@@ -114,7 +114,13 @@ export class UsersService {
   }
 
   async findAll(role?: string) {
-    const where = role ? { role: role.toUpperCase() as any } : {};
+    let mappedRole = role;
+    if (role) {
+      const upper = role.toUpperCase();
+      // Map TEACHER to INSTRUCTOR for backward compatibility
+      mappedRole = upper === 'TEACHER' ? 'INSTRUCTOR' : upper;
+    }
+    const where = mappedRole ? { role: mappedRole as any } : {};
     return this.prisma.user.findMany({
       where,
       select: {

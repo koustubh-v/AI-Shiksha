@@ -19,6 +19,7 @@ export function CourseBuilderWizard() {
     const [activeTab, setActiveTab] = useState('basic');
     const [course, setCourse] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [publishing, setPublishing] = useState(false);
 
     useEffect(() => {
         if (courseId) {
@@ -72,6 +73,35 @@ export function CourseBuilderWizard() {
         }
     };
 
+    const canPublish = () => {
+        if (!course) return false;
+        return !!(
+            course.title &&
+            course.description &&
+            course.category_id &&
+            course.slug
+        );
+    };
+
+    const handlePublish = async () => {
+        if (!canPublish()) {
+            toast.error("Please complete all required fields before publishing");
+            return;
+        }
+
+        setPublishing(true);
+        try {
+            await Courses.update(courseId!, { status: 'PUBLISHED' });
+            toast.success("Course published successfully!");
+            navigate('/dashboard/courses');
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Failed to publish course");
+        } finally {
+            setPublishing(false);
+        }
+    };
+
     if (!courseId) return null;
 
     if (loading) {
@@ -88,7 +118,8 @@ export function CourseBuilderWizard() {
         <CourseBuilderContainer>
             <CourseBuilderLayout
                 title={course?.title || "Course Builder"}
-                onSave={() => { }} // Individual steps handle saving
+                onSave={handlePublish}
+                saving={publishing}
                 onBack={() => navigate('/instructor/courses')}
                 onPreview={() => window.open(`/courses/${course?.slug || courseId}`, '_blank')}
             >

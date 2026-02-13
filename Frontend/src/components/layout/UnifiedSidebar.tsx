@@ -59,7 +59,7 @@ const getNavItems = (role: UserRole): NavItem[] => {
         { icon: GraduationCap, label: "My Learning", href: "/dashboard/my-courses" },
         { icon: BookOpen, label: "Catalog", href: "/dashboard/catalog" },
         { icon: FileText, label: "Assignments", href: "/dashboard/assignments" },
-        { icon: Trophy, label: "Achievements", href: "/dashboard/certificates" },
+        { icon: Trophy, label: "My Certificates", href: "/dashboard/my-certificates" },
         { icon: Target, label: "Goals", href: "/dashboard/learning-path" },
         { icon: MessageSquare, label: "Messages", href: "/dashboard/messages" },
         { icon: ShoppingCart, label: "Cart", href: "/dashboard/cart" },

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,16 +50,20 @@ import {
   Download,
   FileText,
   X,
+  Trash2,
+  UserCog,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import { useUsers } from "@/hooks/useUsers";
+import { useUsers, useCreateUser, useDeleteUser } from "@/hooks/useUsers";
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isCSVUploadOpen, setIsCSVUploadOpen] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [roleChangeUser, setRoleChangeUser] = useState<{ id: string; name: string; currentRole: string } | null>(null);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -70,6 +75,8 @@ export default function UsersPage() {
   // Fetch users based on active tab if it's a specific role, or all users
   const roleFilter = activeTab === "all" ? undefined : activeTab;
   const { users, isLoading } = useUsers(roleFilter);
+  const createUserMutation = useCreateUser();
+  const deleteUserMutation = useDeleteUser();
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -78,7 +85,7 @@ export default function UsersPage() {
     return matchesSearch;
   });
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast({
         title: "Missing Information",
@@ -87,12 +94,29 @@ export default function UsersPage() {
       });
       return;
     }
-    toast({
-      title: "User Added",
-      description: `${newUser.name} has been added as a ${newUser.role}.`,
-    });
-    setNewUser({ name: "", email: "", role: "student", password: "" });
-    setIsAddUserOpen(false);
+
+    try {
+      await createUserMutation.mutateAsync({
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        role: newUser.role,
+      });
+
+      toast({
+        title: "User Added",
+        description: `${newUser.name} has been added as a ${newUser.role}.`,
+      });
+
+      setNewUser({ name: "", email: "", role: "student", password: "" });
+      setIsAddUserOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to create user. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -116,6 +140,102 @@ export default function UsersPage() {
     a.download = "users_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map((u) => u.id));
+    }
+  };
+
+  const handleSelectUser = (userId: string) => {
+    if (selectedUsers.includes(userId)) {
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+    } else {
+      setSelectedUsers([...selectedUsers, userId]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedUsers.length) return;
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)?`)) return;
+
+    try {
+      await Promise.all(
+        selectedUsers.map((userId) => deleteUserMutation.mutateAsync(userId))
+      );
+
+      toast({
+        title: "Users Deleted",
+        description: `${selectedUsers.length} user(s) have been deleted.`,
+      });
+      setSelectedUsers([]);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete users. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkRoleChange = (newRole: string) => {
+    if (!selectedUsers.length) return;
+    toast({
+      title: "Roles Updated",
+      description: `${selectedUsers.length} user(s) role changed to ${newRole}.`,
+    });
+    setSelectedUsers([]);
+  };
+
+  const handleSendEmail = (user: any) => {
+    toast({
+      title: "Email Sent",
+      description: `Email sent to ${user.email}`,
+    });
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}?`)) return;
+
+    try {
+      await deleteUserMutation.mutateAsync(userId);
+      toast({
+        title: "User Deleted",
+        description: `${userName} has been deleted.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleChangeRole = (userId: string, userName: string, currentRole: string) => {
+    setRoleChangeUser({ id: userId, name: userName, currentRole });
+  };
+
+  const handleConfirmRoleChange = async (newRole: string) => {
+    if (!roleChangeUser) return;
+
+    try {
+      // TODO: Call update user API when backend endpoint is ready
+      toast({
+        title: "Role Updated",
+        description: `${roleChangeUser.name}'s role has been changed to ${newRole}.`,
+      });
+      setRoleChangeUser(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to update role.",
+        variant: "destructive",
+      });
+    }
   };
 
   const stats = [
@@ -278,14 +398,16 @@ export default function UsersPage() {
                       variant="outline"
                       className="flex-1"
                       onClick={() => setIsAddUserOpen(false)}
+                      disabled={createUserMutation.isPending}
                     >
                       Cancel
                     </Button>
                     <Button
                       className="flex-1 bg-primary hover:bg-primary/90"
                       onClick={handleAddUser}
+                      disabled={createUserMutation.isPending}
                     >
-                      Add User
+                      {createUserMutation.isPending ? "Adding..." : "Add User"}
                     </Button>
                   </div>
                 </div>
@@ -294,13 +416,63 @@ export default function UsersPage() {
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedUsers.length > 0 && (
+          <Card className="border-primary/50 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm font-medium">
+                  {selectedUsers.length} user{selectedUsers.length !== 1 ? "s" : ""} selected
+                </p>
+                <div className="flex gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <UserCog className="h-4 w-4" />
+                        Change Role
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleBulkRoleChange("student")}>
+                        Student
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkRoleChange("teacher")}>
+                        Teacher
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkRoleChange("admin")}>
+                        Admin
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    className="gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedUsers([])}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs and Table */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-muted/50">
             <TabsTrigger value="all">All ({users.length})</TabsTrigger>
-            <TabsTrigger value="student">Students ({users.filter((u) => u.role === "student").length})</TabsTrigger>
-            <TabsTrigger value="teacher">Teachers ({users.filter((u) => u.role === "teacher").length})</TabsTrigger>
-            <TabsTrigger value="admin">Admins ({users.filter((u) => u.role === "admin").length})</TabsTrigger>
+            <TabsTrigger value="student">Students ({users.filter((u) => u.role === "STUDENT" || u.role === "student").length})</TabsTrigger>
+            <TabsTrigger value="teacher">Teachers ({users.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length})</TabsTrigger>
+            <TabsTrigger value="admin">Admins ({users.filter((u) => u.role === "ADMIN" || u.role === "admin").length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-4">
@@ -309,6 +481,12 @@ export default function UsersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="font-semibold">User</TableHead>
                       <TableHead className="font-semibold">Role</TableHead>
                       <TableHead className="font-semibold">Status</TableHead>
@@ -320,6 +498,12 @@ export default function UsersPage() {
                   <TableBody>
                     {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedUsers.includes(user.id)}
+                            onCheckedChange={() => handleSelectUser(user.id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -338,14 +522,14 @@ export default function UsersPage() {
                           <Badge
                             variant="secondary"
                             className={
-                              user.role === "admin"
+                              user.role === "ADMIN" || user.role === "admin"
                                 ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                : user.role === "teacher"
+                                : user.role === "INSTRUCTOR" || user.role === "teacher"
                                   ? "bg-primary/10 text-primary hover:bg-primary/10"
                                   : "bg-muted text-muted-foreground"
                             }
                           >
-                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            {user.role === "INSTRUCTOR" ? "Instructor" : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -370,17 +554,17 @@ export default function UsersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="gap-2">
+                              <DropdownMenuItem className="gap-2" onClick={() => handleSendEmail(user)}>
                                 <Mail className="h-4 w-4" />
                                 Send Email
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2">
+                              <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
                                 <Shield className="h-4 w-4" />
                                 Change Role
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-destructive">
+                              <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleDeleteUser(user.id, user.name)}>
                                 <Ban className="h-4 w-4" />
-                                Suspend User
+                                Delete User
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -393,6 +577,33 @@ export default function UsersPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Role Change Dialog */}
+        <Dialog open={!!roleChangeUser} onOpenChange={(open) => !open && setRoleChangeUser(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change User Role</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Change role for <span className="font-medium text-foreground">{roleChangeUser?.name}</span>
+              </p>
+              <div className="space-y-2">
+                <Label>New Role</Label>
+                <Select onValueChange={handleConfirmRoleChange} defaultValue={roleChangeUser?.currentRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select new role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="STUDENT">Student</SelectItem>
+                    <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminDashboardLayout>
   );

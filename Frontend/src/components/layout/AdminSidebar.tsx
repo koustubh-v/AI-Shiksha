@@ -104,7 +104,7 @@ const adminNavItems: NavItem[] = [
       { icon: Plus, label: "Add Course", href: "/dashboard/courses/new" },
       { icon: Folder, label: "Categories", href: "/dashboard/categories" },
       { icon: UserCog, label: "Enrollment", href: "/dashboard/enrollment" },
-      { icon: Award, label: "Certificates", href: "/dashboard/certificates" },
+      { icon: Award, label: "Certificate Templates", href: "/dashboard/certificate-templates" },
       { icon: CheckSquare, label: "Completion", href: "/dashboard/completion" },
       { icon: FileCheck, label: "Course Approval", href: "/dashboard/course-approval", badge: "5", badgeColor: "bg-destructive" },
     ],

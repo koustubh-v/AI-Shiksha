@@ -25,6 +25,8 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { useState, useEffect } from "react";
+import { adminService } from "@/services/admin.service";
 
 const platformStats = [
   {
@@ -105,6 +107,60 @@ const aiInsights = [
 ];
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<any[]>([]);
+  const [userGrowth, setUserGrowth] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState<any[]>([]);
+  const [pendingActions, setPendingActions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsData, userGrowthData, revenueData, actionsData] = await Promise.all([
+          adminService.getStats(),
+          adminService.getUserGrowth(),
+          adminService.getRevenue(),
+          adminService.getPendingActions()
+        ]);
+
+        // Map backend stats to match frontend component expectation (icon component)
+        const mappedStats = statsData.map((stat: any) => {
+          let IconComponent = Users;
+          if (stat.icon === 'BookOpen') IconComponent = BookOpen;
+          if (stat.icon === 'DollarSign') IconComponent = DollarSign;
+          if (stat.icon === 'TrendingUp') IconComponent = TrendingUp;
+
+          return {
+            ...stat,
+            icon: IconComponent,
+            positive: stat.change.startsWith('+') // Simple heuristic
+          };
+        });
+
+        setStats(mappedStats);
+        setUserGrowth(userGrowthData);
+        setRevenue(revenueData);
+        setPendingActions(actionsData);
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-full">
+          <p>Loading dashboard...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -122,12 +178,12 @@ export default function AdminDashboard() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {platformStats.map((stat) => (
-            <Card key={stat.title}>
+          {stats.map((stat) => (
+            <Card key={stat.label}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-lg ${stat.color}`}>
-                    <stat.icon className="h-5 w-5 text-white" />
+                  <div className={`p-2 rounded-lg ${stat.gradient}`}> {/* Using gradient from backend or color mapping */}
+                    <stat.icon className={`h-5 w-5 ${stat.iconColor ? stat.iconColor.replace('text-', 'text-') : 'text-white'}`} />
                   </div>
                   <div className={`flex items-center gap-1 text-sm ${stat.positive ? "text-lms-emerald" : "text-lms-rose"}`}>
                     {stat.positive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
@@ -136,7 +192,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-4">
                   <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -153,7 +209,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={userGrowthData}>
+                  <AreaChart data={userGrowth}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -202,7 +258,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueData}>
+                  <BarChart data={revenue}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `$${v / 1000}K`} />
@@ -235,10 +291,9 @@ export default function AdminDashboard() {
                 {pendingActions.map((action, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        action.status === "urgent" ? "bg-lms-rose/10" : "bg-lms-amber/10"
-                      }`}>
-                        {action.status === "urgent" ? (
+                      <div className={`p-2 rounded-lg ${action.priority === "high" ? "bg-lms-rose/10" : "bg-lms-amber/10"
+                        }`}>
+                        {action.priority === "high" ? (
                           <AlertTriangle className="h-4 w-4 text-lms-rose" />
                         ) : (
                           <Clock className="h-4 w-4 text-lms-amber" />
@@ -247,14 +302,16 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-sm font-medium">{action.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {action.teacher || action.user || action.course}
-                          {action.amount && ` • ${action.amount}`}
+                          {/* Backend doesn't return detailed info like teacher name yet for all actions, just title. 
+                              Frontend expected 'action.teacher' etc. 
+                              For now, display title as main info. */}
+                          High Priority Item
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={action.status === "urgent" ? "destructive" : "secondary"}>
-                        {action.status}
+                      <Badge variant={action.priority === "high" ? "destructive" : "secondary"}>
+                        {action.priority || 'Normal'}
                       </Badge>
                       <Button size="sm" variant="outline">Review</Button>
                     </div>
@@ -264,7 +321,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* AI Insights */}
+          {/* AI Insights - Keeping static for now as backend doesn't provide them yet, or use mock if preferred */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold flex items-center gap-2">

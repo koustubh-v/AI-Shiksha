@@ -64,6 +64,15 @@ const getNavItems = (role: UserRole): NavItem[] => {
         { icon: MessageSquare, label: "Messages", href: "/dashboard/messages" },
         { icon: ShoppingCart, label: "Cart", href: "/dashboard/cart" },
       ];
+    case "admin":
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+        { icon: BookOpen, label: "All Courses", href: "/dashboard/courses" },
+        { icon: Users, label: "User Management", href: "/dashboard/users" },
+        { icon: DollarSign, label: "Revenue", href: "/dashboard/revenue" },
+        { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
+        { icon: Settings, label: "Settings", href: "/dashboard/platform-settings" },
+      ];
     default:
       return [];
   }

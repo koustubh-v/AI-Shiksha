@@ -30,6 +30,9 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+import { useAdminDashboard } from "@/hooks/useAdminDashboard";
+import * as LucideIcons from "lucide-react";
+
 export function AdminDashboardContent() {
   const [isFranchiseDialogOpen, setIsFranchiseDialogOpen] = useState(false);
   const [newFranchise, setNewFranchise] = useState({
@@ -38,6 +41,7 @@ export function AdminDashboardContent() {
     adminEmail: "",
   });
   const { toast } = useToast();
+  const { stats, pendingActions: apiPendingActions, isLoading } = useAdminDashboard();
 
   const handleAddFranchise = () => {
     if (!newFranchise.name || !newFranchise.location || !newFranchise.adminEmail) {
@@ -56,13 +60,6 @@ export function AdminDashboardContent() {
     setIsFranchiseDialogOpen(false);
   };
 
-  const platformStats = [
-    { label: "Total Users", value: "24,847", change: "+12%", icon: Users, gradient: "from-primary/15 to-primary/5", iconColor: "text-primary" },
-    { label: "Active Courses", value: "1,234", change: "+8%", icon: BookOpen, gradient: "from-accent/15 to-accent/5", iconColor: "text-accent" },
-    { label: "Monthly Revenue", value: "$284.5K", change: "+15%", icon: DollarSign, gradient: "from-chart-3/15 to-chart-3/5", iconColor: "text-chart-3" },
-    { label: "Completion Rate", value: "78%", change: "+3%", icon: TrendingUp, gradient: "from-chart-4/15 to-chart-4/5", iconColor: "text-chart-4" },
-  ];
-
   const quickActions = [
     { label: "Manage Users", icon: Users, href: "/dashboard/users", color: "bg-primary" },
     { label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses", color: "bg-accent" },
@@ -71,38 +68,41 @@ export function AdminDashboardContent() {
     { label: "SEO Settings", icon: Search, href: "/dashboard/seo-settings", color: "bg-chart-2" },
   ];
 
-  const pendingActions = [
-    { title: "5 teacher verifications", priority: "high", href: "/dashboard/teachers" },
-    { title: "3 courses pending", priority: "high", href: "/dashboard/course-approval" },
-    { title: "12 payout requests", priority: "medium", href: "/dashboard/payouts" },
-  ];
-
   const systemHealth = [
     { label: "Server Uptime", value: "99.9%", healthy: true },
-    { label: "Database", value: "42%", healthy: true },
-    { label: "API Response", value: "145ms", healthy: true },
+    { label: "Database", value: "100%", healthy: true },
+    { label: "API Response", value: "45ms", healthy: true },
     { label: "Storage", value: "68%", healthy: false },
   ];
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Stats Row */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-        {platformStats.map((stat) => (
-          <Card key={stat.label} className={`border bg-gradient-to-br ${stat.gradient}`}>
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between mb-2">
-                <stat.icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.iconColor}`} />
-                <span className="text-[10px] md:text-xs text-accent flex items-center gap-0.5">
-                  <ArrowUpRight className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                  {stat.change}
-                </span>
-              </div>
-              <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {stats?.map((stat) => {
+          // Dynamic icon rendering
+          const IconComponent = (LucideIcons as any)[stat.icon] || LucideIcons.HelpCircle;
+
+          return (
+            <Card key={stat.label} className={`border bg-gradient-to-br ${stat.gradient}`}>
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <IconComponent className={`h-4 w-4 md:h-5 md:w-5 ${stat.iconColor}`} />
+                  <span className="text-[10px] md:text-xs text-accent flex items-center gap-0.5">
+                    <ArrowUpRight className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    {stat.change}
+                  </span>
+                </div>
+                <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Admin Control Center */}
@@ -200,7 +200,7 @@ export function AdminDashboardContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {pendingActions.map((action, index) => (
+            {apiPendingActions?.map((action, index) => (
               <Link key={index} to={action.href}>
                 <div className="flex items-center gap-2 md:gap-3 p-2 bg-muted/50 hover:bg-muted transition-colors rounded-lg cursor-pointer">
                   <AlertTriangle className={`h-3 w-3 md:h-4 md:w-4 ${action.priority === "high" ? "text-destructive" : "text-chart-3"}`} />

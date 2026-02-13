@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import api from "@/lib/api";
 
 export type UserRole = "student" | "teacher" | "admin";
 
@@ -8,118 +9,114 @@ export interface User {
   name: string;
   role: UserRole;
   avatar?: string;
+  bio?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<boolean>;
+  signup: (email: string, password: string, name: string, role: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for testing
-const demoUsers: Record<string, { password: string; user: User }> = {
-  "admin@test.com": {
-    password: "12345678",
-    user: {
-      id: "admin-001",
-      email: "admin@test.com",
-      name: "Admin User",
-      role: "admin",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    },
-  },
-  "student@test.com": {
-    password: "12345678",
-    user: {
-      id: "student-001",
-      email: "student@test.com",
-      name: "Alex Student",
-      role: "student",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-    },
-  },
-  "teacher@test.com": {
-    password: "12345678",
-    user: {
-      id: "teacher-001",
-      email: "teacher@test.com",
-      name: "John Teacher",
-      role: "teacher",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    },
-  },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem("lms_token"));
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("lms_user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem("lms_user");
+    const checkAuth = async () => {
+      const storedToken = localStorage.getItem("lms_token");
+      if (storedToken) {
+        try {
+          // Verify token and get user profile
+          const response = await api.get("/auth/profile");
+          setUser(response.data);
+          setToken(storedToken);
+        } catch (error) {
+          console.error("Session expired or invalid", error);
+          localStorage.removeItem("lms_token");
+          setToken(null);
+          setUser(null);
+        }
+      } else {
+        setToken(null);
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const response = await api.post("/auth/login", { email, password });
+      const { access_token, user } = response.data;
 
-    const lowerEmail = email.toLowerCase();
-    const demoUser = demoUsers[lowerEmail];
-
-    if (demoUser && demoUser.password === password) {
-      setUser(demoUser.user);
-      localStorage.setItem("lms_user", JSON.stringify(demoUser.user));
+      localStorage.setItem("lms_token", access_token);
+      setToken(access_token);
+      setUser(user);
       return true;
+    } catch (error) {
+      console.error("Login failed", error);
+      return false;
     }
-
-    return false;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("lms_user");
+    setToken(null);
+    localStorage.removeItem("lms_token");
+    window.location.href = "/login"; // Force redirect to clear any state
   };
 
   const signup = async (
     email: string,
     password: string,
     name: string,
-    role: UserRole
+    role: string
   ): Promise<boolean> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      // Role needs to be uppercase for backend if it expects enum, 
+      // but typical register might take lowercase. 
+      // Let's ensure consistency. Backend expects 'role' in body.
+      // Based on CreateUserDto, role is optional, defaults to STUDENT.
+      const backendRole = role === 'teacher' ? 'INSTRUCTOR' : role.toUpperCase();
 
-    // For demo, just create a new user
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email,
-      name,
-      role,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-    };
+      const response = await api.post("/auth/register", {
+        email,
+        password,
+        name,
+        role: backendRole
+      });
 
-    setUser(newUser);
-    localStorage.setItem("lms_user", JSON.stringify(newUser));
-    return true;
+      // Auto-login after signup? Or just return true.
+      // Usually better to auto-login.
+      if (response.data) {
+        // If register returns user, we might need to login separately 
+        // or if register returns token.
+        // Backend register returns User object, no token usually unless changed.
+        // Let's try to login immediately.
+        return await login(email, password);
+      }
+      return true;
+    } catch (error) {
+      console.error("Signup failed", error);
+      return false;
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        token,
         isAuthenticated: !!user,
         login,
         logout,

@@ -20,11 +20,112 @@ export class UsersService {
     });
   }
 
+  // ... (keeping other methods same until findAll)
+
+  async getStudentDashboardStats(userId: string) {
+    const enrolledCount = await this.prisma.enrollment.count({
+      where: { student_id: userId, status: 'active' },
+    });
+
+    const hoursLearnedAgg = await this.prisma.lessonProgress.aggregate({
+      where: { student_id: userId },
+      _sum: { watched_seconds: true },
+    });
+    const hours = Math.round(
+      (hoursLearnedAgg._sum.watched_seconds || 0) / 3600,
+    );
+
+    const certificates = await this.prisma.certificate.count({
+      where: { student_id: userId },
+    });
+
+    const inProgress = await this.prisma.enrollment.findMany({
+      where: { student_id: userId, status: 'active' },
+      include: {
+        course: {
+          include: {
+            instructor: { include: { user: true } },
+          },
+        },
+      },
+      take: 3,
+      orderBy: { enrolled_at: 'desc' },
+    });
+
+    const progressList = await Promise.all(
+      inProgress.map(async (enrollment) => {
+        const progress = await this.prisma.courseProgress.findUnique({
+          where: {
+            student_id_course_id: {
+              student_id: userId,
+              course_id: enrollment.course_id,
+            },
+          },
+        });
+        return {
+          id: enrollment.course.id,
+          title: enrollment.course.title,
+          instructor: enrollment.course.instructor.user.name,
+          progress: progress ? progress.progress_percentage : 0,
+          image:
+            enrollment.course.thumbnail_url ||
+            'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=120&h=80&fit=crop',
+        };
+      }),
+    );
+
+    return {
+      stats: [
+        {
+          label: 'Courses Enrolled',
+          value: enrolledCount.toString(),
+          icon: 'BookOpen',
+          gradient: 'from-primary/15 to-primary/5',
+          iconColor: 'text-primary',
+        },
+        {
+          label: 'Hours Learned',
+          value: hours.toString(),
+          icon: 'Clock',
+          gradient: 'from-accent/15 to-accent/5',
+          iconColor: 'text-accent',
+        },
+        {
+          label: 'Certificates',
+          value: certificates.toString(),
+          icon: 'Trophy',
+          gradient: 'from-chart-3/15 to-chart-3/5',
+          iconColor: 'text-chart-3',
+        },
+      ],
+      inProgressCourses: progressList,
+      upcomingDeadlines: [
+        { title: 'Complete Profile', course: 'Onboarding', dueIn: 'Soon' },
+      ],
+    };
+  }
+
   async findOne(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
   async findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async findAll(role?: string) {
+    const where = role ? { role: role.toUpperCase() as any } : {};
+    return this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        created_at: true,
+        avatar_url: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
   }
 }

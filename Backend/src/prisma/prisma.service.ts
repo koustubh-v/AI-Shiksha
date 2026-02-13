@@ -1,8 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 
 @Injectable()
 export class PrismaService
@@ -10,19 +8,14 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(config: ConfigService) {
-    const connectionString = config.get('DATABASE_URL');
-    const pool = new Pool({ connectionString });
-
-    const adapter = new PrismaPg(pool);
-
-    super({ adapter } as any);
+    super();
   }
 
   async onModuleInit() {
-    // $connect is implicit with adapter, but good to keep hook
+    await this.$connect();
   }
 
   async onModuleDestroy() {
-    // $disconnect is implicit
+    await this.$disconnect();
   }
 }

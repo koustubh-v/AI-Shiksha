@@ -15,13 +15,22 @@ import { UpdateInstructorDto } from './dto/update-instructor.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport'; // Or use generic guard
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/dto/create-user.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { Role } from '../../enums/role.enum';
 
 @ApiTags('Instructors')
 @Controller('instructors')
 export class InstructorsController {
   constructor(private readonly instructorsService: InstructorsService) {}
+
+  @Get('admin/list')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all instructors with stats (Admin)' })
+  getAdminList() {
+    return this.instructorsService.findAllWithStats();
+  }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
@@ -37,6 +46,15 @@ export class InstructorsController {
     return this.instructorsService.findAll();
   }
 
+  @Get('dashboard/stats')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.INSTRUCTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get instructor dashboard stats' })
+  getDashboardStats(@Request() req) {
+    return this.instructorsService.getDashboardStats(req.user.userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get instructor details' })
   findOne(@Param('id') id: string) {
@@ -45,7 +63,7 @@ export class InstructorsController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update instructor profile' })
   update(

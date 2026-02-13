@@ -16,7 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/dto/create-user.dto';
+import { Role } from '../../enums/role.enum';
 
 @ApiTags('Modules')
 @Controller('modules')
@@ -25,7 +25,7 @@ export class ModulesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a module' })
   create(@Body() createModuleDto: CreateModuleDto) {
@@ -46,7 +46,7 @@ export class ModulesController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update module' })
   update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto) {
@@ -55,7 +55,7 @@ export class ModulesController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete module' })
   remove(@Param('id') id: string) {

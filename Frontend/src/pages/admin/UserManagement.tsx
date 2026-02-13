@@ -1,4 +1,4 @@
-import AdminLayout from "@/components/admin/AdminLayout";
+import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +53,12 @@ import {
   Check,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { adminService } from "@/services/admin.service";
+import { Users as UsersAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const students = [
   { id: 1, name: "Emma Wilson", email: "emma@example.com", courses: 5, status: "active", joined: "Jan 15, 2024", spent: "$249" },
@@ -95,11 +99,19 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-function AddUserModalContent() {
+function AddUserModalContent({ onSuccess }: { onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+  });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -118,113 +130,256 @@ function AddUserModalContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSubmit = async () => {
+    // Validation
+    if (!formData.name || !formData.email || !formData.role) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const newUser = await UsersAPI.create({
+        ...formData,
+        password,
+      });
+
+      // Reset form first
+      setFormData({ name: "", email: "", role: "" });
+      setPassword("");
+      setConfirmPassword("");
+
+      // Wait for the user list to refresh before closing modal
+      await onSuccess();
+
+      // Close modal after refresh completes
+      setIsOpen(false);
+
+      // Show success toast after everything is done
+      toast({
+        title: "User Created",
+        description: `Successfully created user account for ${formData.name}.`,
+      });
+    } catch (error: any) {
+      console.error("Failed to create user:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to create user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <DialogContent className="sm:max-w-[500px]">
-      <DialogHeader>
-        <DialogTitle className="text-xl">Add New User</DialogTitle>
-        <DialogDescription>
-          Create a new user account. Fill in the details below.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-5 py-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input id="name" placeholder="John Doe" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="role">Role</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="teacher">Instructor</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input id="email" type="email" placeholder="john@example.com" />
-        </div>
-
-        <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-          <div className="flex items-center justify-between">
-            <Label className="text-base font-medium">Security</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={generatePassword}
-              className="h-8 gap-2 text-lms-blue border-lms-blue/20 hover:bg-lms-blue/10"
-            >
-              <Wand2 className="h-3.5 w-3.5" />
-              Generate Strong Password
-            </Button>
-          </div>
-
-          <div className="grid gap-3">
-            <div className="relative">
-              <Label htmlFor="password" className="sr-only">Password</Label>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
+          <UserPlus className="h-4 w-4" />
+          Add User
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Add New User</DialogTitle>
+          <DialogDescription>
+            Create a new user account. Fill in the details below.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-5 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Full Name *</Label>
               <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pr-20"
+                id="name"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
-              <div className="absolute right-0 top-0 h-full flex items-center pr-1 gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                {password && (
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
+                  <SelectItem value="ADMIN">Administrator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email Address *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-medium">Security</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={generatePassword}
+                className="h-8 gap-2 text-lms-blue border-lms-blue/20 hover:bg-lms-blue/10"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                Generate Strong Password
+              </Button>
+            </div>
+
+            <div className="grid gap-3">
+              <div className="relative">
+                <Label htmlFor="password" className="sr-only">Password</Label>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password (min 6 characters)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-20"
+                />
+                <div className="absolute right-0 top-0 h-full flex items-center pr-1 gap-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={copyPassword}
-                    title="Copy Password"
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                )}
+                  {password && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={copyPassword}
+                      title="Copy Password"
+                    >
+                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="grid gap-2">
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => { }}>Cancel</Button>
-        <Button type="submit" className="bg-lms-blue hover:bg-lms-blue/90 w-full sm:w-auto">Create Account</Button>
-      </DialogFooter>
-    </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="bg-lms-blue hover:bg-lms-blue/90 w-full sm:w-auto"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Account
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 
 export default function UserManagement() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await UsersAPI.getAll();
+      setUsers(data);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const students = users.filter(u => u.role === 'STUDENT').map(u => ({
+    ...u,
+    courses: 0, // Mock data as backend might not return this yet
+    status: 'active', // Mock
+    joined: new Date(u.created_at || Date.now()).toLocaleDateString(),
+    spent: '$0' // Mock
+  }));
+  const teachers = users.filter(u => u.role === 'INSTRUCTOR').map(u => ({
+    ...u,
+    courses: 0,
+    students: 0,
+    status: 'verified',
+    earnings: '$0'
+  }));
+  const admins = users.filter(u => u.role === 'ADMIN').map(u => ({
+    ...u,
+    role: 'Admin',
+    lastLogin: 'Recently'
+  }));
+
+  if (loading) {
+    return (
+      <AdminDashboardLayout title="User Management" subtitle="Manage students, teachers, and administrators">
+        <div>Loading users...</div>
+      </AdminDashboardLayout>
+    );
+  }
+
   return (
     <AdminDashboardLayout title="User Management" subtitle="Manage students, teachers, and administrators">
       <div className="space-y-6">
@@ -239,15 +394,7 @@ export default function UserManagement() {
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
-                  <UserPlus className="h-4 w-4" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <AddUserModalContent />
-            </Dialog>
+            <AddUserModalContent onSuccess={loadUsers} />
           </div>
         </div>
 
@@ -260,7 +407,7 @@ export default function UserManagement() {
                   <GraduationCap className="h-6 w-6 text-lms-blue" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">12,542</p>
+                  <p className="text-2xl font-bold">{students.length}</p>
                   <p className="text-sm text-muted-foreground">Total Students</p>
                 </div>
               </div>
@@ -273,7 +420,7 @@ export default function UserManagement() {
                   <Users className="h-6 w-6 text-lms-emerald" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">195</p>
+                  <p className="text-2xl font-bold">{teachers.length}</p>
                   <p className="text-sm text-muted-foreground">Total Teachers</p>
                 </div>
               </div>
@@ -286,7 +433,7 @@ export default function UserManagement() {
                   <Shield className="h-6 w-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">8</p>
+                  <p className="text-2xl font-bold">{admins.length}</p>
                   <p className="text-sm text-muted-foreground">Admin Users</p>
                 </div>
               </div>

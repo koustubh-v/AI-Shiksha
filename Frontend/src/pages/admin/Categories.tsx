@@ -1,9 +1,10 @@
+
+import { useState, useEffect } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -13,79 +14,248 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Folder,
-  Plus,
-  Edit,
-  Trash2,
-  ChevronRight,
-  BookOpen,
-  GripVertical,
-} from "lucide-react";
-
-const categories = [
-  {
-    id: 1,
-    name: "Technology",
-    courses: 342,
-    subcategories: [
-      { name: "Web Development", courses: 120 },
-      { name: "Mobile Development", courses: 85 },
-      { name: "Data Science", courses: 78 },
-      { name: "AI & Machine Learning", courses: 59 },
-    ],
-  },
-  {
-    id: 2,
-    name: "Business",
-    courses: 256,
-    subcategories: [
-      { name: "Marketing", courses: 89 },
-      { name: "Finance", courses: 67 },
-      { name: "Entrepreneurship", courses: 54 },
-      { name: "Management", courses: 46 },
-    ],
-  },
-  {
-    id: 3,
-    name: "Design",
-    courses: 189,
-    subcategories: [
-      { name: "UI/UX Design", courses: 78 },
-      { name: "Graphic Design", courses: 56 },
-      { name: "3D & Animation", courses: 34 },
-      { name: "Photography", courses: 21 },
-    ],
-  },
-  {
-    id: 4,
-    name: "Personal Development",
-    courses: 145,
-    subcategories: [
-      { name: "Leadership", courses: 45 },
-      { name: "Communication", courses: 38 },
-      { name: "Productivity", courses: 32 },
-      { name: "Career Development", courses: 30 },
-    ],
-  },
-];
-
-const skillTags = [
-  "JavaScript", "Python", "React", "Node.js", "SQL", "Machine Learning",
-  "Digital Marketing", "SEO", "Leadership", "Project Management", "Figma",
-  "Adobe XD", "Data Analysis", "Excel", "Communication", "Time Management",
-];
+import { Plus, Loader2 } from "lucide-react";
+import { Categories, Tags } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { DataTable } from "@/components/ui/data-table";
+import { createCategoryColumns, Category } from "./components/CategoryColumns";
+import { createTagColumns, Tag } from "./components/TagColumns";
 
 export default function CategoriesPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingTags, setIsLoadingTags] = useState(true);
+
+  // Category dialog state
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: "",
+    description: "",
+  });
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
+  // Tag dialog state
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+  const [tagName, setTagName] = useState("");
+  const [isSubmittingTag, setIsSubmittingTag] = useState(false);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadCategories();
+    loadTags();
+  }, []);
+
+  const loadCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const data = await Categories.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load categories",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+  const loadTags = async () => {
+    setIsLoadingTags(true);
+    try {
+      const data = await Tags.getAll();
+      setTags(data);
+    } catch (error) {
+      console.error("Failed to load tags:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load tags",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingTags(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!categoryForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Category name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingCategory(true);
+    try {
+      if (isEditMode && editingCategory) {
+        await Categories.update(editingCategory.id, categoryForm);
+        toast({
+          title: "Success",
+          description: "Category updated successfully",
+        });
+      } else {
+        await Categories.create(categoryForm);
+        toast({
+          title: "Success",
+          description: "Category created successfully",
+        });
+      }
+
+      await loadCategories();
+      setIsCategoryDialogOpen(false);
+      resetCategoryForm();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to save category",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingCategory(false);
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name,
+      description: category.description || "",
+    });
+    setIsEditMode(true);
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleDeleteCategory = async (category: Category) => {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+
+    try {
+      await Categories.delete(category.id);
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+      await loadCategories();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete category",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDeleteCategories = async (ids: string[]) => {
+    try {
+      await Promise.all(ids.map(id => Categories.delete(id)));
+      toast({
+        title: "Success",
+        description: `Deleted ${ids.length} categories`,
+      });
+      loadCategories();
+    } catch (error) {
+      console.error("Failed to bulk delete", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete some categories",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  const handleCreateTag = async () => {
+    if (!tagName.trim()) {
+      toast({
+        title: "Error",
+        description: "Tag name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingTag(true);
+    try {
+      await Tags.create({ name: tagName.trim() });
+      toast({
+        title: "Success",
+        description: "Tag created successfully",
+      });
+      await loadTags();
+      setIsTagDialogOpen(false);
+      setTagName("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to create tag",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingTag(false);
+    }
+  };
+
+  const handleDeleteTag = async (tag: Tag) => {
+    if (!confirm("Are you sure you want to delete this tag?")) return;
+
+    try {
+      await Tags.delete(tag.id);
+      toast({
+        title: "Success",
+        description: "Tag deleted successfully",
+      });
+      await loadTags();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete tag",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDeleteTags = async (ids: string[]) => {
+    try {
+      await Promise.all(ids.map(id => Tags.delete(id)));
+      toast({
+        title: "Success",
+        description: `Deleted ${ids.length} tags`,
+      });
+      loadTags();
+    } catch (error) {
+      console.error("Failed to bulk delete", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete some tags",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({ name: "", description: "" });
+    setIsEditMode(false);
+    setEditingCategory(null);
+  };
+
+  const categoryColumns = createCategoryColumns({
+    onEdit: handleEditCategory,
+    onDelete: handleDeleteCategory
+  });
+
+  const tagColumns = createTagColumns({
+    onDelete: handleDeleteTag
+  });
+
+
   return (
     <AdminDashboardLayout title="Categories & Tags" subtitle="Manage course organization variables">
       <div className="space-y-6">
@@ -98,109 +268,83 @@ export default function CategoriesPage() {
           </div>
 
           <TabsContent value="categories" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="relative">
-                <Input placeholder="Search categories..." className="w-full md:w-64" />
-              </div>
-              <Dialog>
+            <div className="flex justify-end">
+              <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => {
+                setIsCategoryDialogOpen(open);
+                if (!open) resetCategoryForm();
+              }}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
+                  <Button className="gap-2 rounded-xl">
                     <Plus className="h-4 w-4" /> Add Category
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Category</DialogTitle>
-                    <DialogDescription>Create a new category to organize courses.</DialogDescription>
+                    <DialogTitle>{isEditMode ? "Edit Category" : "Add New Category"}</DialogTitle>
+                    <DialogDescription>
+                      {isEditMode ? "Update the category details." : "Create a new category to organize courses."}
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="cat-title">Title</Label>
-                      <Input id="cat-title" placeholder="e.g. Web Development" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="cat-slug">Slug</Label>
-                      <Input id="cat-slug" placeholder="e.g. web-development" />
+                      <Label htmlFor="cat-title">Name *</Label>
+                      <Input
+                        id="cat-title"
+                        placeholder="e.g. Web Development"
+                        value={categoryForm.name}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="cat-desc">Description</Label>
-                      <Input id="cat-desc" placeholder="Category description..." />
+                      <Textarea
+                        id="cat-desc"
+                        placeholder="Category description..."
+                        value={categoryForm.description}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                        rows={3}
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit">Create Category</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsCategoryDialogOpen(false);
+                        resetCategoryForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      onClick={handleCreateCategory}
+                      disabled={isSubmittingCategory}
+                    >
+                      {isSubmittingCategory && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isEditMode ? "Update Category" : "Create Category"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Courses</TableHead>
-                      <TableHead>Subcategories</TableHead>
-                      <TableHead className="w-[100px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Folder className="h-4 w-4 text-lms-blue" />
-                            {category.name}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {category.name.toLowerCase().replace(/\s+/g, '-')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{category.courses}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {category.subcategories.slice(0, 3).map((sub, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {sub.name}
-                              </Badge>
-                            ))}
-                            {category.subcategories.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{category.subcategories.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-lms-blue">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost-destructive" size="icon" className="h-8 w-8">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <DataTable
+              columns={categoryColumns}
+              data={categories}
+              filterColumn="name"
+              onDeleteSelected={handleBulkDeleteCategories}
+              isLoading={isLoadingCategories}
+            />
           </TabsContent>
 
           <TabsContent value="tags" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="relative">
-                <Input placeholder="Search tags..." className="w-full md:w-64" />
-              </div>
-              <Dialog>
+            <div className="flex justify-end">
+
+              <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button className="gap-2 rounded-xl">
                     <Plus className="h-4 w-4" /> Add Tag
                   </Button>
                 </DialogTrigger>
@@ -211,57 +355,46 @@ export default function CategoriesPage() {
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="tag-name">Tag Name</Label>
-                      <Input id="tag-name" placeholder="e.g. React.js" />
+                      <Label htmlFor="tag-name">Tag Name *</Label>
+                      <Input
+                        id="tag-name"
+                        placeholder="e.g. React.js"
+                        value={tagName}
+                        onChange={(e) => setTagName(e.target.value)}
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit">Create Tag</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsTagDialogOpen(false);
+                        setTagName("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      onClick={handleCreateTag}
+                      disabled={isSubmittingTag}
+                    >
+                      {isSubmittingTag && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Tag
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tag Name</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Associated Courses</TableHead>
-                      <TableHead className="w-[100px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {skillTags.map((tag, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">
-                          <Badge variant="secondary" className="px-2 py-1">
-                            {tag}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {tag.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-muted-foreground text-sm">
-                            {Math.floor(Math.random() * 50) + 5} courses
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <DataTable
+              columns={tagColumns}
+              data={tags}
+              filterColumn="name"
+              onDeleteSelected={handleBulkDeleteTags}
+              isLoading={isLoadingTags}
+            />
           </TabsContent>
         </Tabs>
       </div>

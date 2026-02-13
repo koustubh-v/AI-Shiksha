@@ -1,23 +1,57 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Mail, Lock, User, Eye, EyeOff, BookOpen, CheckCircle2 } from "lucide-react";
+import { GraduationCap, Mail, Lock, User, Eye, EyeOff, BookOpen, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<"student" | "instructor">("student");
+  const [role, setRole] = useState<"student" | "teacher">("student");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { signup } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Signup:", { ...formData, role });
+    setIsLoading(true);
+
+    try {
+      const success = await signup(formData.email, formData.password, formData.name, role);
+      if (success) {
+        toast({
+          title: "Account created!",
+          description: "You have successfully signed up and logged in.",
+        });
+        navigate("/dashboard");
+      } else {
+        toast({
+          title: "Signup failed",
+          description: "Please check your details and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      // Improved error handling if backend sends specific message
+      const message = error?.response?.data?.message || "Something went wrong. Please try again.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,16 +137,16 @@ export default function Signup() {
               </button>
               <button
                 type="button"
-                onClick={() => setRole("instructor")}
+                onClick={() => setRole("teacher")}
                 className={cn(
                   "flex flex-col items-center gap-2 border-2 p-4 transition-colors",
-                  role === "instructor"
+                  role === "teacher"
                     ? "border-coursera-purple bg-coursera-purple-light"
                     : "border-border hover:border-coursera-purple/50"
                 )}
               >
-                <BookOpen className={cn("h-6 w-6", role === "instructor" ? "text-coursera-purple" : "text-muted-foreground")} />
-                <span className={cn("font-semibold", role === "instructor" ? "text-coursera-purple" : "text-foreground")}>
+                <BookOpen className={cn("h-6 w-6", role === "teacher" ? "text-coursera-purple" : "text-muted-foreground")} />
+                <span className={cn("font-semibold", role === "teacher" ? "text-coursera-purple" : "text-foreground")}>
                   Teach
                 </span>
               </button>
@@ -177,8 +211,16 @@ export default function Signup() {
                 "w-full h-12 font-semibold text-base",
                 role === "student" ? "bg-coursera-blue hover:bg-coursera-blue-hover" : "bg-coursera-purple hover:bg-coursera-purple/90"
               )}
+              disabled={isLoading}
             >
-              Create Account
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
 

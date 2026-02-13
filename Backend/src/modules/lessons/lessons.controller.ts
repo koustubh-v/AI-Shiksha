@@ -16,7 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/dto/create-user.dto';
+import { Role } from '../../enums/role.enum';
 
 @ApiTags('Lessons')
 @Controller('lessons')
@@ -25,7 +25,7 @@ export class LessonsController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a lesson' })
   create(@Body() createLessonDto: CreateLessonDto) {
@@ -46,7 +46,7 @@ export class LessonsController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update lesson' })
   update(@Param('id') id: string, @Body() updateLessonDto: UpdateLessonDto) {
@@ -55,7 +55,7 @@ export class LessonsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete lesson' })
   remove(@Param('id') id: string) {

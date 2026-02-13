@@ -24,7 +24,13 @@ export class AuthService {
     const payload = { username: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
+        avatar: user.avatar_url,
+      },
     };
   }
 
@@ -35,5 +41,17 @@ export class AuthService {
       throw new UnauthorizedException('User already exists'); // Or ConflictException
     }
     return this.usersService.create(createUserDto);
+  }
+
+  async getUserProfile(userId: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
+      avatar: user.avatar_url,
+    };
   }
 }

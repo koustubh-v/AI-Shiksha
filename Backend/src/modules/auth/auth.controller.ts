@@ -17,8 +17,15 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+
 class LoginDto {
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
   password: string;
 }
 
@@ -36,6 +43,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
   async login(@Body() loginDto: LoginDto) {
+    console.log('Login attempt:', loginDto);
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
@@ -50,7 +58,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  getProfile(@Request() req) {
-    return req.user;
+  async getProfile(@Request() req) {
+    return this.authService.getUserProfile(req.user.userId);
   }
 }

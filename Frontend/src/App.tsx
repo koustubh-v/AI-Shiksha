@@ -29,6 +29,7 @@ import Settings from "./pages/dashboard/Settings";
 import Messages from "./pages/dashboard/Messages";
 import Certificates from "./pages/dashboard/Certificates";
 import CourseManagement from "./pages/dashboard/CourseManagement";
+import CreateCourseRedirect from "./pages/dashboard/CreateCourseRedirect";
 import CourseBuilder from "./pages/dashboard/CourseBuilder";
 import UsersPage from "./pages/dashboard/Users";
 import Moderation from "./pages/dashboard/Moderation";
@@ -97,12 +98,12 @@ const App = () => (
 
               {/* Unified Dashboard - Main */}
               <Route path="/dashboard" element={<UnifiedDashboardPage />} />
-              
+
               {/* Dashboard Sub-routes (shared + role-specific) */}
               <Route path="/dashboard/my-courses" element={<MyCourses />} />
               <Route path="/dashboard/courses" element={<CourseManagement />} />
-              <Route path="/dashboard/courses/new" element={<CourseBuilder />} />
-              <Route path="/dashboard/courses/:id/edit" element={<CourseBuilder />} />
+              <Route path="/dashboard/courses/new" element={<CreateCourseRedirect />} />
+              <Route path="/dashboard/courses/:courseId/edit" element={<CourseBuilder />} />
               <Route path="/dashboard/analytics" element={<Analytics />} />
               <Route path="/dashboard/settings" element={<Settings />} />
               <Route path="/dashboard/messages" element={<Messages />} />

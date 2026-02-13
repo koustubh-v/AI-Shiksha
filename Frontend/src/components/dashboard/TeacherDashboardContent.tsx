@@ -3,25 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { DollarSign, Users, BookOpen, Star, ArrowRight, Plus, TrendingUp } from "lucide-react";
 
+import { useInstructorDashboard } from "@/hooks/useInstructorDashboard";
+import * as LucideIcons from "lucide-react";
+
 export function TeacherDashboardContent() {
-  const stats = [
-    { label: "Total Revenue", value: "$84,254", change: "+12.5%", icon: DollarSign, gradient: "from-primary/15 to-primary/5", iconColor: "text-primary" },
-    { label: "Total Students", value: "3,842", change: "+8.2%", icon: Users, gradient: "from-accent/15 to-accent/5", iconColor: "text-accent" },
-    { label: "Active Courses", value: "12", icon: BookOpen, gradient: "from-chart-3/15 to-chart-3/5", iconColor: "text-chart-3" },
-    { label: "Avg. Rating", value: "4.8", icon: Star, gradient: "from-chart-4/15 to-chart-4/5", iconColor: "text-chart-4" },
-  ];
+  const { data, isLoading } = useInstructorDashboard();
 
-  const topCourses = [
-    { title: "Machine Learning Fundamentals", students: 1245, revenue: "$24,500", rating: 4.9 },
-    { title: "Python for Data Science", students: 892, revenue: "$17,840", rating: 4.8 },
-    { title: "Web Development Bootcamp", students: 756, revenue: "$15,120", rating: 4.7 },
-  ];
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
+  }
 
-  const recentActivity = [
-    { action: "New enrollment", course: "Machine Learning", time: "5 min ago" },
-    { action: "Review received", course: "Python for Data Science", time: "1 hour ago" },
-    { action: "Payout processed", course: "$2,450.00", time: "2 hours ago" },
-  ];
+  const { stats, topCourses, recentActivity } = data || { stats: [], topCourses: [], recentActivity: [] };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -42,23 +34,26 @@ export function TeacherDashboardContent() {
 
       {/* Stats Grid */}
       <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className={`border bg-gradient-to-br ${stat.gradient}`}>
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between mb-1 md:mb-2">
-                <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
-                {stat.change && (
-                  <span className="text-[10px] md:text-xs text-accent flex items-center gap-0.5">
-                    <TrendingUp className="h-3 w-3" />
-                    {stat.change}
-                  </span>
-                )}
-              </div>
-              <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {stats?.map((stat) => {
+          const IconComponent = (LucideIcons as any)[stat.icon] || LucideIcons.HelpCircle;
+          return (
+            <Card key={stat.label} className={`border bg-gradient-to-br ${stat.gradient}`}>
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center justify-between mb-1 md:mb-2">
+                  <IconComponent className={`h-4 w-4 ${stat.iconColor}`} />
+                  {stat.change && (
+                    <span className="text-[10px] md:text-xs text-accent flex items-center gap-0.5">
+                      <TrendingUp className="h-3 w-3" />
+                      {stat.change}
+                    </span>
+                  )}
+                </div>
+                <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-5">
@@ -73,27 +68,31 @@ export function TeacherDashboardContent() {
           <Card className="border">
             <CardContent className="p-0">
               <div className="divide-y">
-                {topCourses.map((course, index) => (
-                  <div key={index} className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
-                    <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-xs md:text-sm font-bold text-primary rounded-lg">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-xs md:text-sm truncate">{course.title}</p>
-                      <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
-                        <span>{course.students} students</span>
-                        <span className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-current text-chart-3" />
-                          {course.rating}
-                        </span>
+                {topCourses.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">No courses data available.</div>
+                ) : (
+                  topCourses.map((course, index) => (
+                    <div key={index} className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                      <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-xs md:text-sm font-bold text-primary rounded-lg">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-xs md:text-sm truncate">{course.title}</p>
+                        <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
+                          <span>{course.students} students</span>
+                          <span className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-current text-chart-3" />
+                            {course.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground text-xs md:text-sm">{course.revenue}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground">Revenue</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground text-xs md:text-sm">{course.revenue}</p>
-                      <p className="text-[10px] md:text-xs text-muted-foreground">Revenue</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -104,16 +103,20 @@ export function TeacherDashboardContent() {
           <h3 className="font-semibold text-sm md:text-base text-foreground mb-3 md:mb-4">Recent Activity</h3>
           <Card className="border">
             <CardContent className="p-3 md:p-4 space-y-3 md:space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="h-2 w-2 bg-primary rounded-full mt-1.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-xs md:text-sm font-medium text-foreground">{activity.action}</p>
-                    <p className="text-[10px] md:text-xs text-muted-foreground">{activity.course}</p>
+              {recentActivity.length === 0 ? (
+                <div className="text-center text-xs text-muted-foreground">No recent activity</div>
+              ) : (
+                recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="h-2 w-2 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs md:text-sm font-medium text-foreground">{activity.action}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground">{activity.course}</p>
+                    </div>
+                    <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
                   </div>
-                  <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 

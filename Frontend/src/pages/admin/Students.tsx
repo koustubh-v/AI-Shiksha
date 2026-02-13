@@ -23,16 +23,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const students = [
-  { id: 1, name: "Alex Johnson", email: "alex@example.com", enrolledCourses: 5, completedCourses: 3, progress: 78, status: "active", joinedAt: "2024-01-15" },
-  { id: 2, name: "Maria Garcia", email: "maria@example.com", enrolledCourses: 8, completedCourses: 6, progress: 92, status: "active", joinedAt: "2023-11-20" },
-  { id: 3, name: "James Wilson", email: "james@example.com", enrolledCourses: 3, completedCourses: 1, progress: 45, status: "inactive", joinedAt: "2024-02-10" },
-  { id: 4, name: "Sarah Lee", email: "sarah@example.com", enrolledCourses: 12, completedCourses: 10, progress: 95, status: "active", joinedAt: "2023-08-05" },
-  { id: 5, name: "Michael Brown", email: "michael@example.com", enrolledCourses: 4, completedCourses: 2, progress: 60, status: "active", joinedAt: "2024-03-01" },
-];
+import { useUsers } from "@/hooks/useUsers";
 
 export default function StudentsPage() {
   const { user } = useAuth();
+  const { users: students, isLoading } = useUsers("student");
+
 
   const content = (
     <div className="space-y-6">
@@ -122,13 +118,17 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
+              {isLoading ? (
+                <TableRow><TableCell colSpan={7} className="h-24 text-center">Loading students...</TableCell></TableRow>
+              ) : students.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="h-24 text-center">No students found.</TableCell></TableRow>
+              ) : students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {student.name.split(" ").map(n => n[0]).join("")}
+                          {student.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -137,25 +137,25 @@ export default function StudentsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{student.enrolledCourses} courses</TableCell>
-                  <TableCell>{student.completedCourses} courses</TableCell>
+                  <TableCell>0 courses</TableCell>
+                  <TableCell>0 courses</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-primary rounded-full"
-                          style={{ width: `${student.progress}%` }}
+                          style={{ width: `0%` }}
                         />
                       </div>
-                      <span className="text-sm">{student.progress}%</span>
+                      <span className="text-sm">0%</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={student.status === "active" ? "default" : "secondary"}>
-                      {student.status}
+                    <Badge variant="default">
+                      Active
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{student.joinedAt}</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(student.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

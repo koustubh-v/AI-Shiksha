@@ -35,7 +35,33 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CourseData, Section, Lesson } from "@/pages/dashboard/CourseBuilder";
+
+// Define types locally since CourseBuilder no longer exports them
+export interface Lesson {
+  id: string;
+  title: string;
+  type: 'video' | 'text' | 'quiz' | 'assignment';
+  duration?: number;
+  is_free_preview?: boolean;
+  is_required?: boolean;
+  video_url?: string;
+  content?: string;
+}
+
+export interface Section {
+  id: string;
+  title: string;
+  description?: string;
+  lessons: Lesson[];
+}
+
+export interface CourseData {
+  id?: string;
+  title: string;
+  description?: string;
+  sections?: Section[];
+  [key: string]: any;
+}
 
 interface CourseCurriculumProps {
   data: CourseData;
@@ -100,11 +126,11 @@ export function CourseCurriculum({ data, onUpdate }: CourseCurriculumProps) {
       sections: data.sections.map((section) =>
         section.id === sectionId
           ? {
-              ...section,
-              lessons: section.lessons.map((lesson) =>
-                lesson.id === lessonId ? { ...lesson, ...lessonData } : lesson
-              ),
-            }
+            ...section,
+            lessons: section.lessons.map((lesson) =>
+              lesson.id === lessonId ? { ...lesson, ...lessonData } : lesson
+            ),
+          }
           : section
       ),
     });
@@ -165,22 +191,24 @@ export function CourseCurriculum({ data, onUpdate }: CourseCurriculumProps) {
         </Card>
       </div>
 
+      {/* Add Section Button - Prominently placed */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Course Curriculum</h3>
+          <p className="text-sm text-muted-foreground">Organize your course content into sections and lessons</p>
+        </div>
+        <Button
+          onClick={() => setIsAddingSection(true)}
+          className="bg-lms-blue hover:bg-lms-blue/90 text-white rounded-xl"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Section
+        </Button>
+      </div>
+
       {/* Curriculum Builder */}
       <Card className="rounded-2xl">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Course Curriculum</CardTitle>
-            <CardDescription>Organize your course content into sections and lessons</CardDescription>
-          </div>
-          <Button
-            onClick={() => setIsAddingSection(true)}
-            className="bg-lms-blue hover:bg-lms-blue/90 rounded-xl"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Section
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-6 space-y-4">
           {/* Add Section Form */}
           {isAddingSection && (
             <div className="flex gap-2 p-4 bg-muted/50 rounded-2xl">
@@ -261,7 +289,7 @@ export function CourseCurriculum({ data, onUpdate }: CourseCurriculumProps) {
                               <p className="font-medium truncate">{lesson.title}</p>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span>{lesson.duration} min</span>
-                                {lesson.isFree && (
+                                {lesson.is_free_preview && (
                                   <Badge variant="secondary" className="text-xs">
                                     Free Preview
                                   </Badge>
@@ -339,7 +367,7 @@ function LessonDialog({ open, onOpenChange, lesson, onSave }: LessonDialogProps)
     type: "video",
     duration: 10,
     content: "",
-    isFree: false,
+    is_free_preview: false,
     ...lesson,
   });
 
@@ -399,6 +427,29 @@ function LessonDialog({ open, onOpenChange, lesson, onSave }: LessonDialogProps)
             </div>
           </div>
 
+          {formData.type === "video" && (
+            <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
+              <div className="space-y-2">
+                <Label>Video URL</Label>
+                <Input
+                  placeholder="https://youtube.com/watch?v=..."
+                  value={formData.video_url || ""}
+                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                  className="rounded-xl"
+                />
+                <p className="text-xs text-muted-foreground">Paste a link to a YouTube or Vimeo video</p>
+              </div>
+
+              <div className="relative">
+                <Button variant="outline" className="w-full gap-2 rounded-xl" disabled>
+                  <Video className="h-4 w-4" />
+                  Upload Video
+                </Button>
+                <Badge variant="secondary" className="absolute -top-2 -right-2 text-[10px] px-1.5 h-5">Coming Soon</Badge>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Content / Description</Label>
             <Textarea
@@ -416,8 +467,8 @@ function LessonDialog({ open, onOpenChange, lesson, onSave }: LessonDialogProps)
               <p className="text-sm text-muted-foreground">Allow non-enrolled users to watch</p>
             </div>
             <Switch
-              checked={formData.isFree || false}
-              onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked })}
+              checked={formData.is_free_preview || false}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_free_preview: checked })}
             />
           </div>
         </div>

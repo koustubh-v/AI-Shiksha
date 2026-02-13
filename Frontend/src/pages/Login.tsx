@@ -21,6 +21,9 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      // Clear any existing session before new login
+      localStorage.removeItem("lms_token");
+
       const success = await login(email, password);
       if (success) {
         toast({
@@ -31,7 +34,7 @@ export default function Login() {
       } else {
         toast({
           title: "Login failed",
-          description: "Invalid email or password. Try demo credentials.",
+          description: "Invalid email or password.",
           variant: "destructive",
         });
       }
@@ -48,16 +51,17 @@ export default function Login() {
 
   const handleDemoLogin = async (role: "admin" | "student" | "teacher") => {
     const emails = {
-      admin: "admin@test.com",
+      admin: "admin@lms.com",
       student: "student@test.com",
       teacher: "teacher@test.com",
     };
     setEmail(emails[role]);
-    setPassword("12345678");
+    const pass = role === 'admin' ? "admin123" : "12345678";
+    setPassword(pass);
     setIsLoading(true);
-    
+
     try {
-      const success = await login(emails[role], "12345678");
+      const success = await login(emails[role], pass);
       if (success) {
         toast({
           title: "Welcome!",
@@ -161,9 +165,9 @@ export default function Login() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 bg-coursera-blue hover:bg-coursera-blue-hover font-semibold text-base" 
+            <Button
+              type="submit"
+              className="w-full h-12 bg-coursera-blue hover:bg-coursera-blue-hover font-semibold text-base"
               disabled={isLoading}
             >
               {isLoading ? (

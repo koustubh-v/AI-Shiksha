@@ -52,63 +52,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const users = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john@example.com",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    role: "student",
-    status: "active",
-    joinedDate: "Jan 15, 2024",
-    coursesEnrolled: 5,
-    lastActive: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-    role: "teacher",
-    status: "active",
-    joinedDate: "Dec 10, 2023",
-    coursesEnrolled: 0,
-    coursesCreated: 8,
-    lastActive: "1 hour ago",
-  },
-  {
-    id: "3",
-    name: "Mike Chen",
-    email: "mike@example.com",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    role: "student",
-    status: "suspended",
-    joinedDate: "Feb 5, 2024",
-    coursesEnrolled: 3,
-    lastActive: "1 week ago",
-  },
-  {
-    id: "4",
-    name: "Emily White",
-    email: "emily@example.com",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    role: "teacher",
-    status: "active",
-    joinedDate: "Nov 20, 2023",
-    coursesCreated: 12,
-    lastActive: "30 minutes ago",
-  },
-  {
-    id: "5",
-    name: "Alex Brown",
-    email: "alex@example.com",
-    avatar: "",
-    role: "admin",
-    status: "active",
-    joinedDate: "Sep 1, 2023",
-    lastActive: "Just now",
-  },
-];
+import { useUsers } from "@/hooks/useUsers";
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,12 +67,15 @@ export default function UsersPage() {
   });
   const { toast } = useToast();
 
+  // Fetch users based on active tab if it's a specific role, or all users
+  const roleFilter = activeTab === "all" ? undefined : activeTab;
+  const { users, isLoading } = useUsers(roleFilter);
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    if (activeTab === "all") return matchesSearch;
-    return matchesSearch && user.role === activeTab;
+    return matchesSearch;
   });
 
   const handleAddUser = () => {
@@ -147,6 +94,7 @@ export default function UsersPage() {
     setNewUser({ name: "", email: "", role: "student", password: "" });
     setIsAddUserOpen(false);
   };
+
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -172,9 +120,9 @@ export default function UsersPage() {
 
   const stats = [
     { label: "Total Users", value: users.length, icon: Users, color: "text-primary" },
-    { label: "Active", value: users.filter((u) => u.status === "active").length, icon: UserCheck, color: "text-emerald-600" },
-    { label: "Teachers", value: users.filter((u) => u.role === "teacher").length, icon: Shield, color: "text-primary" },
-    { label: "Suspended", value: users.filter((u) => u.status === "suspended").length, icon: UserX, color: "text-destructive" },
+    { label: "Active", value: users.length, icon: UserCheck, color: "text-emerald-600" },
+    { label: "Teachers", value: users.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length, icon: Shield, color: "text-primary" },
+    { label: "Suspended", value: 0, icon: UserX, color: "text-destructive" },
   ];
 
   return (
@@ -375,7 +323,7 @@ export default function UsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
-                              <AvatarImage src={user.avatar} />
+                              <AvatarImage src={user.avatar_url} />
                               <AvatarFallback className="bg-primary/10 text-primary text-sm">
                                 {user.name.charAt(0)}
                               </AvatarFallback>
@@ -393,8 +341,8 @@ export default function UsersPage() {
                               user.role === "admin"
                                 ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
                                 : user.role === "teacher"
-                                ? "bg-primary/10 text-primary hover:bg-primary/10"
-                                : "bg-muted text-muted-foreground"
+                                  ? "bg-primary/10 text-primary hover:bg-primary/10"
+                                  : "bg-muted text-muted-foreground"
                             }
                           >
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -403,20 +351,16 @@ export default function UsersPage() {
                         <TableCell>
                           <Badge
                             variant="secondary"
-                            className={
-                              user.status === "active"
-                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                : "bg-destructive/10 text-destructive hover:bg-destructive/10"
-                            }
+                            className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
                           >
-                            {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            Active
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">
-                          {user.joinedDate}
+                          {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">
-                          {user.lastActive}
+                          -
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

@@ -88,7 +88,17 @@ export function AdminMobileSidebar() {
   const isActive = (href?: string) => {
     if (!href) return false;
     if (href === "/dashboard") return location.pathname === href;
-    if (href === "/dashboard/courses" && location.pathname === "/dashboard/courses/new") return false;
+
+    // Special case for "Add Course" - highlight when in course builder (edit mode)
+    if (href === "/dashboard/courses/new" && location.pathname.match(/\/dashboard\/courses\/[^/]+\/edit/)) {
+      return true;
+    }
+
+    // Prevent "All Courses" from being active when "Add Course" is active
+    if (href === "/dashboard/courses" && (location.pathname === "/dashboard/courses/new" || location.pathname.match(/\/dashboard\/courses\/[^/]+\/edit/))) {
+      return false;
+    }
+
     return location.pathname.startsWith(href);
   };
 

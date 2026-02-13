@@ -12,6 +12,13 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AiModule } from './modules/ai/ai.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { TagsModule } from './modules/tags/tags.module';
+// Course Builder Modules
+import { SectionsModule } from './modules/sections/sections.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
+import { AssignmentsModule } from './modules/assignments/assignments.module';
 
 @Module({
   imports: [
@@ -28,6 +35,13 @@ import { AiModule } from './modules/ai/ai.module';
     EnrollmentsModule,
     PaymentsModule,
     AiModule,
+    AdminModule,
+    CategoriesModule,
+    TagsModule,
+    // Course Builder
+    SectionsModule,
+    QuizzesModule,
+    AssignmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

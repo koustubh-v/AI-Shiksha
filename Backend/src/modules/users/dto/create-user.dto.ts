@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsOptional,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum UserRole {
   STUDENT = 'STUDENT',
@@ -27,5 +28,13 @@ export class CreateUserDto {
 
   @IsEnum(UserRole)
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const upper = value.toUpperCase();
+      if (upper === 'TEACHER') return UserRole.INSTRUCTOR;
+      return upper;
+    }
+    return value;
+  })
   role?: UserRole;
 }

@@ -24,9 +24,32 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useAdminInstructors } from "@/hooks/useAdminInstructors";
+import { Users as UsersAPI } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function TeachersPage() {
   const { instructors: teachers, isLoading } = useAdminInstructors();
+  const [stats, setStats] = useState({
+    totalTeachers: 0,
+    totalCourses: 0,
+    totalRevenue: 0,
+    avgRating: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await UsersAPI.getTeacherStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch teacher stats:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <AdminDashboardLayout title="Teachers" subtitle="Manage instructors and verification requests">
@@ -38,7 +61,9 @@ export default function TeachersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Teachers</p>
-                  <p className="text-2xl font-bold">1,234</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? "..." : stats.totalTeachers.toLocaleString()}
+                  </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
                   <UserCheck className="h-5 w-5 text-primary" />
@@ -51,7 +76,9 @@ export default function TeachersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Courses</p>
-                  <p className="text-2xl font-bold">3,456</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? "..." : stats.totalCourses.toLocaleString()}
+                  </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
                   <BookOpen className="h-5 w-5 text-accent" />
@@ -64,10 +91,27 @@ export default function TeachersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">$2.4M</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? "..." : `$${(stats.totalRevenue / 1000000).toFixed(1)}M`}
+                  </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-chart-3/20 flex items-center justify-center">
                   <DollarSign className="h-5 w-5 text-chart-3" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg. Rating</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? "..." : stats.avgRating.toFixed(1)}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
+                  <Star className="h-5 w-5 text-chart-4" />
                 </div>
               </div>
             </CardContent>

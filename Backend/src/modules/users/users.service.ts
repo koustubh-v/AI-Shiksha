@@ -6,7 +6,7 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { password, ...rest } = createUserDto;
@@ -127,5 +127,159 @@ export class UsersService {
       },
       orderBy: { created_at: 'desc' },
     });
+  }
+
+  async delete(id: string): Promise<User> {
+    // Prevent deletion of the last admin
+    const userToDelete = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!userToDelete) {
+      throw new Error('User not found');
+    }
+
+    if (userToDelete.role === 'ADMIN') {
+      const adminCount = await this.prisma.user.count({
+        where: { role: 'ADMIN' },
+      });
+
+      if (adminCount <= 1) {
+        throw new Error('Cannot delete the last admin user');
+      }
+    }
+
+    return this.prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  async getStudentStats() {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Total students
+    const totalStudents = await this.prisma.user.count({
+      where: { role: 'STUDENT' },
+    });
+
+    // Active learners (students with at least one active enrollment)
+    const activeStudentsIds = await this.prisma.enrollment.findMany({
+      where: {
+        status: 'active',
+      },
+      select: {
+        student_id: true,
+      },
+      distinct: ['student_id'],
+    });
+
+    const activeStudents = activeStudentsIds.length;
+
+    // Average completion across all students
+    const courseProgressData = await this.prisma.courseProgress.aggregate({
+      _avg: {
+        progress_percentage: true,
+      },
+    });
+
+    const avgCompletion = Math.round(
+      courseProgressData._avg.progress_percentage || 0,
+    );
+
+    // New students this month
+    const newThisMonth = await this.prisma.user.count({
+      where: {
+        role: 'STUDENT',
+        created_at: {
+          gte: firstDayOfMonth,
+        },
+      },
+    });
+
+    return {
+      totalStudents,
+      activeStudents,
+      avgCompletion,
+      newThisMonth,
+    };
+  }
+
+  async getTeacherStats() {
+    // Get only instructors (not admins)
+    const instructors = await this.prisma.instructorProfile.findMany({
+      include: {
+        user: true,
+        courses: {
+          include: {
+            _count: {
+              select: { enrollments: true },
+            },
+            payments: {
+              where: {
+                payment_status: 'completed',
+              },
+            },
+            reviews: {
+              select: { rating: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Filter out admins
+    const nonAdminInstructors = instructors.filter(
+      (i) => i.user.role === 'INSTRUCTOR',
+    );
+
+    const totalTeachers = nonAdminInstructors.length;
+
+    const totalCourses = nonAdminInstructors.reduce(
+      (sum, instructor) => sum + instructor.courses.length,
+      0,
+    );
+
+    const totalRevenue = nonAdminInstructors.reduce(
+      (sum, instructor) =>
+        sum +
+        instructor.courses.reduce(
+          (courseSum, course) =>
+            courseSum +
+            course.payments.reduce(
+              (paymentSum, payment) => paymentSum + payment.amount,
+              0,
+            ),
+          0,
+        ),
+      0,
+    );
+
+    // Calculate average rating across all courses
+    let totalRatingSum = 0;
+    let totalRatingCount = 0;
+
+    nonAdminInstructors.forEach((instructor) => {
+      instructor.courses.forEach((course) => {
+        const courseRatingSum = course.reviews.reduce(
+          (sum, review) => sum + review.rating,
+          0,
+        );
+        totalRatingSum += courseRatingSum;
+        totalRatingCount += course.reviews.length;
+      });
+    });
+
+    const avgRating =
+      totalRatingCount > 0
+        ? parseFloat((totalRatingSum / totalRatingCount).toFixed(1))
+        : 0;
+
+    return {
+      totalTeachers,
+      totalCourses,
+      totalRevenue,
+      avgRating,
+    };
   }
 }

@@ -112,6 +112,14 @@ export const Users = {
         const { data } = await api.delete(`/users/${id}`);
         return data;
     },
+    getStudentStats: async () => {
+        const { data } = await api.get("/users/stats/students");
+        return data;
+    },
+    getTeacherStats: async () => {
+        const { data } = await api.get("/users/stats/teachers");
+        return data;
+    },
 };
 
 // ============================================
@@ -281,6 +289,64 @@ export const Assignments = {
     },
     getSubmission: async (submissionId: string) => {
         const { data } = await api.get(`/submissions/${submissionId}`);
+        return data;
+    },
+};
+
+// Course Completions
+export const Completions = {
+    getAll: async (search?: string) => {
+        const { data } = await api.get("/completions", { params: { search } });
+        return data;
+    },
+    getStats: async () => {
+        const { data } = await api.get("/completions/stats");
+        return data;
+    },
+    markComplete: async (studentId: string, courseId: string) => {
+        const { data } = await api.post("/completions/manual", {
+            student_id: studentId,
+            course_id: courseId,
+        });
+        return data;
+    },
+    issueCertificate: async (studentId: string, courseId: string) => {
+        const { data } = await api.post("/completions/issue-certificate", {
+            student_id: studentId,
+            course_id: courseId,
+        });
+        return data;
+    },
+};
+
+// Certificate Templates
+export const CertificateTemplates = {
+    getAll: async () => {
+        const { data } = await api.get("/certificate-templates");
+        return data;
+    },
+    getOne: async (id: string) => {
+        const { data } = await api.get(`/certificate-templates/${id}`);
+        return data;
+    },
+    getDefault: async () => {
+        const { data } = await api.get("/certificate-templates/default");
+        return data;
+    },
+    create: async (templateData: any) => {
+        const { data } = await api.post("/certificate-templates", templateData);
+        return data;
+    },
+    update: async (id: string, templateData: any) => {
+        const { data } = await api.patch(`/certificate-templates/${id}`, templateData);
+        return data;
+    },
+    delete: async (id: string) => {
+        const { data } = await api.delete(`/certificate-templates/${id}`);
+        return data;
+    },
+    setDefault: async (id: string) => {
+        const { data } = await api.post(`/certificate-templates/${id}/set-default`);
         return data;
     },
 };

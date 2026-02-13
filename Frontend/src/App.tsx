@@ -55,6 +55,10 @@ import HelpPage from "./pages/admin/Help";
 import EnrollmentPage from "./pages/admin/Enrollment";
 import CompletionPage from "./pages/admin/Completion";
 import FranchisesPage from "./pages/admin/Franchises";
+import CertificateTemplatesPage from "./pages/admin/CertificateTemplates";
+
+// Student Pages
+import MyCertificatesPage from "./pages/student/MyCertificates";
 
 // Course Pages
 import CourseDetailPage from "./pages/course/CourseDetail";
@@ -146,6 +150,8 @@ const App = () => (
               <Route path="/dashboard/feature-flags" element={<IntegrationsPage />} />
               <Route path="/dashboard/help" element={<HelpPage />} />
               <Route path="/dashboard/system-status" element={<SystemStatusPage />} />
+              <Route path="/dashboard/certificate-templates" element={<CertificateTemplatesPage />} />
+              <Route path="/dashboard/my-certificates" element={<MyCertificatesPage />} />
 
               {/* Course Pages (Standalone) */}
               <Route path="/course/:id" element={<CourseDetailPage />} />

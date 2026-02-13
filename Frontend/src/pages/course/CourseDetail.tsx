@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Play,
@@ -12,118 +11,159 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  ShoppingCart,
-  Award,
+  ArrowLeft,
+  GraduationCap,
+  Share2,
+  Heart,
   BookOpen,
   FileText,
   Globe,
   Smartphone,
   LifeBuoy,
-  ArrowLeft,
-  GraduationCap,
-  Share2,
-  Heart,
+  Award,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Courses } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+
+interface Course {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  thumbnail?: string;
+  price: number;
+  level?: string;
+  language?: string;
+  updated_at: string;
+  certificate_enabled?: boolean;
+  instructor: {
+    user: {
+      name: string;
+      email: string;
+      avatar_url?: string;
+    };
+  };
+  category?: {
+    name: string;
+  };
+  sections: Array<{
+    id: string;
+    title: string;
+    order_index: number;
+    items: Array<{
+      id: string;
+      title: string;
+      item_type: string;
+      duration_minutes?: number;
+      order_index: number;
+    }>;
+  }>;
+  enrollments?: any[];
+  reviews?: any[];
+}
 
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
 
-  const course = {
-    id,
-    title: "Machine Learning Specialization",
-    subtitle: "Build ML models with Python and TensorFlow. Master supervised learning, neural networks, and more.",
-    description: `Master the fundamentals of machine learning and build a portfolio of projects demonstrating your expertise.
+  useEffect(() => {
+    const loadCourse = async () => {
+      if (!id) return;
 
-This comprehensive specialization covers everything from basic concepts to advanced techniques, including supervised learning, neural networks, unsupervised learning, and reinforcement learning.
+      try {
+        setLoading(true);
+        const data = await Courses.getOne(id);
+        setCourse(data);
+      } catch (error: any) {
+        console.error("Failed to load course:", error);
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || "Failed to load course",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-By the end of this program, you'll be able to build and train machine learning models using Python and popular frameworks like TensorFlow and scikit-learn.`,
-    thumbnail: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=450&fit=crop",
-    provider: "Stanford University",
-    instructor: {
-      name: "Andrew Ng",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
-      title: "Founder, DeepLearning.AI",
-      students: 4500000,
-      courses: 8,
-      rating: 4.9,
-    },
-    price: 49,
-    rating: 4.9,
-    reviews: 182453,
-    students: 4891234,
-    duration: "3 months",
-    hoursPerWeek: "10 hours/week",
-    lessons: 156,
-    level: "Beginner",
-    language: "English",
-    lastUpdated: "January 2024",
-    includes: [
-      { icon: Play, text: "100+ hours on-demand video" },
-      { icon: FileText, text: "50 articles & readings" },
-      { icon: BookOpen, text: "200+ coding exercises" },
-      { icon: Award, text: "Shareable Certificate" },
-      { icon: Smartphone, text: "Access on mobile and desktop" },
-      { icon: LifeBuoy, text: "Flexible deadlines" },
-    ],
-    skills: [
-      "Machine Learning",
-      "Python",
-      "TensorFlow",
-      "Neural Networks",
-      "Deep Learning",
-      "Data Science",
-    ],
-    learnings: [
-      "Build machine learning models in Python using popular libraries",
-      "Build & train supervised models for prediction & classification",
-      "Build & train a neural network with TensorFlow for multi-class classification",
-      "Apply best practices for machine learning development",
-      "Build recommender systems with collaborative filtering approach",
-    ],
-  };
-
-  const curriculum = [
-    {
-      title: "Course 1: Supervised Machine Learning",
-      duration: "4 weeks",
-      lessons: [
-        { title: "Introduction to Machine Learning", duration: "23 min", type: "video" },
-        { title: "Linear Regression with One Variable", duration: "42 min", type: "video" },
-        { title: "Cost Function and Gradient Descent", duration: "35 min", type: "video" },
-        { title: "Practice Quiz: Supervised Learning", duration: "20 min", type: "quiz" },
-        { title: "Programming Assignment: Linear Regression", duration: "2 hours", type: "assignment" },
-      ],
-    },
-    {
-      title: "Course 2: Advanced Learning Algorithms",
-      duration: "4 weeks",
-      lessons: [
-        { title: "Neural Network Basics", duration: "45 min", type: "video" },
-        { title: "TensorFlow Implementation", duration: "38 min", type: "video" },
-        { title: "Training Neural Networks", duration: "42 min", type: "video" },
-        { title: "Practice: Build Your First Neural Network", duration: "3 hours", type: "assignment" },
-      ],
-    },
-    {
-      title: "Course 3: Unsupervised Learning",
-      duration: "3 weeks",
-      lessons: [
-        { title: "Clustering Algorithms", duration: "35 min", type: "video" },
-        { title: "K-Means Clustering", duration: "28 min", type: "video" },
-        { title: "Anomaly Detection", duration: "32 min", type: "video" },
-        { title: "Recommender Systems", duration: "45 min", type: "video" },
-      ],
-    },
-  ];
+    loadCourse();
+  }, [id, toast]);
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+    });
+  };
+
+  const calculateTotalLessons = () => {
+    if (!course?.sections) return 0;
+    return course.sections.reduce((total, section) => total + (section.items?.length || 0), 0);
+  };
+
+  const calculateTotalDuration = () => {
+    if (!course?.sections) return "0 hours";
+    const totalMinutes = course.sections.reduce((total, section) => {
+      return total + (section.items?.reduce((sum, item) => sum + (item.duration_minutes || 0), 0) || 0);
+    }, 0);
+    const hours = Math.floor(totalMinutes / 60);
+    return `${hours}+ hours`;
+  };
+
+  const getItemIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "lecture":
+      case "video":
+        return Play;
+      case "quiz":
+        return FileText;
+      case "assignment":
+        return BookOpen;
+      default:
+        return Play;
+    }
+  };
+
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return "N/A";
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
+        <Button onClick={() => navigate("/")}>Go Home</Button>
+      </div>
+    );
+  }
+
+  const studentCount = course.enrollments?.length || 0;
+  const reviewCount = course.reviews?.length || 0;
+  const avgRating = 4.8; // TODO: Calculate from reviews
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,48 +201,52 @@ By the end of this program, you'll be able to build and train machine learning m
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center gap-2 text-sm">
                 <Badge className="bg-white/20 text-white hover:bg-white/30">
-                  {course.level}
+                  {course.level || "All Levels"}
                 </Badge>
                 <span className="text-white/70">•</span>
-                <span className="text-white/70">{course.duration}</span>
+                <span className="text-white/70">{calculateTotalDuration()}</span>
               </div>
-              
+
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">{course.title}</h1>
-              <p className="text-lg text-white/80 max-w-2xl">{course.subtitle}</p>
-              
+              <p className="text-lg text-white/80 max-w-2xl">{course.subtitle || course.description}</p>
+
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-coursera-orange text-coursera-orange" />
-                  <span className="font-bold">{course.rating}</span>
-                  <span className="text-white/70">({(course.reviews / 1000).toFixed(0)}K reviews)</span>
+                  <span className="font-bold">{avgRating.toFixed(1)}</span>
+                  <span className="text-white/70">({reviewCount} reviews)</span>
                 </div>
                 <div className="flex items-center gap-1 text-white/70">
                   <Users className="h-4 w-4" />
-                  {(course.students / 1000000).toFixed(1)}M students
+                  {studentCount} students
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 border-2 border-white/20">
-                  <AvatarImage src={course.instructor.avatar} />
-                  <AvatarFallback>AN</AvatarFallback>
+                  {course.instructor.user.avatar_url ? (
+                    <AvatarImage src={course.instructor.user.avatar_url} />
+                  ) : null}
+                  <AvatarFallback>
+                    {course.instructor.user.name.split(" ").map(n => n[0]).join("")}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{course.instructor.name}</p>
-                  <p className="text-sm text-white/70">{course.provider}</p>
+                  <p className="font-medium">{course.instructor.user.name}</p>
+                  <p className="text-sm text-white/70">Instructor</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-white/70 pt-2">
                 <span className="flex items-center gap-1">
                   <Globe className="h-4 w-4" />
-                  {course.language}
+                  {course.language || "English"}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  {course.hoursPerWeek}
+                  {calculateTotalDuration()}
                 </span>
-                <span>Updated {course.lastUpdated}</span>
+                <span>Updated {formatDate(course.updated_at)}</span>
               </div>
             </div>
           </div>
@@ -213,39 +257,27 @@ By the end of this program, you'll be able to build and train machine learning m
       <div className="container-coursera py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Skills */}
-            <div className="bg-card border p-6">
-              <h2 className="text-lg font-semibold mb-4">Skills you'll gain</h2>
-              <div className="flex flex-wrap gap-2">
-                {course.skills.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="font-medium">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
             {/* What you'll learn */}
-            <div className="bg-card border p-6">
-              <h2 className="text-lg font-semibold mb-4">What you'll learn</h2>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {course.learnings.map((item, i) => (
-                  <div key={i} className="flex gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-coursera-green shrink-0 mt-0.5" />
-                    <span className="text-sm">{item}</span>
-                  </div>
-                ))}
+            {course.description && (
+              <div className="bg-card border p-6">
+                <h2 className="text-lg font-semibold mb-4">About this Course</h2>
+                <p className="text-muted-foreground whitespace-pre-line">{course.description}</p>
               </div>
-            </div>
+            )}
 
             {/* Curriculum */}
             <div className="bg-card border p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Specialization - 3 course series</h2>
+                <h2 className="text-lg font-semibold">
+                  Course Content - {course.sections?.length || 0} sections
+                </h2>
+                <span className="text-sm text-muted-foreground">
+                  {calculateTotalLessons()} lessons
+                </span>
               </div>
               <div className="space-y-2">
-                {curriculum.map((section, sectionIndex) => (
-                  <div key={sectionIndex} className="border overflow-hidden">
+                {course.sections?.sort((a, b) => a.order_index - b.order_index).map((section, sectionIndex) => (
+                  <div key={section.id} className="border overflow-hidden">
                     <button
                       onClick={() => toggleSection(sectionIndex)}
                       className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -256,7 +288,9 @@ By the end of this program, you'll be able to build and train machine learning m
                         </div>
                         <div>
                           <span className="font-medium">{section.title}</span>
-                          <p className="text-sm text-muted-foreground">{section.duration} • {section.lessons.length} items</p>
+                          <p className="text-sm text-muted-foreground">
+                            {section.items?.length || 0} items
+                          </p>
                         </div>
                       </div>
                       {expandedSections.includes(sectionIndex) ? (
@@ -267,20 +301,23 @@ By the end of this program, you'll be able to build and train machine learning m
                     </button>
                     {expandedSections.includes(sectionIndex) && (
                       <div className="divide-y">
-                        {section.lessons.map((lesson, lessonIndex) => (
-                          <div
-                            key={lessonIndex}
-                            className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              {lesson.type === "video" && <Play className="h-4 w-4 text-muted-foreground" />}
-                              {lesson.type === "quiz" && <FileText className="h-4 w-4 text-muted-foreground" />}
-                              {lesson.type === "assignment" && <BookOpen className="h-4 w-4 text-muted-foreground" />}
-                              <span className="text-sm">{lesson.title}</span>
+                        {section.items?.sort((a, b) => a.order_index - b.order_index).map((item) => {
+                          const Icon = getItemIcon(item.item_type);
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{item.title}</span>
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {formatDuration(item.duration_minutes)}
+                              </span>
                             </div>
-                            <span className="text-sm text-muted-foreground">{lesson.duration}</span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -288,37 +325,21 @@ By the end of this program, you'll be able to build and train machine learning m
               </div>
             </div>
 
-            {/* Description */}
-            <div className="bg-card border p-6">
-              <h2 className="text-lg font-semibold mb-4">About this Specialization</h2>
-              <p className="text-muted-foreground whitespace-pre-line">{course.description}</p>
-            </div>
-
             {/* Instructor */}
             <div className="bg-card border p-6">
               <h2 className="text-lg font-semibold mb-4">Instructor</h2>
               <div className="flex items-start gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={course.instructor.avatar} />
-                  <AvatarFallback>AN</AvatarFallback>
+                  {course.instructor.user.avatar_url ? (
+                    <AvatarImage src={course.instructor.user.avatar_url} />
+                  ) : null}
+                  <AvatarFallback>
+                    {course.instructor.user.name.split(" ").map(n => n[0]).join("")}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-coursera-blue">{course.instructor.name}</h3>
-                  <p className="text-muted-foreground">{course.instructor.title}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-coursera-orange" />
-                      {course.instructor.rating} Rating
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {(course.instructor.students / 1000000).toFixed(1)}M Students
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      {course.instructor.courses} Courses
-                    </span>
-                  </div>
+                  <h3 className="font-semibold text-coursera-blue">{course.instructor.user.name}</h3>
+                  <p className="text-muted-foreground">{course.instructor.user.email}</p>
                 </div>
               </div>
             </div>
@@ -330,11 +351,17 @@ By the end of this program, you'll be able to build and train machine learning m
               {/* Course Card */}
               <div className="bg-card border shadow-card overflow-hidden">
                 <div className="relative">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full aspect-video object-cover"
-                  />
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full aspect-video object-cover"
+                    />
+                  ) : (
+                    <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                      <Play className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
                   <button className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors group">
                     <div className="h-16 w-16 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="h-6 w-6 text-coursera-blue ml-1" />
@@ -342,43 +369,54 @@ By the end of this program, you'll be able to build and train machine learning m
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Included with</span>
-                    <Badge className="bg-coursera-purple text-white">LearnAI Plus</Badge>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold">
+                      {course.price === 0 ? "Free" : `$${course.price}`}
+                    </p>
                   </div>
                   <Button className="w-full bg-coursera-blue hover:bg-coursera-blue-hover font-semibold h-12 text-base">
-                    Enroll for Free
+                    Enroll Now
                   </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    Starts Jan 27 · Financial aid available
-                  </p>
                   <div className="border-t pt-4">
-                    <p className="text-sm font-medium mb-3">This specialization includes:</p>
+                    <p className="text-sm font-medium mb-3">This course includes:</p>
                     <div className="space-y-2">
-                      {course.includes.slice(0, 4).map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.text}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Play className="h-4 w-4" />
+                        <span>{calculateTotalDuration()} on-demand video</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <BookOpen className="h-4 w-4" />
+                        <span>{calculateTotalLessons()} lessons</span>
+                      </div>
+                      {course.certificate_enabled && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Award className="h-4 w-4" />
+                          <span>Certificate of completion</span>
                         </div>
-                      ))}
+                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Smartphone className="h-4 w-4" />
+                        <span>Access on mobile and desktop</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Offered By */}
-              <div className="bg-card border p-6">
-                <p className="text-sm font-medium mb-3">Offered by</p>
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
-                    <GraduationCap className="h-6 w-6 text-coursera-blue" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{course.provider}</p>
-                    <p className="text-sm text-muted-foreground">Top University</p>
+              {/* Category */}
+              {course.category && (
+                <div className="bg-card border p-6">
+                  <p className="text-sm font-medium mb-3">Category</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
+                      <GraduationCap className="h-6 w-6 text-coursera-blue" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{course.category.name}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -388,7 +426,9 @@ By the end of this program, you'll be able to build and train machine learning m
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 lg:hidden z-50 shadow-nav">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-muted-foreground">Specialization</p>
+            <p className="text-sm text-muted-foreground">
+              {course.price === 0 ? "Free Course" : `$${course.price}`}
+            </p>
             <p className="font-semibold">{course.title}</p>
           </div>
           <Button className="bg-coursera-blue hover:bg-coursera-blue-hover font-semibold px-6">

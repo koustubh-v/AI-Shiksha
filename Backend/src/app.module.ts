@@ -19,6 +19,9 @@ import { TagsModule } from './modules/tags/tags.module';
 import { SectionsModule } from './modules/sections/sections.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { CompletionsModule } from './modules/completions/completions.module';
+
+import { CertificateTemplatesModule } from './modules/certificate-templates/certificate-templates.module';
 
 @Module({
   imports: [
@@ -42,8 +45,10 @@ import { AssignmentsModule } from './modules/assignments/assignments.module';
     SectionsModule,
     QuizzesModule,
     AssignmentsModule,
+    CompletionsModule,
+    CertificateTemplatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

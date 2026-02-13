@@ -24,10 +24,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useUsers } from "@/hooks/useUsers";
+import { Users as UsersAPI } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function StudentsPage() {
   const { user } = useAuth();
   const { users: students, isLoading } = useUsers("student");
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    avgCompletion: 0,
+    newThisMonth: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await UsersAPI.getStudentStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch student stats:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
 
   const content = (
@@ -39,7 +62,9 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-2xl font-bold">12,847</p>
+                <p className="text-2xl font-bold">
+                  {loadingStats ? "..." : stats.totalStudents.toLocaleString()}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-primary" />
@@ -52,7 +77,9 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Learners</p>
-                <p className="text-2xl font-bold">8,234</p>
+                <p className="text-2xl font-bold">
+                  {loadingStats ? "..." : stats.activeStudents.toLocaleString()}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-accent" />
@@ -65,7 +92,9 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg. Completion</p>
-                <p className="text-2xl font-bold">76%</p>
+                <p className="text-2xl font-bold">
+                  {loadingStats ? "..." : `${stats.avgCompletion}%`}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-chart-3/20 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-chart-3" />
@@ -78,7 +107,9 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">New This Month</p>
-                <p className="text-2xl font-bold">+1,234</p>
+                <p className="text-2xl font-bold">
+                  {loadingStats ? "..." : `+${stats.newThisMonth.toLocaleString()}`}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-chart-4" />

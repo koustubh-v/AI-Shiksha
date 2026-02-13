@@ -54,11 +54,24 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { adminService } from "@/services/admin.service";
 import { Users as UsersAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const students = [
   { id: 1, name: "Emma Wilson", email: "emma@example.com", courses: 5, status: "active", joined: "Jan 15, 2024", spent: "$249" },
@@ -335,16 +348,96 @@ function AddUserModalContent({ onSuccess }: { onSuccess: () => void }) {
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   const loadUsers = async () => {
     try {
       setLoading(true);
       const data = await UsersAPI.getAll();
       setUsers(data);
+      setSelectedUsers(new Set()); // Clear selections on reload
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setIsDeleting(true);
+    try {
+      await UsersAPI.delete(userId);
+      toast({
+        title: "User Deleted",
+        description: "User has been successfully deleted.",
+      });
+      await loadUsers();
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error: any) {
+      console.error("Failed to delete user:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(selectedUsers).map((id) => UsersAPI.delete(id))
+      );
+      toast({
+        title: "Users Deleted",
+        description: `Successfully deleted ${selectedUsers.size} user(s).`,
+      });
+      await loadUsers();
+      setDeleteDialogOpen(false);
+    } catch (error: any) {
+      console.error("Failed to delete users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete some users",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  const toggleSelectAll = (usersList: any[]) => {
+    const userIds = usersList.map(u => u.id);
+    if (userIds.every(id => selectedUsers.has(id))) {
+      // Deselect all
+      const newSelection = new Set(selectedUsers);
+      userIds.forEach(id => newSelection.delete(id));
+      setSelectedUsers(newSelection);
+    } else {
+      // Select all
+      const newSelection = new Set(selectedUsers);
+      userIds.forEach(id => newSelection.add(id));
+      setSelectedUsers(newSelection);
     }
   };
 
@@ -441,15 +534,37 @@ export default function UserManagement() {
           </Card>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedUsers.size > 0 && (
+          <Card className="bg-muted/50 border-primary">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {selectedUsers.size} user(s) selected
+                </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* User Tables */}
         <Card>
           <Tabs defaultValue="students">
             <CardHeader className="pb-0">
               <div className="flex items-center justify-between">
                 <TabsList>
-                  <TabsTrigger value="students">Students</TabsTrigger>
-                  <TabsTrigger value="teachers">Teachers</TabsTrigger>
-                  <TabsTrigger value="admins">Admins</TabsTrigger>
+                  <TabsTrigger value="students">Students ({students.length})</TabsTrigger>
+                  <TabsTrigger value="teachers">Teachers ({teachers.length})</TabsTrigger>
+                  <TabsTrigger value="admins">Admins ({admins.length})</TabsTrigger>
                 </TabsList>
                 <div className="flex items-center gap-3">
                   <Button variant="outline" size="icon">
@@ -467,6 +582,12 @@ export default function UserManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={students.length > 0 && students.every(s => selectedUsers.has(s.id))}
+                          onCheckedChange={() => toggleSelectAll(students)}
+                        />
+                      </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Courses</TableHead>
@@ -479,6 +600,12 @@ export default function UserManagement() {
                   <TableBody>
                     {students.map((student) => (
                       <TableRow key={student.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedUsers.has(student.id)}
+                            onCheckedChange={() => toggleUserSelection(student.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell className="text-muted-foreground">{student.email}</TableCell>
                         <TableCell>{student.courses}</TableCell>
@@ -496,7 +623,16 @@ export default function UserManagement() {
                               <DropdownMenuItem>View Profile</DropdownMenuItem>
                               <DropdownMenuItem>Edit</DropdownMenuItem>
                               <DropdownMenuItem>Send Message</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Suspend</DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                onClick={() => {
+                                  setUserToDelete(student.id);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -510,6 +646,12 @@ export default function UserManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={teachers.length > 0 && teachers.every(t => selectedUsers.has(t.id))}
+                          onCheckedChange={() => toggleSelectAll(teachers)}
+                        />
+                      </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Courses</TableHead>
@@ -522,6 +664,12 @@ export default function UserManagement() {
                   <TableBody>
                     {teachers.map((teacher) => (
                       <TableRow key={teacher.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedUsers.has(teacher.id)}
+                            onCheckedChange={() => toggleUserSelection(teacher.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{teacher.name}</TableCell>
                         <TableCell className="text-muted-foreground">{teacher.email}</TableCell>
                         <TableCell>{teacher.courses}</TableCell>
@@ -539,7 +687,16 @@ export default function UserManagement() {
                               <DropdownMenuItem>View Profile</DropdownMenuItem>
                               <DropdownMenuItem>View Courses</DropdownMenuItem>
                               <DropdownMenuItem>Approve/Reject</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Suspend</DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                onClick={() => {
+                                  setUserToDelete(teacher.id);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -578,7 +735,17 @@ export default function UserManagement() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>Edit Permissions</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Remove Admin</DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                onClick={() => {
+                                  setUserToDelete(admin.id);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                disabled={admins.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Remove Admin
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -590,6 +757,42 @@ export default function UserManagement() {
             </CardContent>
           </Tabs>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Confirm Deletion
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {userToDelete ? (
+                  "Are you sure you want to delete this user? This action cannot be undone."
+                ) : (
+                  `Are you sure you want to delete ${selectedUsers.size} user(s)? This action cannot be undone.`
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (userToDelete) {
+                    handleDeleteUser(userToDelete);
+                  } else {
+                    handleBulkDelete();
+                  }
+                }}
+                disabled={isDeleting}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminDashboardLayout>
   );

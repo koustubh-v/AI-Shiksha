@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,51 +12,155 @@ import {
   AlertTriangle,
   Eye,
   BookOpen,
-  Star,
-  Users,
   PlayCircle,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { CourseApproval } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
-const pendingCourses = [
-  {
-    id: 1,
-    title: "Advanced React Patterns",
-    instructor: "Dr. Emily Chen",
-    category: "Web Development",
-    lessons: 24,
-    duration: "8 hours",
-    submittedAt: "2024-01-20",
-    aiScore: 92,
-  },
-  {
-    id: 2,
-    title: "Machine Learning Fundamentals",
-    instructor: "Prof. Robert Smith",
-    category: "Data Science",
-    lessons: 32,
-    duration: "12 hours",
-    submittedAt: "2024-01-19",
-    aiScore: 88,
-  },
-  {
-    id: 3,
-    title: "UI/UX Design Masterclass",
-    instructor: "Sarah Williams",
-    category: "Design",
-    lessons: 18,
-    duration: "6 hours",
-    submittedAt: "2024-01-18",
-    aiScore: 76,
-  },
-];
-
-const flaggedContent = [
-  { id: 1, course: "Python Basics", issue: "Outdated content", lesson: "Lesson 5", severity: "medium" },
-  { id: 2, course: "Digital Marketing", issue: "Potential plagiarism", lesson: "Lesson 12", severity: "high" },
-  { id: 3, course: "Leadership Skills", issue: "Missing resources", lesson: "Lesson 3", severity: "low" },
-];
+interface PendingCourse {
+  id: string;
+  title: string;
+  instructor: {
+    user: {
+      name: string;
+      email: string;
+    };
+  };
+  category?: {
+    name: string;
+  };
+  sections: any[];
+  status: string;
+  submitted_for_approval_at: string;
+  price: number;
+}
 
 export default function CourseApprovalPage() {
+  const [courses, setCourses] = useState<PendingCourse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<PendingCourse | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const { toast } = useToast();
+
+  const loadPendingCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await CourseApproval.getPending();
+      setCourses(data);
+    } catch (error) {
+      console.error("Failed to load pending courses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load pending courses",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPendingCourses();
+  }, []);
+
+  const handleApprove = async (courseId: string) => {
+    setActionLoading(courseId);
+    try {
+      await CourseApproval.approve(courseId);
+      toast({
+        title: "Course Approved",
+        description: "The course has been approved and published successfully.",
+      });
+      await loadPendingCourses();
+    } catch (error: any) {
+      console.error("Failed to approve course:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to approve course",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectClick = (course: PendingCourse) => {
+    setSelectedCourse(course);
+    setRejectDialogOpen(true);
+    setRejectionReason("");
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!selectedCourse || !rejectionReason.trim()) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejecting this course.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setActionLoading(selectedCourse.id);
+    try {
+      await CourseApproval.reject(selectedCourse.id, rejectionReason);
+      toast({
+        title: "Course Rejected",
+        description: "The instructor will be notified of the rejection.",
+      });
+      setRejectDialogOpen(false);
+      setSelectedCourse(null);
+      setRejectionReason("");
+      await loadPendingCourses();
+    } catch (error: any) {
+      console.error("Failed to reject course:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to reject course",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const calculateLessonCount = (course: PendingCourse) => {
+    return course.sections?.reduce((total, section) => {
+      return total + (section.items?.length || 0);
+    }, 0) || 0;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  if (loading) {
+    return (
+      <AdminDashboardLayout title="Course Approval" subtitle="Review and approve pending courses">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
+
   return (
     <AdminDashboardLayout title="Course Approval" subtitle="Review and approve pending courses">
       <div className="space-y-6">
@@ -66,7 +171,7 @@ export default function CourseApprovalPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Review</p>
-                  <p className="text-2xl font-bold">12</p>
+                  <p className="text-2xl font-bold">{courses.length}</p>
                 </div>
                 <Clock className="h-8 w-8 text-chart-3/50" />
               </div>
@@ -76,32 +181,36 @@ export default function CourseApprovalPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Approved Today</p>
-                  <p className="text-2xl font-bold">8</p>
+                  <p className="text-sm text-muted-foreground">Awaiting Action</p>
+                  <p className="text-2xl font-bold">{courses.length}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-accent/50" />
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20">
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Rejected</p>
-                  <p className="text-2xl font-bold">2</p>
+                  <p className="text-sm text-muted-foreground">Total Sections</p>
+                  <p className="text-2xl font-bold">
+                    {courses.reduce((sum, c) => sum + (c.sections?.length || 0), 0)}
+                  </p>
                 </div>
-                <XCircle className="h-8 w-8 text-destructive/50" />
+                <BookOpen className="h-8 w-8 text-blue-500/50" />
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/20">
+          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Flagged Content</p>
-                  <p className="text-2xl font-bold">5</p>
+                  <p className="text-sm text-muted-foreground">Total Lessons</p>
+                  <p className="text-2xl font-bold">
+                    {courses.reduce((sum, c) => sum + calculateLessonCount(c), 0)}
+                  </p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-chart-4/50" />
+                <PlayCircle className="h-8 w-8 text-purple-500/50" />
               </div>
             </CardContent>
           </Card>
@@ -109,99 +218,149 @@ export default function CourseApprovalPage() {
 
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending Courses</TabsTrigger>
-            <TabsTrigger value="flagged">Flagged Content</TabsTrigger>
+            <TabsTrigger value="pending">Pending Courses ({courses.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
-            {pendingCourses.map((course) => (
-              <Card key={course.id}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Course Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4">
-                        <div className="h-20 w-32 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                          <PlayCircle className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">{course.title}</h3>
-                            <Badge variant="secondary">{course.category}</Badge>
+            {courses.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">All Caught Up!</h3>
+                  <p className="text-muted-foreground">
+                    There are no courses pending approval at the moment.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              courses.map((course) => (
+                <Card key={course.id}>
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                      {/* Course Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          <div className="h-20 w-32 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                            <PlayCircle className="h-8 w-8 text-muted-foreground" />
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                            <Avatar className="h-5 w-5">
-                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                                {course.instructor.split(" ").map(n => n[0]).join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{course.instructor}</span>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <BookOpen className="h-4 w-4" /> {course.lessons} lessons
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" /> {course.duration}
-                            </span>
-                            <span>Submitted: {course.submittedAt}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg">{course.title}</h3>
+                              {course.category && (
+                                <Badge variant="secondary">{course.category.name}</Badge>
+                              )}
+                              <Badge variant={course.price === 0 ? "default" : "outline"}>
+                                {course.price === 0 ? "Free" : `$${course.price}`}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                  {course.instructor.user.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{course.instructor.user.name}</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="h-4 w-4" /> {course.sections?.length || 0}{" "}
+                                sections
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <PlayCircle className="h-4 w-4" /> {calculateLessonCount(course)}{" "}
+                                lessons
+                              </span>
+                              <span>
+                                Submitted:{" "}
+                                {course.submitted_for_approval_at
+                                  ? formatDate(course.submitted_for_approval_at)
+                                  : "N/A"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* AI Score */}
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <div className={`text-2xl font-bold ${course.aiScore >= 85 ? "text-accent" : course.aiScore >= 70 ? "text-chart-3" : "text-destructive"}`}>
-                          {course.aiScore}%
-                        </div>
-                        <p className="text-xs text-muted-foreground">AI Quality Score</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <Eye className="h-4 w-4" /> Preview
+                      {/* Actions */}
+                      <div className="flex gap-2 lg:flex-col">
+                        <Link to={`/course/${course.id}`} target="_blank" className="flex-1 lg:flex-none">
+                          <Button variant="outline" size="sm" className="gap-1 w-full">
+                            <Eye className="h-4 w-4" /> Preview
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          className="gap-1 bg-accent hover:bg-accent/90 flex-1 lg:flex-none"
+                          onClick={() => handleApprove(course.id)}
+                          disabled={actionLoading === course.id}
+                        >
+                          {actionLoading === course.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
+                          Approve
                         </Button>
-                        <Button size="sm" className="gap-1 bg-accent hover:bg-accent/90">
-                          <CheckCircle className="h-4 w-4" /> Approve
-                        </Button>
-                        <Button size="sm" variant="destructive" className="gap-1">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="gap-1 flex-1 lg:flex-none"
+                          onClick={() => handleRejectClick(course)}
+                          disabled={actionLoading === course.id}
+                        >
                           <XCircle className="h-4 w-4" /> Reject
                         </Button>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="flagged" className="space-y-4">
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {flaggedContent.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-4">
-                        <AlertTriangle className={`h-5 w-5 ${item.severity === "high" ? "text-destructive" : item.severity === "medium" ? "text-chart-3" : "text-muted-foreground"}`} />
-                        <div>
-                          <p className="font-medium">{item.course}</p>
-                          <p className="text-sm text-muted-foreground">{item.lesson} - {item.issue}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={item.severity === "high" ? "destructive" : item.severity === "medium" ? "default" : "secondary"}>
-                          {item.severity}
-                        </Badge>
-                        <Button variant="outline" size="sm">Review</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </TabsContent>
         </Tabs>
+
+        {/* Rejection Dialog */}
+        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Course</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for rejecting "{selectedCourse?.title}". The instructor
+                will be notified with your feedback.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reason">Rejection Reason *</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="e.g., Content quality issues, incomplete sections, missing resources..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="min-h-[120px]"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleRejectSubmit}
+                disabled={!rejectionReason.trim() || actionLoading === selectedCourse?.id}
+              >
+                {actionLoading === selectedCourse?.id && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Reject Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminDashboardLayout>
   );

@@ -115,7 +115,7 @@ export const createCourseColumns = ({ onDelete }: CourseColumnsProps): ColumnDef
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                            <Link to={`/dashboard/course/${course.id}/edit`}>
+                            <Link to={`/dashboard/courses/${course.id}/edit`}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Details
                             </Link>
                         </DropdownMenuItem>

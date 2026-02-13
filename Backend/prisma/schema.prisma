@@ -37,7 +37,8 @@ model User {
   // Course Builder relations
   quiz_submissions       QuizSubmission[]
   assignment_submissions AssignmentSubmission[]
-  graded_assignments     AssignmentSubmission[] @relation("GradedAssignments")
+  graded_assignments     AssignmentSubmission[]     @relation("GradedAssignments")
+  created_certificate_templates CertificateTemplate[] @relation("CreatedCertificateTemplates")
 
   // Refresh token rotation
   refresh_token_hash String?
@@ -118,6 +119,7 @@ model Course {
   updated_at DateTime @updatedAt
 
   // Relations
+  certificate_template CertificateTemplate?  @relation("CourseCertificateTemplate", fields: [certificate_template_id], references: [id], onDelete: SetNull)
   sections         CourseSection[] // New: replaces modules
   modules          Module[] // Keep for backward compatibility
   enrollments      Enrollment[]
@@ -299,6 +301,23 @@ model Certificate {
 
   @@unique([student_id, course_id])
   @@map("certificates")
+}
+
+model CertificateTemplate {
+  id                String   @id @default(uuid())
+  name              String
+  description       String?
+  is_default        Boolean  @default(false)
+  template_config   Json     // Stores template design configuration
+  preview_image_url String?
+  created_by        String?
+  creator           User?    @relation("CreatedCertificateTemplates", fields: [created_by], references: [id], onDelete: SetNull)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  courses Course[] @relation("CourseCertificateTemplate")
+
+  @@map("certificate_templates")
 }
 
 // AI System

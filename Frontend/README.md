@@ -1,73 +1,105 @@
-# Welcome to your Lovable project
+# AI Shiksha - Frontend (LMS Client)
 
-## Project info
+This is the modern, responsive frontend application for the AI Shiksha Learning Management System. Built with **React** and **Vite**, it offers a premium user experience with a focus on performance, aesthetics, and usability.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🛠 Tech Stack
 
-## How can I edit this code?
+*   **Builder:** [Vite](https://vitejs.dev/) - Super fast build tool.
+*   **Framework:** [React](https://react.dev/) (v18)
+*   **Language:** TypeScript
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **UI Components:**
+    *   [Shadcn UI](https://ui.shadcn.com/) (based on Radix UI)
+    *   [Lucide React](https://lucide.dev/) (Icons)
+*   **State Management:** React Hooks & Context API
+*   **Forms:** React Hook Form + Zod Validation
+*   **Data Fetching:** Axios / TanStack Query (React Query)
+*   **Routing:** React Router DOM
 
-There are several ways of editing your application.
+## 🚀 Key Features
 
-**Use Lovable**
+*   **Modern Dashboard:**
+    *   Role-specific dashboards (Admin, Instructor, Student).
+    *   Analytics with interactive charts (Recharts).
+*   **Course Builder:**
+    *   Drag-and-drop curriculum builder.
+    *   Rich text editing for lesson content.
+    *   Multi-modal creation flow (Wizard, Modals).
+*   **Learning Experience:**
+    *   Distraction-free video player.
+    *   real-time progress tracking.
+    *   Quiz and Assignment interfaces.
+*   **Authentication Flow:**
+    *   Login, Registration, and Password Recovery.
+    *   Protected routes based on user roles.
+*   **Design System:**
+    *   Fully responsive layout (Mobile, Tablet, Desktop).
+    *   Dark/Light mode support.
+    *   Glassmorphism and modern UI trends.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ⚙️ Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+*   Node.js (v18 or higher)
+*   npm or yarn
 
-**Use your preferred IDE**
+## 📦 Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/koustubh-v/AI-Shiksha.git
+    cd Frontend
+    ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-Follow these steps:
+3.  **Environment Configuration:**
+    Create a `.env` file in the `Frontend` root directory:
+    ```env
+    VITE_API_URL="http://localhost:3000"
+    VITE_STRIPE_PUBLIC_KEY="pk_test_..."
+    ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🏃‍♂️ Running the Application
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+*   **Development Mode:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:8081` (or the port shown in your terminal).
 
-# Step 3: Install the necessary dependencies.
-npm i
+*   **Production Build:**
+    ```bash
+    npm run build
+    npm run preview
+    ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 📂 Project Structure
+
+```
+src/
+├── assets/          # Static assets (images, fonts)
+├── components/      # Reusable UI components
+│   ├── ui/          # Shadcn UI primitives
+│   ├── layout/      # Layout wrappers (Sidebar, Navbar)
+│   └── ...
+├── hooks/           # Custom React hooks
+├── lib/             # Utilities (API client, helpers)
+├── pages/           # Page views (Routed components)
+│   ├── admin/       # Admin-specific pages
+│   ├── dashboard/   # Instructor/Student dashboard
+│   └── ...
+├── types/           # TypeScript interfaces/types
+└── App.tsx          # Main application entry
 ```
 
-**Edit a file directly in GitHub**
+## 🤝 Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+We welcome contributions! Please ensure you lint your code before submitting a Pull Request.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```bash
+# Lint code
+npm run lint
+```

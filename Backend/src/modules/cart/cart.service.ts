@@ -26,7 +26,7 @@ export class CartService {
         // Check if user is already enrolled
         const existingEnrollment = await this.prisma.enrollment.findFirst({
             where: {
-                user_id: userId,
+                student_id: userId,
                 course_id: courseId,
             },
         });

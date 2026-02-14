@@ -78,9 +78,17 @@ export function UnifiedTopBar({ title, subtitle }: UnifiedTopBarProps) {
         </Button>
 
         <div className="md:hidden">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
-            {user?.name.slice(0, 2).toUpperCase()}
-          </div>
+          {user?.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.name}
+              className="h-8 w-8 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
+              {user?.name?.slice(0, 2).toUpperCase() || "US"}
+            </div>
+          )}
         </div>
       </div>
     </header>

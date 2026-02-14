@@ -83,7 +83,7 @@ export default function MyCourses() {
     <UnifiedDashboard title="My Courses" subtitle="Continue learning where you left off">
       <div className="p-6 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <Link to="/course/catalog">
+          <Link to="/courses">
             <Button className="bg-lms-blue hover:bg-lms-blue/90">
               Browse More Courses
             </Button>
@@ -152,7 +152,7 @@ export default function MyCourses() {
                           </Badge>
                           <span className="text-xs text-muted-foreground">{course.lastAccessed}</span>
                         </div>
-                        
+
                         <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
                           {course.title}
                         </h3>

@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UnifiedSidebar } from "./UnifiedSidebar";
 import { UnifiedTopBar } from "./UnifiedTopBar";
+import UnifiedNavbar from "./UnifiedNavbar";
 import { useSidebarContext } from "@/contexts/SidebarContext";
 import { cn } from "@/lib/utils";
 
@@ -29,11 +30,12 @@ export function UnifiedDashboard({ children, title, subtitle }: UnifiedDashboard
       <UnifiedSidebar />
       <div
         className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+          "flex flex-1 flex-col transition-all duration-300 ease-in-out pt-16",
           collapsed ? "md:pl-[70px]" : "md:pl-[260px]"
         )}
       >
-        <UnifiedTopBar title={title} subtitle={subtitle} />
+        <UnifiedNavbar />
+        {/* <UnifiedTopBar title={title} subtitle={subtitle} /> */}
         <main className="flex-1 p-4 md:p-6">
           {children}
         </main>

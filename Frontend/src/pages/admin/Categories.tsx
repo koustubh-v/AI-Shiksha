@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DataTable } from "@/components/ui/data-table";
 import { createCategoryColumns, Category } from "./components/CategoryColumns";
 import { createTagColumns, Tag } from "./components/TagColumns";
+import { IconPicker } from "@/components/common/IconPicker";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,6 +36,7 @@ export default function CategoriesPage() {
   const [categoryForm, setCategoryForm] = useState({
     name: "",
     description: "",
+    icon: "",
   });
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
@@ -129,6 +131,7 @@ export default function CategoriesPage() {
     setCategoryForm({
       name: category.name,
       description: category.description || "",
+      icon: category.icon || "",
     });
     setIsEditMode(true);
     setIsCategoryDialogOpen(true);
@@ -241,7 +244,7 @@ export default function CategoriesPage() {
   };
 
   const resetCategoryForm = () => {
-    setCategoryForm({ name: "", description: "" });
+    setCategoryForm({ name: "", description: "", icon: "" });
     setIsEditMode(false);
     setEditingCategory(null);
   };
@@ -303,6 +306,13 @@ export default function CategoriesPage() {
                         value={categoryForm.description}
                         onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
                         rows={3}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Icon</Label>
+                      <IconPicker
+                        value={categoryForm.icon || ""}
+                        onChange={(value) => setCategoryForm({ ...categoryForm, icon: value })}
                       />
                     </div>
                   </div>

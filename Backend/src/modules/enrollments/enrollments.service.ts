@@ -4,10 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CompletionsService } from '../completions/completions.service';
 
 @Injectable()
 export class EnrollmentsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private completionsService: CompletionsService,
+  ) { }
 
   async findOne(studentId: string, courseId: string) {
     return this.prisma.enrollment.findUnique({
@@ -305,9 +309,9 @@ export class EnrollmentsService {
         avatar_url: enrollment.user.avatar_url,
         enrolled_at: enrollment.enrolled_at,
         status: enrollment.status,
-        progress_percentage: enrollment.progress_percentage || 0,
-        completed_at: enrollment.completed_at,
-        last_activity_at: enrollment.last_activity_at,
+        progress_percentage: (enrollment as any).progress_percentage || 0,
+        completed_at: (enrollment as any).completed_at,
+        last_activity_at: (enrollment as any).last_activity_at,
         // TODO: Calculate these from progress tracking
         lessons_completed: 0,
         total_lessons: 0,
@@ -382,7 +386,8 @@ export class EnrollmentsService {
 
     const completionDate = dto.completion_date ? new Date(dto.completion_date) : new Date();
 
-    return this.prisma.enrollment.update({
+    // 1. Update Enrollment
+    const updated = await this.prisma.enrollment.update({
       where: { id: enrollmentId },
       data: {
         status: 'completed',
@@ -390,20 +395,128 @@ export class EnrollmentsService {
         progress_percentage: 100,
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        course: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
+        user: true,
+        course: true,
       },
     });
+
+    // 2. Trigger completion logic via CompletionsService
+    const completionResult = await this.completionsService.markComplete(updated.student_id, updated.course_id, 'ADMIN');
+
+    // If date was custom, ensure CourseProgress/Certificate match that date
+    if (dto.completion_date) {
+      await this.updateCompletionDate(enrollmentId, { completion_date: dto.completion_date });
+    }
+
+    return {
+      ...updated,
+      certificate_issued: !!completionResult.certificate,
+    };
+  }
+
+  async bulkUpdateDates(dto: { enrollment_ids: string[]; enrollment_date?: string; completion_date?: string }) {
+    const updates: any = {};
+    if (dto.enrollment_date) {
+      updates.enrolled_at = new Date(dto.enrollment_date);
+    }
+    if (dto.completion_date) {
+      updates.completed_at = new Date(dto.completion_date);
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return { success: true, updated: 0, message: 'No dates provided for update' };
+    }
+
+    const result = await this.prisma.enrollment.updateMany({
+      where: {
+        id: { in: dto.enrollment_ids },
+      },
+      data: updates,
+    });
+
+    // If completion date updated, sync with CourseProgress and Certificate
+    if (dto.completion_date) {
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: { id: { in: dto.enrollment_ids } },
+        select: { student_id: true, course_id: true },
+      });
+
+      const newDate = new Date(dto.completion_date);
+
+      for (const enrollment of enrollments) {
+        // Update CourseProgress
+        await this.prisma.courseProgress.updateMany({
+          where: {
+            student_id: enrollment.student_id,
+            course_id: enrollment.course_id,
+          },
+          data: { updated_at: newDate },
+        });
+
+        // Update Certificate
+        await this.prisma.certificate.updateMany({
+          where: {
+            student_id: enrollment.student_id,
+            course_id: enrollment.course_id,
+          },
+          data: { issued_at: newDate },
+        });
+      }
+    }
+
+    return {
+      success: true,
+      updated: result.count,
+      message: `Successfully updated dates for ${result.count} enrollment(s)`,
+    };
+  }
+
+  async bulkIncomplete(dto: { enrollment_ids: string[] }) {
+    // 1. Update Enrollments to active, progress 0, no completion date
+    const result = await this.prisma.enrollment.updateMany({
+      where: {
+        id: { in: dto.enrollment_ids },
+      },
+      data: {
+        status: 'active',
+        completed_at: null,
+        progress_percentage: 0,
+      },
+    });
+
+    // 2. Fetch enrollment details to find related CourseProgress/Certificates
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { id: { in: dto.enrollment_ids } },
+      select: { student_id: true, course_id: true },
+    });
+
+    for (const enrollment of enrollments) {
+      // 3. Reset CourseProgress
+      await this.prisma.courseProgress.updateMany({
+        where: {
+          student_id: enrollment.student_id,
+          course_id: enrollment.course_id,
+        },
+        data: {
+          completed: false,
+          progress_percentage: 0,
+          updated_at: new Date(),
+        },
+      });
+
+      // 4. Delete existing certificates
+      await this.prisma.certificate.deleteMany({
+        where: {
+          student_id: enrollment.student_id,
+          course_id: enrollment.course_id,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      updated: result.count,
+      message: `Successfully marked ${result.count} enrollment(s) as incomplete and reset progress`,
+    };
   }
 }

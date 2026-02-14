@@ -156,7 +156,7 @@ export function CourseBuilderWizard() {
                 disabled={!canPublish()}
                 buttonText={course?.status === 'PUBLISHED' ? 'Update Course' : 'Publish Course'}
                 onBack={() => navigate('/instructor/courses')}
-                onPreview={() => window.open(`/courses/${course?.slug || courseId}`, '_blank')}
+                onPreview={() => window.open(`/dashboard/courses/${courseId}/preview`, '_blank')}
             >
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <div className="border-b bg-white px-4">

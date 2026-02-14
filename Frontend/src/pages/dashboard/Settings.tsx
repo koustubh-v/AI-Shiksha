@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Users, Uploads } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedDashboard } from "@/components/layout/UnifiedDashboard";
+import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import {
   User,
   Bell,
@@ -25,352 +27,307 @@ import {
 
 export default function Settings() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    toast({
-      title: "Settings saved",
-      description: "Your preferences have been updated successfully.",
-    });
-  };
+  if (user?.role === "admin") {
+    return (
+      <AdminDashboardLayout title="Settings" subtitle="Manage your account and preferences">
+        <SettingsContent />
+      </AdminDashboardLayout>
+    );
+  }
 
   return (
     <UnifiedDashboard title="Settings" subtitle="Manage your account and preferences">
-      <div className="p-6 space-y-6">
+      <SettingsContent />
+    </UnifiedDashboard>
+  );
+}
 
+function SettingsContent() {
+  const { user, updateUser } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Profile Form State
+  const [profileData, setProfileData] = useState({
+    name: user?.name || "",
+    bio: user?.bio || "",
+  });
+
+  // Password Form State
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // Sync profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || "",
+        bio: user.bio || "",
+      });
+    }
+  }, [user]);
+
+  const handleProfileUpdate = async () => {
+    setIsLoading(true);
+    try {
+      await Users.updateProfile(profileData);
+      // We manually update the local state with the data we verified
+      // This prevents issues where backend might return enum Role (UPPERCASE) 
+      // which conflicts with frontend role logic (lowercase)
+      updateUser(profileData);
+      toast({ title: "Success", description: "Profile updated successfully" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to update profile" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({ variant: "destructive", title: "Error", description: "Passwords do not match" });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await Users.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+      toast({ title: "Success", description: "Password changed successfully" });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to change password" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Utility to resize and crop image to a square
+  const centerCropImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        // Calculate square crop
+        const size = Math.min(img.width, img.height);
+        const x = (img.width - size) / 2;
+        const y = (img.height - size) / 2;
+
+        // Set canvas to square size (max 500x500 for avatar)
+        const maxSize = 500;
+        const finalSize = Math.min(size, maxSize);
+
+        canvas.width = finalSize;
+        canvas.height = finalSize;
+
+        // Draw cropped and resized image
+        ctx.drawImage(img, x, y, size, size, 0, 0, finalSize, finalSize);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const newFile = new File([blob], file.name, { type: file.type });
+            resolve(newFile);
+          } else {
+            reject(new Error('Could not crop image'));
+          }
+        }, file.type);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // Increased limit to 5MB to allow for cropping high-res uploads
+      toast({ variant: "destructive", title: "Error", description: "Image size must be less than 5MB" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Auto-crop to square before uploading
+      const croppedFile = await centerCropImage(file);
+
+      const { url } = await Uploads.upload(croppedFile);
+      const fullUrl = `http://localhost:3000${url}`;
+      await Users.updateProfile({ avatar_url: fullUrl });
+      updateUser({ avatar_url: fullUrl });
+      toast({ title: "Success", description: "Profile picture updated" });
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to upload image" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 lg:w-auto">
-          <TabsTrigger value="profile" className="gap-2">
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Profile</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Security</span>
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="gap-2">
-            <Brain className="h-4 w-4" />
-            <span className="hidden sm:inline">AI Settings</span>
-          </TabsTrigger>
-          {user?.role === "teacher" && (
-            <TabsTrigger value="billing" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Billing</span>
-            </TabsTrigger>
-          )}
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
-        {/* Profile Tab */}
         <TabsContent value="profile">
-          <Card>
+          <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your photo and personal details.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Avatar */}
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback className="text-lg">{user?.name?.charAt(0)}</AvatarFallback>
+            <CardContent className="space-y-8">
+              {/* Avatar Section */}
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <Avatar className="h-24 w-24 ring-2 ring-offset-2 ring-slate-100">
+                  <AvatarImage src={user?.avatar_url} />
+                  <AvatarFallback className="text-2xl bg-slate-100">{user?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Camera className="h-4 w-4" />
-                    Change Photo
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 2MB</p>
+                <div className="space-y-2 text-center sm:text-left">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="relative overflow-hidden rounded-full" disabled={uploading}>
+                      <Camera className="mr-2 h-4 w-4" />
+                      {uploading ? "Uploading..." : "Change Photo"}
+                      <input
+                        type="file"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 rounded-full"
+                      onClick={async () => {
+                        try {
+                          await Users.deleteAvatar();
+                          updateUser({ avatar_url: undefined }); // Clear avatar in context
+                          toast({ title: "Success", description: "Profile picture removed" });
+                        } catch (error) {
+                          toast({ variant: "destructive", title: "Error", description: "Failed to remove profile picture" });
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">JPG, GIF or PNG. 5MB max.</p>
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" defaultValue={user?.name} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue={user?.email} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Input id="role" value={user?.role} disabled className="capitalize" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select defaultValue="utc-8">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="utc-8">Pacific Time (UTC-8)</SelectItem>
-                      <SelectItem value="utc-5">Eastern Time (UTC-5)</SelectItem>
-                      <SelectItem value="utc+0">UTC</SelectItem>
-                      <SelectItem value="utc+5:30">India (UTC+5:30)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Tell us about yourself..."
-                  className="min-h-24"
-                />
-              </div>
-
-              <Button onClick={handleSave} disabled={isLoading} className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
-                <Save className="h-4 w-4" />
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Tab */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose how you want to be notified</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-muted-foreground">Receive updates via email</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Course Updates</p>
-                    <p className="text-sm text-muted-foreground">New lessons and content</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Weekly Progress Report</p>
-                    <p className="text-sm text-muted-foreground">Summary of your learning</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Promotional Emails</p>
-                    <p className="text-sm text-muted-foreground">Special offers and discounts</p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">AI Recommendations</p>
-                    <p className="text-sm text-muted-foreground">Personalized course suggestions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </div>
-
-              <Button onClick={handleSave} disabled={isLoading} className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
-                <Save className="h-4 w-4" />
-                Save Preferences
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Manage your account security</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <Input id="current-password" type="password" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <Input id="new-password" type="password" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input id="confirm-password" type="password" />
-                </div>
-              </div>
-
-              <Button variant="outline" className="gap-2">
-                Update Password
-              </Button>
-
-              <div className="pt-6 border-t">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-muted-foreground">Add extra security to your account</p>
-                  </div>
-                  <Button variant="outline">Enable 2FA</Button>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-destructive">Delete Account</p>
-                    <p className="text-sm text-muted-foreground">Permanently delete your account</p>
-                  </div>
-                  <Button variant="destructive">Delete Account</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* AI Settings Tab */}
-        <TabsContent value="ai">
-          <Card className="border-lms-blue/20">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle>AI Personalization</CardTitle>
-                <Badge className="bg-lms-blue/10 text-lms-blue">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  AI-Powered
-                </Badge>
-              </div>
-              <CardDescription>Customize how AI assists your learning</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">AI Tutor</p>
-                    <p className="text-sm text-muted-foreground">Get help from AI during lessons</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Smart Recommendations</p>
-                    <p className="text-sm text-muted-foreground">Personalized course suggestions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Adaptive Learning</p>
-                    <p className="text-sm text-muted-foreground">Adjust difficulty based on progress</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">AI-Generated Quizzes</p>
-                    <p className="text-sm text-muted-foreground">Auto-generate practice questions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Learning Style Preference</Label>
-                <Select defaultValue="visual">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="visual">Visual Learner</SelectItem>
-                    <SelectItem value="reading">Reading/Writing</SelectItem>
-                    <SelectItem value="auditory">Auditory Learner</SelectItem>
-                    <SelectItem value="kinesthetic">Hands-on Learning</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>AI Response Tone</Label>
-                <Select defaultValue="friendly">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="friendly">Friendly</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="academic">Academic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button onClick={handleSave} disabled={isLoading} className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
-                <Save className="h-4 w-4" />
-                Save AI Preferences
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Billing Tab (Teachers only) */}
-        {user?.role === "teacher" && (
-          <TabsContent value="billing">
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing & Payouts</CardTitle>
-                <CardDescription>Manage your earnings and payment methods</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Available Balance</p>
-                    <p className="text-3xl font-bold text-lms-emerald">$2,450.00</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      className="rounded-lg border-slate-200 focus:ring-primary"
+                    />
                   </div>
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Pending Earnings</p>
-                    <p className="text-3xl font-bold">$890.00</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <CreditCard className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Bank Account</p>
-                        <p className="text-sm text-muted-foreground">****4567</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">Primary</Badge>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" value={user?.email} disabled className="bg-slate-50 border-slate-200 rounded-lg text-slate-500" />
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
-                    Withdraw Funds
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <CardDescription className="pb-2">
+                    This will be displayed on your public profile and course landing pages.
+                  </CardDescription>
+                  <Textarea
+                    id="bio"
+                    placeholder="Tell students about your professional background and expertise..."
+                    className="min-h-[120px] rounded-lg border-slate-200 focus:ring-primary resize-none"
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button
+                    type="button"
+                    onClick={handleProfileUpdate}
+                    disabled={isLoading}
+                    className="rounded-full px-8 bg-primary hover:bg-primary/90"
+                  >
+                    {isLoading ? "Saving..." : "Save Changes"}
                   </Button>
-                  <Button variant="outline">Add Payment Method</Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>Password & Security</CardTitle>
+              <CardDescription>Manage your password and account security settings.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-6">
+                <div className="space-y-4 max-w-md">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className="rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button type="submit" disabled={isLoading} className="rounded-full px-8 bg-primary hover:bg-primary/90">
+                    {isLoading ? "Updating..." : "Update Password"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
-      </div>
-    </UnifiedDashboard>
+    </div>
   );
 }

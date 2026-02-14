@@ -151,4 +151,22 @@ export class EnrollmentsController {
   ) {
     return this.enrollmentsService.updateCompletionDate(enrollmentId, dto);
   }
+
+  @Post('admin/bulk-update-dates')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk update enrollment and completion dates (Admin only)' })
+  bulkUpdateDates(@Body() dto: any) {
+    return this.enrollmentsService.bulkUpdateDates(dto);
+  }
+
+  @Post('admin/bulk-incomplete')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk mark enrollments as incomplete and reset progress (Admin only)' })
+  bulkIncomplete(@Body() dto: any) {
+    return this.enrollmentsService.bulkIncomplete(dto);
+  }
 }

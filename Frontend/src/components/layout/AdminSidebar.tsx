@@ -184,6 +184,11 @@ const adminNavItems: NavItem[] = [
       { icon: Flag, label: "Feature Flags", href: "/dashboard/feature-flags" },
     ],
   },
+  {
+    icon: User,
+    label: "Profile Settings",
+    href: "/dashboard/settings",
+  },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -449,7 +454,7 @@ export function AdminSidebar() {
           )}
         >
           <Avatar className="h-9 w-9 border-2 border-white/20 flex-shrink-0">
-            <AvatarImage src={user.avatar} />
+            <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="bg-primary text-white text-sm">
               {user.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>

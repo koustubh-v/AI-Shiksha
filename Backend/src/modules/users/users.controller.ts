@@ -18,11 +18,38 @@ import { Role } from '../../enums/role.enum';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 
+import { UpdateProfileDto, ChangePasswordDto } from './dto/update-profile.dto';
+
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
+
+  @Post('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.usersService.updateProfile(req.user.userId, updateProfileDto);
+  }
+
+  @Delete('profile/avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete user avatar' })
+  deleteAvatar(@Request() req) {
+    return this.usersService.deleteAvatar(req.user.userId);
+  }
+
+  @Post('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+    try {
+      return await this.usersService.changePassword(req.user.userId, changePasswordDto);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   @Get('dashboard/stats')
   @Roles(Role.STUDENT, Role.ADMIN) // Allow admin to see too? Or just student.

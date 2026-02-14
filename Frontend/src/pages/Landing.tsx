@@ -186,7 +186,7 @@ export default function Landing() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredCourses.map((course) => (
-              <Link key={course.id} to={`/course/${course.id}`} className="group">
+              <Link key={course.id} to={`/courses/${course.slug || course.id}`} className="group">
                 <div className="border border-border bg-card hover:shadow-card transition-shadow">
                   <div className="relative aspect-video overflow-hidden">
                     <img
@@ -338,7 +338,7 @@ export default function Landing() {
                 Upskill your team with Coursera for Business
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Empower employees with world-class learning. Drive business outcomes 
+                Empower employees with world-class learning. Drive business outcomes
                 with role-based learning paths and hands-on projects.
               </p>
               <div className="grid sm:grid-cols-2 gap-4 mb-8">

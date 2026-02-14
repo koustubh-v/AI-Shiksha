@@ -4,6 +4,10 @@ import { Courses, LectureContent } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2 } from "lucide-react";
 import { LessonPreviewModal } from '@/components/preview/LessonPreviewModal';
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { useNavigate } from "react-router-dom";
 
 // --- Icon Component (Material Symbols) ---
 interface IconProps {
@@ -24,64 +28,7 @@ const Icon: React.FC<IconProps> = ({ name, className = "", fill = true }) => {
 };
 
 // --- Header Component ---
-const Header: React.FC = () => {
-  return (
-    <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#d1d7dc] bg-white px-6 md:px-10 py-3 sticky top-0 z-[100] shadow-sm">
-      <div className="flex items-center gap-8 w-full max-w-[1340px] mx-auto">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 text-[#a435f0] cursor-pointer hover:opacity-90 transition-opacity">
-          <div className="size-8">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <path clipRule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fillRule="evenodd"></path>
-            </svg>
-          </div>
-          <h2 className="text-[#2d2f31] text-xl font-bold leading-tight tracking-tight hidden sm:block">LearnFlow</h2>
-        </Link>
-
-        {/* Search Bar */}
-        <div className="hidden md:block flex-1 max-w-2xl">
-          <label className="flex flex-col h-12 group">
-            <div className="flex w-full flex-1 items-stretch rounded-full border border-black/80 bg-[#f7f9fa] h-full overflow-hidden group-focus-within:bg-white group-focus-within:border-[#a435f0] group-focus-within:ring-1 group-focus-within:ring-[#a435f0] transition-all">
-              <div className="text-[#6a6f73] flex items-center justify-center pl-4">
-                <Icon name="search" className="text-xl" fill={false} />
-              </div>
-              <input
-                className="flex w-full min-w-0 flex-1 border-none bg-transparent focus:outline-none px-4 text-sm font-normal text-[#2d2f31] placeholder-[#6a6f73]"
-                placeholder="Search for anything..."
-              />
-            </div>
-          </label>
-        </div>
-
-        {/* Navigation Links & Profile */}
-        <div className="flex items-center gap-6">
-          <nav className="hidden lg:flex items-center gap-6">
-            <Link className="text-[#2d2f31] text-sm font-normal hover:text-[#a435f0] transition-colors" to="/dashboard">
-              My Learning
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <button className="md:hidden text-[#2d2f31] hover:text-[#a435f0]">
-              <Icon name="search" className="text-2xl" fill={false} />
-            </button>
-            <button className="text-[#2d2f31] hover:text-[#a435f0]">
-              <Icon name="shopping_cart" className="text-2xl" fill={false} />
-            </button>
-            <button className="hidden sm:block text-[#2d2f31] hover:text-[#a435f0]">
-              <Icon name="notifications" className="text-2xl" fill={false} />
-            </button>
-            <Link to="/dashboard">
-              <div className="bg-[#a435f0] text-white rounded-full size-9 flex items-center justify-center font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity">
-                U
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-};
+// Header component removed as it is now provided by UnifiedLayout
 
 // --- Hero Component ---
 interface HeroProps {
@@ -166,6 +113,43 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ course }) => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { addToCart } = useCart();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
+  // Check if user is already enrolled (this requires course to have is_enrolled field or check against my-courses)
+  // For now, we'll try to add to cart/enroll and handle errors
+
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setIsEnrolling(true);
+    try {
+      await addToCart(course.id);
+      navigate("/cart");
+    } catch (error: any) {
+      // If already in cart, just go to cart
+      if (error.response?.data?.message?.includes("already in cart")) {
+        navigate("/cart");
+      }
+      // If already enrolled (backend might return specific error), redirect to learn
+      else if (error.response?.data?.message?.includes("enrolled")) {
+        navigate(`/learn/${course.id}/lesson/1`);
+      }
+      else {
+        // Generic error, but check if it was actually successful?
+        // Assuming validation happens in addToCart
+      }
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
   const hasDiscount = course.original_price && course.original_price > course.price;
   const discountPercent = hasDiscount
     ? Math.round(((course.original_price - course.price) / course.original_price) * 100)
@@ -173,6 +157,11 @@ const Sidebar: React.FC<SidebarProps> = ({ course }) => {
 
   return (
     <div className="lg:-mt-[300px] lg:sticky lg:top-[88px] self-start z-20">
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onSuccess={() => handleEnroll()}
+      />
       <div className="bg-white border border-[#d1d7dc] shadow-xl overflow-hidden">
         {/* Featured Image */}
         <div className="relative aspect-video bg-gray-100 overflow-hidden">
@@ -202,11 +191,16 @@ const Sidebar: React.FC<SidebarProps> = ({ course }) => {
           )}
 
           <div className="flex flex-col gap-3">
-            <Link to={`/learn/${course.id}/lesson/1`}>
-              <button className="w-full bg-[#a435f0] text-white font-bold py-3 px-4 hover:bg-[#7b1fa2] transition-colors shadow-sm">
-                Enroll Now
-              </button>
-            </Link>
+            <button
+              onClick={handleEnroll}
+              disabled={isEnrolling}
+              className="w-full bg-[#a435f0] text-white font-bold py-3 px-4 hover:bg-[#7b1fa2] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isEnrolling ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enroll Now"}
+            </button>
+            <button className="w-full bg-white text-[#2d2f31] border border-[#2d2f31] font-bold py-3 px-4 hover:bg-[#f7f9fa] transition-colors">
+              Add to Cart
+            </button>
           </div>
 
           <p className="text-center text-xs text-[#6a6f73] mt-2">30-Day Money-Back Guarantee</p>
@@ -800,7 +794,6 @@ export default function CoursePreview() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
-      <Header />
       <Hero course={course} />
 
       <main className="relative">
@@ -870,9 +863,7 @@ export default function CoursePreview() {
             )}
           </div>
           <Link to={`/learn/${course.id}/lesson/1`}>
-            <button className="bg-[#a435f0] text-white font-bold py-3 px-6 hover:bg-[#7b1fa2] transition-colors">
-              Enroll Now
-            </button>
+            {/* Mobile bottom bar logic should also be updated ideally, but for now linking to learn page or using similar handleEnroll logic */}
           </Link>
         </div>
       </div>

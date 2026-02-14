@@ -116,21 +116,7 @@ export const createEnrollmentColumns = ({ onDelete, onUpdateStatus }: Enrollment
             return <div className="text-gray-500">{date.toLocaleDateString()}</div>
         },
     },
-    {
-        accessorKey: "progress",
-        header: "Progress",
-        cell: ({ row }) => {
-            const progress = row.original.progress || 0;
-            return (
-                <div className="w-full max-w-[100px] h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-primary"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-            )
-        }
-    },
+
     {
         id: "actions",
         cell: ({ row }) => {

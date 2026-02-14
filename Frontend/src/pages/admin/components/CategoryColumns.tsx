@@ -20,10 +20,14 @@ export type Category = {
     name: string;
     slug: string;
     description?: string;
+    icon?: string;
     _count?: {
         courses: number;
     };
 }
+
+// @ts-ignore
+import { icons } from "@/components/common/IconPicker";
 
 interface CategoryColumnsProps {
     onEdit: (category: Category) => void;
@@ -57,6 +61,17 @@ export const createCategoryColumns = ({ onEdit, onDelete }: CategoryColumnsProps
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+        accessorKey: "icon",
+        header: "Icon",
+        cell: ({ row }) => {
+            const iconName = row.getValue("icon") as string;
+            const iconData = icons.find(i => i.value === iconName);
+            const Icon = iconData ? iconData.icon : null;
+
+            return Icon ? <Icon className="h-4 w-4 text-slate-500" /> : <div className="text-xs text-slate-400">-</div>;
+        },
     },
     {
         accessorKey: "slug",

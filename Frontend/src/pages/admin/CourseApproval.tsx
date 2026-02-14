@@ -286,7 +286,7 @@ export default function CourseApprovalPage() {
 
                       {/* Actions */}
                       <div className="flex gap-2 lg:flex-col">
-                        <Link to={`/course/${course.id}`} target="_blank" className="flex-1 lg:flex-none">
+                        <Link to={`/courses/${course.id}`} target="_blank" className="flex-1 lg:flex-none">
                           <Button variant="outline" size="sm" className="gap-1 w-full">
                             <Eye className="h-4 w-4" /> Preview
                           </Button>

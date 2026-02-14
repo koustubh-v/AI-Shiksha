@@ -5,16 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -29,71 +27,86 @@ import {
   Users,
   CheckCircle,
   Loader2,
-  Plus,
+  MoreHorizontal,
+  Filter,
+  X,
+  Calendar,
 } from "lucide-react";
-import { Completions, Users as UsersAPI, Courses } from "@/lib/api";
+import { Enrollments, Completions } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-interface CompletionStats {
-  total_completions: number;
-  certificates_issued: number;
-  avg_score: number;
-  this_month: number;
-}
-
-interface Completion {
-  id: string;
-  student: {
+interface Enrollment {
+  id: string; // The enrollment ID
+  user: {
     id: string;
     name: string;
     email: string;
+    avatar_url?: string;
   };
   course: {
     id: string;
     title: string;
-    certificate_enabled: boolean;
   };
-  completed_at: string;
+  enrolled_at: string;
+  status: 'active' | 'completed' | 'cancelled';
   progress_percentage: number;
-  certificate_issued: boolean;
-  certificate_id?: string;
-  certificate_url?: string;
+  completed_at?: string;
+}
+
+interface Stats {
+  total: number;
+  active: number;
+  completed: number;
+  thisMonth: number;
+  growth: number;
 }
 
 export default function CompletionPage() {
   const { toast } = useToast();
-  const [stats, setStats] = useState<CompletionStats | null>(null);
-  const [completions, setCompletions] = useState<Completion[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [issuingCertificate, setIssuingCertificate] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
+  const [processing, setProcessing] = useState(false);
 
-  // Manual completion dialog
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [students, setStudents] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [markingComplete, setMarkingComplete] = useState(false);
+  // Edit Dates State
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
+  const [incompleteOpen, setIncompleteOpen] = useState(false);
+  const [editEnrollmentDate, setEditEnrollmentDate] = useState("");
+  const [editCompletionDate, setEditCompletionDate] = useState("");
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [statusFilter]); // Reload when status filter changes
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsData, completionsData] = await Promise.all([
-        Completions.getStats(),
-        Completions.getAll(),
+      const [statsData, enrollmentsData] = await Promise.all([
+        Enrollments.getStats(),
+        Enrollments.getAll(search, statusFilter === "all" ? undefined : statusFilter),
       ]);
       setStats(statsData);
-      setCompletions(completionsData);
+      setEnrollments(enrollmentsData);
     } catch (error: any) {
-      console.error("Failed to load completions:", error);
+      console.error("Failed to load data:", error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to load completions",
+        description: error.response?.data?.message || "Failed to load enrollments",
         variant: "destructive",
       });
     } finally {
@@ -101,352 +114,393 @@ export default function CompletionPage() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      loadData();
-      return;
-    }
+  const handleSearch = () => {
+    loadData();
+  };
 
-    try {
-      setLoading(true);
-      const data = await Completions.getAll(search);
-      setCompletions(data);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to search completions",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedEnrollments(enrollments.map(e => e.id));
+    } else {
+      setSelectedEnrollments([]);
     }
   };
 
-  const loadStudentsAndCourses = async () => {
-    try {
-      const [studentsData, coursesData] = await Promise.all([
-        UsersAPI.getAll("STUDENT"),
-        Courses.getAll(),
-      ]);
-      setStudents(studentsData);
-      setCourses(coursesData);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to load students or courses",
-        variant: "destructive",
-      });
+  const handleSelectEnrollment = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedEnrollments(prev => [...prev, id]);
+    } else {
+      setSelectedEnrollments(prev => prev.filter(eid => eid !== id));
     }
   };
 
-  const handleOpenDialog = () => {
-    setDialogOpen(true);
-    loadStudentsAndCourses();
-  };
-
-  const handleManualCompletion = async () => {
-    if (!selectedStudent || !selectedCourse) {
-      toast({
-        title: "Missing Information",
-        description: "Please select both a student and a course",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleBulkComplete = async () => {
+    if (selectedEnrollments.length === 0) return;
 
     try {
-      setMarkingComplete(true);
-      await Completions.markComplete(selectedStudent, selectedCourse);
+      setProcessing(true);
+      const res = await Enrollments.bulkComplete(selectedEnrollments);
       toast({
-        title: "Course Completed",
-        description: "Course has been marked as complete and certificate issued (if enabled)",
+        title: "Success",
+        description: res.message,
       });
-      setDialogOpen(false);
-      setSelectedStudent("");
-      setSelectedCourse("");
+      setSelectedEnrollments([]);
       loadData();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to mark course as complete",
+        description: error.response?.data?.message || "Failed to mark as complete",
         variant: "destructive",
       });
     } finally {
-      setMarkingComplete(false);
+      setProcessing(false);
     }
   };
 
-  const handleIssueCertificate = async (studentId: string, courseId: string, completionId: string) => {
+  const handleSaveDates = async () => {
     try {
-      setIssuingCertificate(completionId);
-      await Completions.issueCertificate(studentId, courseId);
-      toast({
-        title: "Certificate Issued",
-        description: "Certificate has been successfully issued to the student",
-      });
-      // Reload data to update certificate status
+      setProcessing(true);
+      const res = await Enrollments.bulkUpdateDates(
+        selectedEnrollments,
+        editEnrollmentDate || undefined,
+        editCompletionDate || undefined
+      );
+      toast({ title: "Success", description: res.message });
+      setDatesOpen(false);
+      setEditEnrollmentDate("");
+      setEditCompletionDate("");
+      setSelectedEnrollments([]);
       loadData();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to issue certificate",
+        description: error.response?.data?.message || "Failed to update dates",
         variant: "destructive",
       });
     } finally {
-      setIssuingCertificate(null);
+      setProcessing(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const handleMarkIncomplete = async () => {
+    try {
+      setProcessing(true);
+      const res = await Enrollments.bulkIncomplete(selectedEnrollments);
+      toast({ title: "Success", description: res.message });
+      setIncompleteOpen(false);
+      setSelectedEnrollments([]);
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to mark incomplete",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  if (loading && !stats) {
-    return (
-      <AdminDashboardLayout title="Course Completions" subtitle="Track student course completions and certificates">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-
-foreground" />
-        </div>
-      </AdminDashboardLayout>
-    );
-  }
+  const openEditDates = (id?: string) => {
+    if (id) setSelectedEnrollments([id]);
+    setEditEnrollmentDate("");
+    setEditCompletionDate("");
+    setDatesOpen(true);
+  };
+
+  const openMarkIncomplete = (id?: string) => {
+    if (id) setSelectedEnrollments([id]);
+    setIncompleteOpen(true);
+  };
+
+  const handleManualComplete = async (enrollmentId: string) => {
+    try {
+      setProcessing(true);
+      await Enrollments.manualComplete(enrollmentId);
+      toast({
+        title: "Success",
+        description: "Enrollment marked as complete",
+      });
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to complete enrollment",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const completedRate = stats ? Math.round((stats.completed / (stats.total || 1)) * 100) : 0;
 
   return (
-    <AdminDashboardLayout title="Course Completions" subtitle="Track student course completions and certificates">
-      <div className="space-y-4 md:space-y-6">
+    <AdminDashboardLayout title="Enrollments & Completions" subtitle="Track progress and manage student completions">
+      <div className="space-y-6">
         {/* Stats */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Total Completions</p>
-                  <p className="text-xl md:text-2xl font-bold">{stats?.total_completions || 0}</p>
-                </div>
-                <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-accent/50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Certificates Issued</p>
-                  <p className="text-xl md:text-2xl font-bold">{stats?.certificates_issued || 0}</p>
-                </div>
-                <Award className="h-6 w-6 md:h-8 md:w-8 text-chart-3/50" />
-              </div>
-            </CardContent>
-          </Card>
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-3 md:p-4">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Avg. Score</p>
-                  <p className="text-xl md:text-2xl font-bold">{stats?.avg_score || 0}%</p>
+                  <p className="text-sm text-muted-foreground">Total Enrollments</p>
+                  <p className="text-2xl font-bold">{stats?.total || 0}</p>
                 </div>
-                <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-primary/50" />
+                <Users className="h-8 w-8 text-primary/50" />
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/20">
-            <CardContent className="p-3 md:p-4">
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">This Month</p>
-                  <p className="text-xl md:text-2xl font-bold">{stats?.this_month || 0}</p>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold">{stats?.completed || 0}</p>
                 </div>
-                <Users className="h-6 w-6 md:h-8 md:w-8 text-chart-4/50" />
+                <CheckCircle className="h-8 w-8 text-green-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Students</p>
+                  <p className="text-2xl font-bold">{stats?.active || 0}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-blue-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Completion Rate</p>
+                  <p className="text-2xl font-bold">{completedRate}%</p>
+                </div>
+                <Award className="h-8 w-8 text-orange-500/50" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Completions Table */}
+        {/* Filters and Actions */}
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <CardTitle className="text-base md:text-lg">Recent Completions</CardTitle>
-              <div className="flex gap-2">
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={handleOpenDialog} size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Mark Complete
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                      <DialogTitle>Manually Mark Course Complete</DialogTitle>
-                      <DialogDescription>
-                        Select a student and course to manually mark as completed. If certificates are enabled for the course, one will be automatically issued.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <label htmlFor="student" className="text-sm font-medium">
-                          Student
-                        </label>
-                        <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a student" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {students.map((student) => (
-                              <SelectItem key={student.id} value={student.id}>
-                                {student.name} ({student.email})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <label htmlFor="course" className="text-sm font-medium">
-                          Course
-                        </label>
-                        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a course" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {courses.map((course) => (
-                              <SelectItem key={course.id} value={course.id}>
-                                {course.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setDialogOpen(false)}
-                        disabled={markingComplete}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleManualCompletion}
-                        disabled={markingComplete || !selectedStudent || !selectedCourse}
-                      >
-                        {markingComplete ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Marking Complete...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Mark Complete
-                          </>
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                <div className="relative flex-1 md:w-64">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Student Enrollments</CardTitle>
+                <Badge variant="outline" className="text-muted-foreground font-normal">
+                  {enrollments.length} found
+                </Badge>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name, email, or course..."
+                    placeholder="Search student or course..."
                     className="pl-8"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   />
                 </div>
-                <Button onClick={handleSearch} size="sm">Search</Button>
+
+                {/* Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[150px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button onClick={handleSearch} variant="secondary">
+                  Search
+                </Button>
               </div>
             </div>
           </CardHeader>
+
           <CardContent>
-            <div className="rounded-md border overflow-x-auto">
+            {/* Bulk Actions Toolbar */}
+            {selectedEnrollments.length > 0 && (
+              <div className="flex items-center justify-between p-3 mb-4 bg-primary/10 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                <span className="text-sm font-medium">
+                  {selectedEnrollments.length} selected
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEditDates()}
+                    disabled={processing}
+                    className="gap-2 bg-background"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Edit Dates
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openMarkIncomplete()}
+                    disabled={processing}
+                    className="gap-2 bg-background text-orange-600 border-orange-200 hover:bg-orange-50"
+                  >
+                    <TrendingUp className="h-4 w-4 rotate-180" />
+                    Reset Progress
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleBulkComplete}
+                    disabled={processing}
+                    className="gap-2"
+                  >
+                    {processing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4" />
+                    )}
+                    Mark Complete
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedEnrollments([])}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="rounded-md border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={enrollments.length > 0 && selectedEnrollments.length === enrollments.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Course</TableHead>
-                    <TableHead>Completed</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Certificate</TableHead>
+                    <TableHead>Enrolled</TableHead>
+                    <TableHead>Completion</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                      <TableCell colSpan={7} className="text-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mt-2">Loading enrollments...</p>
                       </TableCell>
                     </TableRow>
-                  ) : completions.length === 0 ? (
+                  ) : enrollments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No completions found
+                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                        No enrollments found matching your filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    completions.map((completion) => (
-                      <TableRow key={completion.id}>
+                    enrollments.map((enrollment) => (
+                      <TableRow key={enrollment.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedEnrollments.includes(enrollment.id)}
+                            onCheckedChange={(checked) => handleSelectEnrollment(enrollment.id, checked as boolean)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
+                              <AvatarImage src={enrollment.user.avatar_url} />
                               <AvatarFallback>
-                                {completion.student.name.split(" ").map(n => n[0]).join("")}
+                                {enrollment.user.name.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium text-sm">{completion.student.name}</p>
-                              <p className="text-xs text-muted-foreground">{completion.student.email}</p>
+                              <p className="font-medium text-sm">{enrollment.user.name}</p>
+                              <p className="text-xs text-muted-foreground">{enrollment.user.email}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="font-medium text-sm max-w-[200px] truncate">{completion.course.title}</p>
+                          <p className="font-medium text-sm max-w-[200px] truncate" title={enrollment.course.title}>
+                            {enrollment.course.title}
+                          </p>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(completion.completed_at)}
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {format(new Date(enrollment.enrolled_at), "MMM d, yyyy")}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{completion.progress_percentage}%</span>
-                        </TableCell>
-                        <TableCell>
-                          {completion.certificate_issued ? (
-                            <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">
-                              Issued
-                            </Badge>
-                          ) : completion.course.certificate_enabled ? (
-                            <Badge variant="outline">Not Issued</Badge>
+                          {enrollment.status === 'completed' || enrollment.progress_percentage === 100 ? (
+                            <div className="font-medium text-green-700">
+                              {enrollment.completed_at ? format(new Date(enrollment.completed_at), "MMM d, yyyy") : "Completed"}
+                            </div>
                           ) : (
-                            <Badge variant="secondary">Disabled</Badge>
+                            <div className="w-[140px] space-y-1">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="font-medium">{enrollment.progress_percentage}%</span>
+                              </div>
+                              <Progress value={enrollment.progress_percentage} className="h-2" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {enrollment.status === 'completed' ? (
+                            <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">
+                              Completed
+                            </Badge>
+                          ) : enrollment.status === 'active' ? (
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-500/5">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">
+                              {enrollment.status}
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {!completion.certificate_issued && completion.course.certificate_enabled && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleIssueCertificate(completion.student.id, completion.course.id, completion.id)}
-                              disabled={issuingCertificate === completion.id}
-                            >
-                              {issuingCertificate === completion.id ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Issuing...
-                                </>
-                              ) : (
-                                <>
-                                  <Award className="h-3 w-3 mr-1" />
-                                  Issue
-                                </>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {enrollment.status !== 'completed' && (
+                                <DropdownMenuItem onClick={() => handleManualComplete(enrollment.id)}>
+                                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                                  Mark as Complete
+                                </DropdownMenuItem>
                               )}
-                            </Button>
-                          )}
+                              <DropdownMenuItem onClick={() => openEditDates(enrollment.id)}>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Edit Dates
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openMarkIncomplete(enrollment.id)}
+                                className="text-orange-600 focus:text-orange-700"
+                              >
+                                <TrendingUp className="h-4 w-4 mr-2 rotate-180" />
+                                Reset Progress
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -456,6 +510,74 @@ foreground" />
             </div>
           </CardContent>
         </Card>
+
+        {/* Edit Dates Dialog */}
+        <Dialog open={datesOpen} onOpenChange={setDatesOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Dates</DialogTitle>
+              <DialogDescription>
+                Update enrollment and completion dates for {selectedEnrollments.length} student(s).
+                Leave blank to keep existing dates.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="enrolledDate" className="text-right">
+                  Enrolled
+                </Label>
+                <Input
+                  id="enrolledDate"
+                  type="date"
+                  className="col-span-3"
+                  value={editEnrollmentDate}
+                  onChange={(e) => setEditEnrollmentDate(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="completedDate" className="text-right">
+                  Completed
+                </Label>
+                <Input
+                  id="completedDate"
+                  type="date"
+                  className="col-span-3"
+                  value={editCompletionDate}
+                  onChange={(e) => setEditCompletionDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDatesOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveDates} disabled={processing}>
+                {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mark Incomplete Confirmation Dialog */}
+        <Dialog open={incompleteOpen} onOpenChange={setIncompleteOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Reset Progress?</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to reset progress for {selectedEnrollments.length} student(s)?
+                This will set progress to 0%, mark status as Active, and delete any issued certificates.
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIncompleteOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleMarkIncomplete} disabled={processing}>
+                {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Reset Progress
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AdminDashboardLayout>
   );

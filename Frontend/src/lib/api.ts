@@ -80,8 +80,8 @@ export const Categories = {
         const { data } = await api.post("/categories", categoryData);
         return data;
     },
-    update: async (id: string, categoryData: { name: string; description?: string }) => {
-        const { data } = await api.put(`/categories/${id}`, categoryData);
+    update: async (id: string, categoryData: { name: string; description?: string; icon?: string }) => {
+        const { data } = await api.patch(`/categories/${id}`, categoryData);
         return data;
     },
     delete: async (id: string) => {
@@ -154,6 +154,20 @@ export const Enrollments = {
         });
         return data;
     },
+    bulkUpdateDates: async (enrollmentIds: string[], enrollmentDate?: string, completionDate?: string) => {
+        const { data } = await api.post('/enrollments/admin/bulk-update-dates', {
+            enrollment_ids: enrollmentIds,
+            enrollment_date: enrollmentDate,
+            completion_date: completionDate,
+        });
+        return data;
+    },
+    bulkIncomplete: async (enrollmentIds: string[]) => {
+        const { data } = await api.post('/enrollments/admin/bulk-incomplete', {
+            enrollment_ids: enrollmentIds,
+        });
+        return data;
+    },
 };
 
 export const Users = {
@@ -179,6 +193,18 @@ export const Users = {
     getTeacherStats: async () => {
         const { data } = await api.get("/users/stats/teachers");
         return data;
+    },
+    updateProfile: async (data: any) => {
+        const { data: response } = await api.post('/users/profile', data);
+        return response;
+    },
+    deleteAvatar: async () => {
+        const { data } = await api.delete('/users/profile/avatar');
+        return data;
+    },
+    changePassword: async (data: any) => {
+        const { data: response } = await api.post('/users/change-password', data);
+        return response;
     },
 };
 

@@ -32,7 +32,7 @@ class LoginDto {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -43,7 +43,6 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
   async login(@Body() loginDto: LoginDto) {
-    console.log('Login attempt:', loginDto);
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,

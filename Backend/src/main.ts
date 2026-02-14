@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import * as express from 'express';
 
 async function bootstrap() {
@@ -19,7 +19,8 @@ async function bootstrap() {
   });
 
   // Serve uploaded files
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  // main.js is in dist/src/main.js, so we need to go up to ../.. to get to project root
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
     prefix: '/uploads/',
   });
 

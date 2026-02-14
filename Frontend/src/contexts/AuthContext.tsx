@@ -8,7 +8,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  avatar?: string;
+  avatar_url?: string; // Matches backend field
   bio?: string;
 }
 
@@ -19,6 +19,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   signup: (email: string, password: string, name: string, role: string) => Promise<boolean>;
+  updateUser: (data: Partial<User>) => void;
   isLoading: boolean;
 }
 
@@ -112,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (data: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...data } : null));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -121,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         signup,
+        updateUser,
         isLoading,
       }}
     >

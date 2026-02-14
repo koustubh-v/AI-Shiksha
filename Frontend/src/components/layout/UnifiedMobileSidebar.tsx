@@ -85,7 +85,7 @@ export function UnifiedMobileSidebar() {
       <div className="p-4 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border-2 border-white/20">
-            <AvatarImage src={user.avatar} />
+            <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="bg-primary text-white">{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>

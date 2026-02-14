@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findOne(email);
@@ -29,7 +29,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
-        avatar: user.avatar_url,
+        avatar_url: user.avatar_url,
+        bio: user.bio,
       },
     };
   }
@@ -46,12 +47,14 @@ export class AuthService {
   async getUserProfile(userId: string) {
     const user = await this.usersService.findById(userId);
     if (!user) return null;
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
-      avatar: user.avatar_url,
+      avatar_url: user.avatar_url,
+      bio: user.bio,
     };
   }
 }

@@ -79,7 +79,7 @@ const getNavItems = (role: UserRole): NavItem[] => {
 };
 
 const bottomNav: NavItem[] = [
-  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
+  { icon: Settings, label: "Profile Settings", href: "/dashboard/settings" },
   { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
 ];
 
@@ -237,7 +237,7 @@ export function UnifiedSidebar() {
       <div className="border-t border-white/10 p-3 flex-shrink-0">
         <div className={cn("flex items-center gap-3 px-2 py-2", collapsed ? "justify-center" : "")}>
           <Avatar className="h-9 w-9 border-2 border-white/20 flex-shrink-0">
-            <AvatarImage src={user.avatar} />
+            <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="bg-primary text-white text-sm">
               {user.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>

@@ -20,6 +20,36 @@ export class UsersService {
     });
   }
 
+  async updateProfile(userId: string, data: { name?: string; bio?: string; avatar_url?: string }) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
+
+  async deleteAvatar(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar_url: null },
+    });
+  }
+
+  async changePassword(userId: string, dto: any) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password_hash);
+    if (!isMatch) throw new Error('Incorrect current password');
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password_hash: hashedPassword },
+    });
+
+    return { message: 'Password updated successfully' };
+  }
+
   // ... (keeping other methods same until findAll)
 
   async getStudentDashboardStats(userId: string) {

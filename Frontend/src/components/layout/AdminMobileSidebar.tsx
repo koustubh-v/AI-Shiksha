@@ -16,6 +16,8 @@ import {
   LogOut,
   HelpCircle,
   Server,
+  Bot,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,10 +64,10 @@ const mobileNavItems: NavItem[] = [
       { icon: BookOpen, label: "Approval", href: "/dashboard/course-approval" },
     ],
   },
-  { icon: Brain, label: "AI Center", href: "/dashboard/ai-control" },
+  { icon: Bot, label: "Ai Control Center", href: "/dashboard/ai-control" },
   { icon: DollarSign, label: "Revenue", href: "/dashboard/revenue" },
-  { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-  { icon: MessageSquare, label: "Messages", href: "/dashboard/announcements" },
+  { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
+  { icon: MessageSquare, label: "Communication", href: "/dashboard/announcements" },
   { icon: Shield, label: "Security", href: "/dashboard/security" },
   { icon: Settings, label: "Settings", href: "/dashboard/platform-settings" },
 ];
@@ -204,7 +206,7 @@ export function AdminMobileSidebar() {
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar className="h-9 w-9 border-2 border-white/20">
-            <AvatarImage src={user.avatar} />
+            <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="bg-primary text-white text-sm">
               {user.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>

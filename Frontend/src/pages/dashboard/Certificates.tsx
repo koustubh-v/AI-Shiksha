@@ -48,7 +48,7 @@ const certificates = [
 
 export default function Certificates() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin", "super_admin", "franchise_admin", "instructor", "teacher"].includes(user?.role?.toLowerCase() || "");
 
   const content = (
     <div className="p-6 max-w-6xl mx-auto space-y-8 font-sans">

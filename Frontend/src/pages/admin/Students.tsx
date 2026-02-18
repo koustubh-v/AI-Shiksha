@@ -213,7 +213,9 @@ export default function StudentsPage() {
     </div>
   );
 
-  if (user?.role === "admin") {
+  const isAdminRole = ["admin", "super_admin", "franchise_admin"].includes(user?.role?.toLowerCase() || "");
+
+  if (isAdminRole) {
     return (
       <AdminDashboardLayout title="Students" subtitle="Manage student accounts and enrollments">
         {content}

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -86,6 +87,9 @@ export default {
         },
         "lms-blue": "#0056D2", // Added to fix visibility issues
         "lms-blue-hover": "#0041a3",
+        "background-light": "#f8fafc",
+        "text-main": "#0f172a",
+        "text-muted": "#64748b",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -123,5 +127,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

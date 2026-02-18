@@ -28,7 +28,9 @@ import {
 export default function Settings() {
   const { user } = useAuth();
 
-  if (user?.role === "admin") {
+  const isAdminRole = ["admin", "super_admin", "franchise_admin"].includes(user?.role?.toLowerCase() || "");
+
+  if (isAdminRole) {
     return (
       <AdminDashboardLayout title="Settings" subtitle="Manage your account and preferences">
         <SettingsContent />

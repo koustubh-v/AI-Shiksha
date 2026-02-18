@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
@@ -19,13 +19,18 @@ export class PaymentsService {
     );
   }
 
-  async createCheckoutSession(userId: string, courseId: string) {
+  async createCheckoutSession(userId: string, courseId: string, franchiseId?: string) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: { instructor: { include: { user: true } } },
     });
 
     if (!course) throw new BadRequestException('Course not found');
+
+    // Verify course belongs to franchise
+    if (franchiseId && course.franchise_id && course.franchise_id !== franchiseId) {
+      throw new ForbiddenException('Cannot purchase course from another franchise');
+    }
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -49,6 +54,7 @@ export class PaymentsService {
       metadata: {
         courseId: courseId,
         userId: userId,
+        franchiseId: franchiseId || '',
       },
     });
 
@@ -86,6 +92,7 @@ export class PaymentsService {
     }
     const userId = session.metadata.userId;
     const courseId = session.metadata.courseId;
+    const franchiseId = session.metadata.franchiseId || null;
 
     // Check if already enrolled
     const existing = await this.prisma.enrollment.findUnique({
@@ -99,6 +106,12 @@ export class PaymentsService {
 
     if (existing) return;
 
+    // Fetch Course to ensure we have the correct franchise context
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+
+    // Use course's franchise_id if available, otherwise fallback to session metadata (user's franchise)
+    const targetFranchiseId = (course && course.franchise_id) ? course.franchise_id : franchiseId;
+
     // Create Payment Record
     await this.prisma.payment.create({
       data: {
@@ -108,6 +121,7 @@ export class PaymentsService {
         payment_provider: 'stripe',
         payment_status: 'completed',
         transaction_id: session.id,
+        franchise_id: targetFranchiseId,
       },
     });
 
@@ -116,8 +130,14 @@ export class PaymentsService {
       data: {
         student_id: userId,
         course_id: courseId,
-        payment_id: session.id,
         status: 'active',
+        franchise_id: targetFranchiseId,
+        expires_at: (course?.access_days_limit) ? (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + course.access_days_limit);
+          return d;
+        })() : null,
+        total_learning_time: 0,
       },
     });
   }

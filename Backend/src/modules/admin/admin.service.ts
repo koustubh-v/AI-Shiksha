@@ -3,15 +3,19 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getPlatformStats() {
-    const totalUsers = await this.prisma.user.count();
+  async getPlatformStats(franchiseId?: string) {
+    // Build where clause for franchise scoping
+    const franchiseWhere = franchiseId ? { franchise_id: franchiseId } : {};
+
+    const totalUsers = await this.prisma.user.count({ where: franchiseId ? { franchise_id: franchiseId } : {} });
     const activeCourses = await (this.prisma as any).course.count({
-      where: { status: 'PUBLISHED' },
+      where: { status: 'PUBLISHED', ...franchiseWhere },
     });
 
     const totalRevenueResult = await this.prisma.payment.aggregate({
+      where: franchiseWhere,
       _sum: { amount: true },
     });
     const totalRevenue = totalRevenueResult._sum.amount || 0;
@@ -62,9 +66,16 @@ export class AdminService {
     ];
   }
 
-  async getUserGrowth() {
+
+  async getUserGrowth(franchiseId?: string) {
     // Group users by month created
+    const whereClause: any = {};
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     const users = await this.prisma.user.findMany({
+      where: whereClause,
       select: { created_at: true, role: true },
     });
 
@@ -104,9 +115,15 @@ export class AdminService {
     return result;
   }
 
-  async getRevenueData() {
+  async getRevenueData(franchiseId?: string) {
     // Raw query might be better for aggregation but using JS for simplicity with small data
+    const whereClause: any = {};
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     const payments = await this.prisma.payment.findMany({
+      where: whereClause,
       select: { created_at: true, amount: true },
     });
 
@@ -147,12 +164,13 @@ export class AdminService {
     return result;
   }
 
-  async getPendingActions() {
+  async getPendingActions(franchiseId?: string) {
     const pendingActions: any[] = [];
+    const franchiseWhere = franchiseId ? { franchise_id: franchiseId } : {};
 
     // Check for draft courses
     const draftCourses = await (this.prisma as any).course.findMany({
-      where: { status: 'DRAFT' },
+      where: { status: 'DRAFT', ...franchiseWhere },
       take: 5,
       include: { instructor: { include: { user: true } } },
     });
@@ -168,7 +186,7 @@ export class AdminService {
 
     // Check for unverified instructors
     const unverifiedInstructors = await this.prisma.instructorProfile.findMany({
-      where: { verified: false },
+      where: { verified: false, user: franchiseWhere }, // Filter by user franchise
       take: 5,
       include: { user: true },
     });
@@ -185,3 +203,4 @@ export class AdminService {
     return pendingActions;
   }
 }
+

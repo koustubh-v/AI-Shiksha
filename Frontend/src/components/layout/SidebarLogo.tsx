@@ -1,19 +1,27 @@
 import { GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFranchise } from "@/contexts/FranchiseContext";
 
 interface SidebarLogoProps {
     collapsed?: boolean;
 }
 
 export function SidebarLogo({ collapsed }: SidebarLogoProps) {
+    const { branding } = useFranchise();
+
     return (
         <div className={cn("flex items-center gap-2 overflow-hidden transition-all duration-300", collapsed ? "w-8" : "w-full")}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0">
-                <GraduationCap className="h-5 w-5 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0 overflow-hidden">
+                {branding.logo_url ? (
+                    <img src={branding.logo_url} alt={branding.lms_name} className="h-8 w-8 object-cover" />
+                ) : (
+                    <GraduationCap className="h-5 w-5 text-white" />
+                )}
             </div>
             <span className={cn("text-lg font-bold text-white whitespace-nowrap transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
-                LearnAI
+                {branding.lms_name}
             </span>
         </div>
     );
 }
+

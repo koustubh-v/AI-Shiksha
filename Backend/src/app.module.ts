@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,6 +30,8 @@ import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { FranchisesModule } from './modules/franchises/franchises.module';
+import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
 @Module({
   imports: [
@@ -65,8 +67,14 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
     CertificatesModule,
     TransactionsModule,
     SystemSettingsModule,
+    FranchisesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).forRoutes('*');
+  }
+}
+

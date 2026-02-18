@@ -161,9 +161,98 @@ export class CompletionsService {
             },
         });
 
-        // Auto-issue certificate if enabled
+        // Update Enrollment with total time (estimated)
+        if (course.estimated_duration) {
+            await this.prisma.enrollment.updateMany({
+                where: {
+                    student_id: studentId,
+                    course_id: courseId,
+                },
+                data: {
+                    total_learning_time: course.estimated_duration,
+                    completed_at: new Date(),
+                    progress_percentage: 100,
+                    status: 'completed',
+                },
+            });
+        } else {
+            await this.prisma.enrollment.updateMany({
+                where: {
+                    student_id: studentId,
+                    course_id: courseId,
+                },
+                data: {
+                    completed_at: new Date(),
+                    progress_percentage: 100,
+                    status: 'completed',
+                },
+            });
+        }
 
+        // Auto-complete all lessons and section items
+        // 1. Get all lessons (Legacy)
+        const lessons = await this.prisma.lesson.findMany({
+            where: { module: { course_id: courseId } },
+            select: { id: true }
+        });
+
+        // 2. Get all section items (New)
+        const sectionItems = await this.prisma.sectionItem.findMany({
+            where: { section: { course_id: courseId } },
+            select: { id: true }
+        });
+
+        const now = new Date();
+
+        // 3. Mark all lessons as complete
+        if (lessons.length > 0) {
+            // Using transaction for bulk upsert loop might be heavy, but Prisma createMany doesn't support 'skipDuplicates' broadly enough for progress tracking sometimes
+            // Logic: we want to ensure they exist. modify if exists, create if not.
+            // For bulk mark complete, we can just use createMany with skipDuplicates if supported, or iterate.
+            // Loop is safest for upsert logic correctness across DBs without raw SQL.
+            for (const lesson of lessons) {
+                await this.prisma.lessonProgress.upsert({
+                    where: {
+                        student_id_lesson_id: {
+                            student_id: studentId,
+                            lesson_id: lesson.id,
+                        },
+                    },
+                    update: { completed: true, completed_at: now },
+                    create: {
+                        student_id: studentId,
+                        lesson_id: lesson.id,
+                        completed: true,
+                        completed_at: now,
+                    },
+                });
+            }
+        }
+
+        // 4. Mark all section items as complete
+        if (sectionItems.length > 0) {
+            for (const item of sectionItems) {
+                await this.prisma.sectionItemProgress.upsert({
+                    where: {
+                        student_id_item_id: {
+                            student_id: studentId,
+                            item_id: item.id,
+                        },
+                    },
+                    update: { completed: true, completed_at: now },
+                    create: {
+                        student_id: studentId,
+                        item_id: item.id,
+                        completed: true,
+                        completed_at: now,
+                    },
+                });
+            }
+        }
+
+        // Auto-issue certificate if enabled
         let certificate: any = null;
+
         if (course.certificate_enabled) {
             // Check if certificate already exists
             const existingCert = await this.prisma.certificate.findFirst({
@@ -174,12 +263,24 @@ export class CompletionsService {
             });
 
             if (!existingCert) {
+                // Generate unique certificate number
+                const timestamp = Date.now();
+                const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const certificateNumber = `CERT-${new Date().getFullYear()}-${randomSuffix}${timestamp.toString().slice(-4)}`;
+
+                // Generate QR validation URL
+                const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                const qrValidationUrl = `${baseUrl}/courses/${course.slug}/validation/${studentId}`;
+
                 certificate = await this.prisma.certificate.create({
                     data: {
                         student_id: studentId,
                         course_id: courseId,
+                        certificate_number: certificateNumber,
+                        qr_validation_url: qrValidationUrl,
                         issued_at: new Date(),
                         certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
+                        franchise_id: course.franchise_id, // Inherit franchise from course
                     },
                 });
             } else {
@@ -192,7 +293,9 @@ export class CompletionsService {
             certificate,
             message: certificate
                 ? 'Course marked as complete and certificate issued'
-                : 'Course marked as complete',
+                : course.certificate_enabled
+                    ? 'Course marked as complete (Certificate failed to issue)'
+                    : 'Course marked as complete (Certificates disabled for this course)',
         };
     }
 
@@ -234,13 +337,31 @@ export class CompletionsService {
             };
         }
 
+        // Generate unique certificate number
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const certificateNumber = `CERT-${new Date().getFullYear()}-${randomSuffix}${timestamp.toString().slice(-4)}`;
+
+        // Get course slug for QR URL
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { slug: true, franchise_id: true },
+        });
+
+        // Generate QR validation URL
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const qrValidationUrl = course ? `${baseUrl}/courses/${course.slug}/validation/${studentId}` : null;
+
         // Create certificate
         const certificate = await this.prisma.certificate.create({
             data: {
                 student_id: studentId,
                 course_id: courseId,
+                certificate_number: certificateNumber,
+                qr_validation_url: qrValidationUrl,
                 issued_at: new Date(),
                 certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
+                franchise_id: course?.franchise_id, // Inherit franchise from course
             },
         });
 
@@ -447,6 +568,64 @@ export class CompletionsService {
             },
         });
 
+        // Auto-generate certificate if course is complete and certificates are enabled
+        if (isComplete) {
+            await this.generateCertificateOnCompletion(studentId, courseId);
+        }
+
+    }
+
+    private async generateCertificateOnCompletion(studentId: string, courseId: string) {
+        try {
+            // Check if course has certificates enabled
+            const course = await this.prisma.course.findUnique({
+                where: { id: courseId },
+                select: {
+                    certificate_enabled: true,
+                    slug: true,
+                },
+            });
+
+            if (!course || !course.certificate_enabled) {
+                return; // Certificates not enabled for this course
+            }
+
+            // Check if certificate already exists
+            const existingCert = await this.prisma.certificate.findFirst({
+                where: {
+                    student_id: studentId,
+                    course_id: courseId,
+                },
+            });
+
+            if (existingCert) {
+                return; // Certificate already issued
+            }
+
+            // Generate unique certificate number
+            const timestamp = Date.now();
+            const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const certificateNumber = `CERT-${new Date().getFullYear()}-${randomSuffix}${timestamp.toString().slice(-4)}`;
+
+            // Generate QR validation URL
+            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            const qrValidationUrl = `${baseUrl}/courses/${course.slug}/validation/${studentId}`;
+
+            // Create certificate
+            await this.prisma.certificate.create({
+                data: {
+                    student_id: studentId,
+                    course_id: courseId,
+                    certificate_number: certificateNumber,
+                    qr_validation_url: qrValidationUrl,
+                    certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
+                    issued_at: new Date(),
+                },
+            });
+        } catch (error) {
+            console.error('Error generating certificate on completion:', error);
+            // Don't throw - certificate generation shouldn't block completion
+        }
     }
 
     async logAccess(studentId: string, courseId: string, itemId: string) {
@@ -500,7 +679,7 @@ export class CompletionsService {
         return { success: true };
     }
 
-    async updateTimeSpent(studentId: string, durationMinutes: number) {
+    async updateTimeSpent(studentId: string, durationMinutes: number, courseId?: string) {
         if (durationMinutes <= 0) return;
 
         // Update User's weekly minutes
@@ -512,6 +691,31 @@ export class CompletionsService {
                 },
             },
         });
+
+        // Update Enrollment total time if course specified
+        if (courseId) {
+            // We use updateMany because composite unique constraint on Enrollment is [student_id, course_id]
+            // but prisma update requires unique where input.
+            // Actually Enrollment has student_id_course_id composite unique.
+            try {
+                await this.prisma.enrollment.update({
+                    where: {
+                        student_id_course_id: {
+                            student_id: studentId,
+                            course_id: courseId,
+                        },
+                    },
+                    data: {
+                        total_learning_time: {
+                            increment: durationMinutes,
+                        },
+                        last_activity_at: new Date(),
+                    },
+                });
+            } catch (e) {
+                // Ignore if enrollment not found (e.g. preview mode or error)
+            }
+        }
 
         return { success: true };
     }

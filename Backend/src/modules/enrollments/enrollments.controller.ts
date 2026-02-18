@@ -28,7 +28,7 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my enrollments' })
   findMyEnrollments(@Request() req) {
-    return this.enrollmentsService.findMyEnrollments(req.user.userId);
+    return this.enrollmentsService.findMyEnrollments(req.user.userId, req.user.franchise_id);
   }
 
   @Post()
@@ -36,7 +36,7 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Enroll in a course' })
   create(@Request() req, @Body('courseId') courseId: string) {
-    return this.enrollmentsService.create(req.user.userId, courseId);
+    return this.enrollmentsService.create(req.user.userId, courseId, req.user.franchise_id);
   }
 
   @Get(':courseId/check')
@@ -44,6 +44,7 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Check if enrolled in a course' })
   check(@Request() req, @Param('courseId') courseId: string) {
+    // Check implies existing enrollment, no strict franchise check needed here usually, but good to be safe
     return this.enrollmentsService.checkEnrollment(req.user.userId, courseId);
   }
 
@@ -61,8 +62,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get enrollment statistics (Admin only)' })
-  getStats() {
-    return this.enrollmentsService.getStats();
+  getStats(@Request() req) {
+    return this.enrollmentsService.getStats(req.user.franchise_id);
   }
 
   @Get()
@@ -70,8 +71,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all enrollments (Admin only)' })
-  findAll(@Query('search') search?: string, @Query('status') status?: string) {
-    return this.enrollmentsService.findAll(search, status);
+  findAll(@Request() req, @Query('search') search?: string, @Query('status') status?: string) {
+    return this.enrollmentsService.findAll(search, status, req.user.franchise_id);
   }
 
   @Post('admin/enroll')
@@ -80,10 +81,11 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Manually enroll a student (Admin only)' })
   adminEnroll(
+    @Request() req,
     @Body('studentEmail') studentEmail: string,
     @Body('courseId') courseId: string,
   ) {
-    return this.enrollmentsService.adminEnroll(studentEmail, courseId);
+    return this.enrollmentsService.adminEnroll(studentEmail, courseId, req.user.franchise_id);
   }
 
   @Post('admin/bulk-enroll')
@@ -92,10 +94,11 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bulk enroll students in courses (Admin only)' })
   bulkEnroll(
+    @Request() req,
     @Body('studentIds') studentIds: string[],
     @Body('courseIds') courseIds: string[],
   ) {
-    return this.enrollmentsService.bulkEnroll(studentIds, courseIds);
+    return this.enrollmentsService.bulkEnroll(studentIds, courseIds, req.user.franchise_id);
   }
 
   @Patch(':id/status')
@@ -103,8 +106,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update enrollment status (Admin only)' })
-  updateStatus(@Param('id') id: string, @Body('status') status: string) {
-    return this.enrollmentsService.updateStatus(id, status);
+  updateStatus(@Request() req, @Param('id') id: string, @Body('status') status: string) {
+    return this.enrollmentsService.updateStatus(id, status, req.user.franchise_id);
   }
 
   @Delete(':id')
@@ -112,8 +115,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete enrollment (Admin only)' })
-  remove(@Param('id') id: string) {
-    return this.enrollmentsService.remove(id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.enrollmentsService.remove(id, req.user.franchise_id);
   }
 
   // Course completion management endpoints
@@ -123,8 +126,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all students enrolled in a course with progress (Admin/Instructor only)' })
-  getCourseStudents(@Param('courseId') courseId: string) {
-    return this.enrollmentsService.getCourseStudents(courseId);
+  getCourseStudents(@Request() req, @Param('courseId') courseId: string) {
+    return this.enrollmentsService.getCourseStudents(courseId, req.user.franchise_id);
   }
 
   @Post('bulk-complete')
@@ -132,8 +135,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark multiple enrollments as complete (Admin only)' })
-  bulkComplete(@Body() dto: any) {
-    return this.enrollmentsService.bulkComplete(dto);
+  bulkComplete(@Request() req, @Body() dto: any) {
+    return this.enrollmentsService.bulkComplete(dto, req.user.franchise_id);
   }
 
   @Post(':enrollmentId/complete')
@@ -142,10 +145,11 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Manually mark an enrollment as complete (Admin only)' })
   manualComplete(
+    @Request() req,
     @Param('enrollmentId') enrollmentId: string,
     @Body() dto: any,
   ) {
-    return this.enrollmentsService.manualComplete(enrollmentId, dto);
+    return this.enrollmentsService.manualComplete(enrollmentId, dto, req.user.franchise_id);
   }
 
   @Patch(':enrollmentId/completion-date')
@@ -154,10 +158,11 @@ export class EnrollmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update completion date for an enrollment (Admin only)' })
   updateCompletionDate(
+    @Request() req,
     @Param('enrollmentId') enrollmentId: string,
     @Body() dto: any,
   ) {
-    return this.enrollmentsService.updateCompletionDate(enrollmentId, dto);
+    return this.enrollmentsService.updateCompletionDate(enrollmentId, dto, req.user.franchise_id);
   }
 
   @Post('admin/bulk-update-dates')
@@ -165,8 +170,8 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bulk update enrollment and completion dates (Admin only)' })
-  bulkUpdateDates(@Body() dto: any) {
-    return this.enrollmentsService.bulkUpdateDates(dto);
+  bulkUpdateDates(@Request() req, @Body() dto: any) {
+    return this.enrollmentsService.bulkUpdateDates(dto, req.user.franchise_id);
   }
 
   @Post('admin/bulk-incomplete')
@@ -174,7 +179,7 @@ export class EnrollmentsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bulk mark enrollments as incomplete and reset progress (Admin only)' })
-  bulkIncomplete(@Body() dto: any) {
-    return this.enrollmentsService.bulkIncomplete(dto);
+  bulkIncomplete(@Request() req, @Body() dto: any) {
+    return this.enrollmentsService.bulkIncomplete(dto, req.user.franchise_id);
   }
 }

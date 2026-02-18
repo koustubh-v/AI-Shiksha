@@ -207,11 +207,12 @@ export const Completions = {
         const { data } = await api.post('/completions/lesson', { lessonId });
         return data;
     },
-    updateTimeSpent: async (minutes: number) => {
-        const { data } = await api.post('/completions/tracking/time', { minutes });
+    updateTimeSpent: async (minutes: number, courseId?: string) => {
+        const { data } = await api.post('/completions/tracking/time', { minutes, courseId });
         return data;
     },
     logAccess: async (courseId: string, itemId: string) => {
+        if (!courseId || !itemId || courseId === 'undefined' || itemId === 'undefined') return; // Prevent 400 errors
         const { data } = await api.post('/completions/tracking/access', { courseId, itemId });
         return data;
     },

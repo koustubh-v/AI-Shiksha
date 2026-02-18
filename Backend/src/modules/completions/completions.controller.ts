@@ -63,9 +63,10 @@ export class CompletionsController {
     @ApiOperation({ summary: 'Update time spent (Heartbeat)' })
     async updateTimeSpent(
         @Body('minutes') minutes: number,
+        @Body('courseId') courseId: string,
         @Request() req: any,
     ) {
-        return this.completionsService.updateTimeSpent(req.user.userId, minutes);
+        return this.completionsService.updateTimeSpent(req.user.userId, minutes, courseId);
     }
 
     @Post('tracking/access')

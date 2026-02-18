@@ -84,7 +84,7 @@ export default function UsersPage() {
     const role = user.role.toLowerCase();
     if (activeTab === 'student') return role === 'student';
     if (activeTab === 'teacher') return role === 'teacher' || role === 'instructor';
-    if (activeTab === 'admin') return role === 'admin';
+    if (activeTab === 'admin') return role === 'admin' || role === 'super_admin' || role === 'franchise_admin';
     return false;
   });
 
@@ -483,7 +483,7 @@ export default function UsersPage() {
             <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
             <TabsTrigger value="student">Students ({allUsers.filter((u) => u.role === "STUDENT" || u.role === "student").length})</TabsTrigger>
             <TabsTrigger value="teacher">Teachers ({allUsers.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length})</TabsTrigger>
-            <TabsTrigger value="admin">Admins ({allUsers.filter((u) => u.role === "ADMIN" || u.role === "admin").length})</TabsTrigger>
+            <TabsTrigger value="admin">Admins ({allUsers.filter((u) => ["admin", "super_admin", "franchise_admin", "admin"].includes(u.role?.toLowerCase())).length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-4">

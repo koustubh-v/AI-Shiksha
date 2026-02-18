@@ -17,7 +17,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../enums/role.enum';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
-
 import { UpdateProfileDto, ChangePasswordDto } from './dto/update-profile.dto';
 
 @ApiTags('Users')
@@ -62,44 +61,52 @@ export class UsersController {
   @Get('leaderboard')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student leaderboard' })
-  getLeaderboard() {
-    return this.usersService.getLeaderboard();
+  getLeaderboard(@Request() req) {
+    return this.usersService.getLeaderboard(req.user.franchise_id);
   }
 
   @Get('stats/students')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student statistics (Admin only)' })
-  getStudentStats() {
-    return this.usersService.getStudentStats();
+  getStudentStats(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.usersService.getStudentStats(franchiseId);
   }
 
   @Get('stats/teachers')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get teacher statistics (Admin only)' })
-  getTeacherStats() {
-    return this.usersService.getTeacherStats();
+  getTeacherStats(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.usersService.getTeacherStats(franchiseId);
   }
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all users (Admin only)' })
-  findAll(@Query('role') role?: Role) {
-    return this.usersService.findAll(role);
+  findAll(@Query('role') role: Role, @Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = req.user?.franchise_id || null;
+    return this.usersService.findAll(role, franchiseId, isSuperAdmin);
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new user (Admin only)' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto, @Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
+    return this.usersService.create(createUserDto, franchiseId);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a user (Admin only)' })
   async delete(@Param('id') id: string, @Request() req) {
@@ -107,6 +114,9 @@ export class UsersController {
     if (id === req.user.userId) {
       throw new BadRequestException('Cannot delete your own account');
     }
-    return this.usersService.delete(id);
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.usersService.delete(id, franchiseId);
   }
 }
+

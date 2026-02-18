@@ -14,7 +14,23 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import type { CourseData } from "@/pages/dashboard/CourseBuilder";
+
+// Placeholder interface if imported one is missing
+interface CourseData {
+  title: string;
+  description: string;
+  category: string;
+  sections: any[];
+  price: number;
+  isPublic: boolean;
+  enableDrip: boolean;
+  enableComments: boolean;
+  enableReviews: boolean;
+  maxStudents: number;
+  access_days_limit?: number;
+  estimated_duration?: number;
+  enrollmentDuration?: number; // kept for compatibility if needed
+}
 
 interface CourseSettingsProps {
   data: CourseData;
@@ -63,9 +79,8 @@ export function CourseSettings({ data, onUpdate }: CourseSettingsProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div
-              className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                data.isPublic ? "border-lms-blue bg-lms-blue/5" : "border-border"
-              }`}
+              className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-colors ${data.isPublic ? "border-lms-blue bg-lms-blue/5" : "border-border"
+                }`}
               onClick={() => onUpdate({ isPublic: true })}
             >
               <div className="flex items-center gap-4">
@@ -83,9 +98,8 @@ export function CourseSettings({ data, onUpdate }: CourseSettingsProps) {
             </div>
 
             <div
-              className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                !data.isPublic ? "border-lms-blue bg-lms-blue/5" : "border-border"
-              }`}
+              className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-colors ${!data.isPublic ? "border-lms-blue bg-lms-blue/5" : "border-border"
+                }`}
               onClick={() => onUpdate({ isPublic: false })}
             >
               <div className="flex items-center gap-4">
@@ -200,11 +214,27 @@ export function CourseSettings({ data, onUpdate }: CourseSettingsProps) {
                   type="number"
                   min="0"
                   placeholder="0 = Lifetime"
-                  value={data.enrollmentDuration || ""}
-                  onChange={(e) => onUpdate({ enrollmentDuration: parseInt(e.target.value) || 0 })}
+                  value={data.access_days_limit || ""}
+                  onChange={(e) => onUpdate({ access_days_limit: parseInt(e.target.value) || 0 })}
                   className="rounded-xl"
                 />
                 <p className="text-xs text-muted-foreground">Leave 0 for lifetime access</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Estimated Duration (minutes)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 120 (2 hours)"
+                  value={data.estimated_duration || ""}
+                  onChange={(e) => onUpdate({ estimated_duration: parseInt(e.target.value) || 0 })}
+                  className="rounded-xl"
+                />
+                <p className="text-xs text-muted-foreground">Total time to complete course (for certificate)</p>
               </div>
             </div>
           </CardContent>
@@ -230,9 +260,8 @@ export function CourseSettings({ data, onUpdate }: CourseSettingsProps) {
             {completionChecks.map((check, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-3 p-3 rounded-xl ${
-                  check.done ? "bg-lms-emerald/10" : "bg-muted/30"
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-xl ${check.done ? "bg-lms-emerald/10" : "bg-muted/30"
+                  }`}
               >
                 {check.done ? (
                   <CheckCircle2 className="h-5 w-5 text-lms-emerald" />
@@ -240,9 +269,8 @@ export function CourseSettings({ data, onUpdate }: CourseSettingsProps) {
                   <AlertCircle className="h-5 w-5 text-muted-foreground" />
                 )}
                 <span
-                  className={`text-sm ${
-                    check.done ? "text-foreground" : "text-muted-foreground"
-                  }`}
+                  className={`text-sm ${check.done ? "text-foreground" : "text-muted-foreground"
+                    }`}
                 >
                   {check.label}
                 </span>

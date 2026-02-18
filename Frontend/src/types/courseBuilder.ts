@@ -106,6 +106,7 @@ export interface LectureContent {
     file_url?: string;
     file_type?: string;
     file_size?: number;
+    pdf_url?: string; // For Flipbook
 
     // Link
     external_link?: string;
@@ -271,6 +272,7 @@ export interface CreateLectureContentDTO {
     file_url?: string;
     file_type?: string;
     file_size?: number;
+    pdf_url?: string;
     external_link?: string;
 }
 

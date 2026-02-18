@@ -145,6 +145,16 @@ export class CreateCourseDto {
     discussion_forum?: boolean;
   };
 
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  access_days_limit?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  estimated_duration?: number; // In minutes
+
   @IsString()
   @IsOptional()
   author_id?: string; // Optional override for course author (Admin only)

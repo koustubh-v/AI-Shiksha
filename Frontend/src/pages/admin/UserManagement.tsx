@@ -459,9 +459,9 @@ export default function UserManagement() {
     status: 'verified',
     earnings: '$0'
   }));
-  const admins = users.filter(u => u.role === 'ADMIN').map(u => ({
+  const admins = users.filter(u => ["admin", "super_admin", "franchise_admin"].includes(u.role?.toLowerCase())).map(u => ({
     ...u,
-    role: 'Admin',
+    role: u.role === 'super_admin' ? 'Super Admin' : u.role === 'franchise_admin' ? 'Franchise Admin' : 'Admin',
     lastLogin: 'Recently'
   }));
 

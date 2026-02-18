@@ -21,16 +21,23 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.email, sub: user.id, role: user.role };
+    const payload = {
+      username: user.email,
+      sub: user.id,
+      role: user.role,
+      franchise_id: user.franchise_id || null,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
+        role: this.normalizeRole(user.role),
         avatar_url: user.avatar_url,
         bio: user.bio,
+        franchise_id: user.franchise_id || null,
+        franchise: user.franchise || null,
       },
     };
   }
@@ -52,9 +59,19 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role === 'INSTRUCTOR' ? 'teacher' : user.role.toLowerCase(),
+      role: this.normalizeRole(user.role),
       avatar_url: user.avatar_url,
       bio: user.bio,
+      franchise_id: (user as any).franchise_id || null,
+      franchise: (user as any).franchise || null,
     };
   }
+
+  private normalizeRole(role: string): string {
+    if (role === 'INSTRUCTOR') return 'teacher';
+    if (role === 'SUPER_ADMIN') return 'super_admin';
+    if (role === 'FRANCHISE_ADMIN') return 'franchise_admin';
+    return role.toLowerCase();
+  }
 }
+

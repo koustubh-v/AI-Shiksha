@@ -1,16 +1,25 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import api from "@/lib/api";
 
-export type UserRole = "student" | "teacher" | "admin";
+export type UserRole = "student" | "teacher" | "admin" | "super_admin" | "franchise_admin";
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
-  avatar_url?: string; // Matches backend field
+  avatar_url?: string;
   bio?: string;
+  franchise_id?: string | null;
+  franchise?: {
+    id: string;
+    name: string;
+    lms_name?: string;
+    logo_url?: string | null;
+    primary_color?: string;
+  } | null;
 }
+
 
 interface AuthContextType {
   user: User | null;

@@ -12,7 +12,7 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 export class CoursesService {
   constructor(private prisma: PrismaService) { }
 
-  async create(instructorUserId: string, createCourseDto: CreateCourseDto) {
+  async create(instructorUserId: string, createCourseDto: CreateCourseDto, franchiseId: string) {
     // Override instructor if author_id is provided (e.g. by Admin)
     const targetUserId = createCourseDto.author_id || instructorUserId;
 
@@ -31,12 +31,17 @@ export class CoursesService {
         throw new BadRequestException('User not found');
       }
 
-      if (user.role === 'ADMIN' || user.role === 'INSTRUCTOR') {
+      // Ensure user belongs to the same franchise
+      if (user.franchise_id && user.franchise_id !== franchiseId) {
+        throw new ForbiddenException('Cannot create course for user in different franchise');
+      }
+
+      if (user.role === 'ADMIN' || user.role === 'INSTRUCTOR' || user.role === 'SUPER_ADMIN') {
         instructor = await this.prisma.instructorProfile.create({
           data: {
             user_id: targetUserId,
-            headline: user.role === 'ADMIN' ? 'Administrator' : 'Instructor',
-            description: user.role === 'ADMIN' ? 'Platform Administrator' : 'Course Instructor',
+            headline: 'Instructor',
+            description: 'Course Instructor',
           },
         });
       } else {
@@ -58,6 +63,7 @@ export class CoursesService {
         ...courseData,
         slug: courseData.slug || courseData.title.toLowerCase().replace(/ /g, '-') + '-' + Date.now(),
         instructor_id: instructor.id,
+        franchise_id: franchiseId,
         category_id: category_id || null,
         prerequisites: prerequisite_course_ids
           ? {
@@ -107,8 +113,12 @@ export class CoursesService {
     });
   }
 
-  async findAll(adminRequest: boolean = false) {
+  async findAll(adminRequest: boolean = false, franchiseId?: string) {
     const whereClause: any = adminRequest ? {} : { status: 'PUBLISHED' };
+
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
 
     console.log('Finding courses with where clause:', whereClause);
 
@@ -163,7 +173,7 @@ export class CoursesService {
     }));
   }
 
-  async findMyCourses(userId: string) {
+  async findMyCourses(userId: string, franchiseId?: string) {
     const instructor = await this.prisma.instructorProfile.findUnique({
       where: { user_id: userId },
     });
@@ -172,8 +182,13 @@ export class CoursesService {
       return [];
     }
 
+    const whereClause: any = { instructor_id: instructor.id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     const courses = await this.prisma.course.findMany({
-      where: { instructor_id: instructor.id },
+      where: whereClause,
       include: {
         _count: {
           select: {
@@ -212,9 +227,14 @@ export class CoursesService {
     }));
   }
 
-  async findOne(id: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id },
+  async findOne(id: string, franchiseId?: string) {
+    const whereClause: any = { id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
       include: {
         instructor: { include: { user: true } },
         category: true,
@@ -261,9 +281,14 @@ export class CoursesService {
     return course;
   }
 
-  async findBySlug(slug: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { slug },
+  async findBySlug(slug: string, franchiseId?: string) {
+    const whereClause: any = { slug };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
       include: {
         instructor: { include: { user: true } },
         category: true,
@@ -320,16 +345,24 @@ export class CoursesService {
     updateCourseDto: UpdateCourseDto,
     userId: string,
     userRole?: string,
+    franchiseId?: string
   ) {
-    const course = await this.prisma.course.findUnique({
-      where: { id },
+    console.log(`[CoursesService.update] ID: ${id}, DTO:`, JSON.stringify(updateCourseDto, null, 2));
+
+    const whereClause: any = { id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
       include: { instructor: true },
     });
 
     if (!course) throw new NotFoundException('Course not found');
 
-    // Verify ownership (skip for Admin)
-    if (course.instructor.user_id !== userId && userRole !== 'ADMIN') {
+    // Verify ownership (skip for Admin/SuperAdmin)
+    if (userRole !== 'SUPER_ADMIN' && userRole !== 'ADMIN' && course.instructor.user_id !== userId) {
       throw new BadRequestException('You do not own this course'); // Or ForbiddenException
     }
 
@@ -347,11 +380,11 @@ export class CoursesService {
       if (!targetInstructor) {
         // Auto-create if not exists (similar to create logic)
         const user = await this.prisma.user.findUnique({ where: { id: author_id } });
-        if (user && (user.role === 'ADMIN' || user.role === 'INSTRUCTOR')) {
+        if (user && (user.role === 'ADMIN' || user.role === 'INSTRUCTOR' || user.role === 'SUPER_ADMIN')) {
           targetInstructor = await this.prisma.instructorProfile.create({
             data: {
               user_id: author_id,
-              headline: user.role === 'ADMIN' ? 'Administrator' : 'Instructor',
+              headline: 'Instructor',
               description: 'Course Instructor',
             }
           });
@@ -487,9 +520,14 @@ export class CoursesService {
     });
   }
 
-  async remove(id: string, userId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id },
+  async remove(id: string, userId: string, franchiseId?: string) {
+    const whereClause: any = { id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
       include: { instructor: true },
     });
 
@@ -507,10 +545,15 @@ export class CoursesService {
 
   // ========== APPROVAL WORKFLOW METHODS ==========
 
-  async submitForApproval(courseId: string, userId: string) {
+  async submitForApproval(courseId: string, userId: string, franchiseId?: string) {
+    const whereClause: any = { id: courseId };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     // Verify ownership
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
       include: { instructor: true },
     });
 
@@ -541,9 +584,14 @@ export class CoursesService {
     });
   }
 
-  async approveCourse(courseId: string, adminUserId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
+  async approveCourse(courseId: string, adminUserId: string, franchiseId?: string) {
+    const whereClause: any = { id: courseId };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
     });
 
     if (!course) {
@@ -566,13 +614,19 @@ export class CoursesService {
         instructor: { include: { user: true } },
         approver: true,
         category: true,
+        tags: { include: { tag: true } },
       },
     });
   }
 
-  async rejectCourse(courseId: string, adminUserId: string, reason: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
+  async rejectCourse(courseId: string, adminUserId: string, reason: string, franchiseId?: string) {
+    const whereClause: any = { id: courseId };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
     });
 
     if (!course) {
@@ -598,10 +652,15 @@ export class CoursesService {
     });
   }
 
-  async publishCourse(courseId: string, adminUserId: string) {
+  async publishCourse(courseId: string, adminUserId: string, franchiseId?: string) {
+    const whereClause: any = { id: courseId };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     // Admin can directly publish any course
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
+    const course = await this.prisma.course.findFirst({
+      where: whereClause,
     });
 
     if (!course) {
@@ -623,9 +682,14 @@ export class CoursesService {
     });
   }
 
-  async getPendingApproval() {
+  async getPendingApproval(franchiseId?: string) {
+    const whereClause: any = { status: 'PENDING_APPROVAL' };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
     return (this.prisma as any).course.findMany({
-      where: { status: 'PENDING_APPROVAL' },
+      where: whereClause,
       include: {
         instructor: { include: { user: true } },
         category: true,

@@ -23,6 +23,8 @@ import {
   Award,
   ChevronDown,
   ChevronRight,
+  Bot,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,8 +75,10 @@ const getNavItems = (role: UserRole): NavItem[] => {
         { icon: HelpCircle, label: "Support", href: "/dashboard/support" },
         { icon: Settings, label: "Profile Settings", href: "/dashboard/settings" },
       ];
+    case "super_admin":
+    case "franchise_admin":
     case "admin":
-      return [
+      const adminItems = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         {
           icon: BookOpen,
@@ -87,10 +91,18 @@ const getNavItems = (role: UserRole): NavItem[] => {
           ],
         },
         { icon: Users, label: "User Management", href: "/dashboard/users" },
+        { icon: Bot, label: "Ai Control Center", href: "/dashboard/ai-control" },
         { icon: DollarSign, label: "Revenue", href: "/dashboard/revenue" },
-        { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
+        { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
         { icon: Settings, label: "Settings", href: "/dashboard/platform-settings" },
       ];
+
+      if (role === "super_admin") {
+        // Insert Franchise Management after Dashboard
+        adminItems.splice(1, 0, { icon: Users, label: "Franchises", href: "/dashboard/franchises" });
+      }
+
+      return adminItems;
     default:
       return [];
   }

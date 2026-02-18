@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -7,27 +7,37 @@ import { Role } from '../../enums/role.enum';
 
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
   @Get('stats')
-  getStats() {
-    return this.adminService.getPlatformStats();
+  getStats(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.adminService.getPlatformStats(franchiseId);
   }
 
   @Get('analytics/user-growth')
-  getUserGrowth() {
-    return this.adminService.getUserGrowth();
+  getUserGrowth(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.adminService.getUserGrowth(franchiseId);
   }
 
   @Get('analytics/revenue')
-  getRevenue() {
-    return this.adminService.getRevenueData();
+  getRevenue(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.adminService.getRevenueData(franchiseId);
   }
 
   @Get('pending-actions')
-  getPendingActions() {
-    return this.adminService.getPendingActions();
+  getPendingActions(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.adminService.getPendingActions(franchiseId);
   }
 }
+
+

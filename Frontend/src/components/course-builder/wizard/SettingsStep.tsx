@@ -27,6 +27,8 @@ const formSchema = z.object({
     is_private: z.boolean().default(false),
     password: z.string().optional(),
     max_students: z.coerce.number().min(0).optional(),
+    access_days_limit: z.coerce.number().min(0).optional(),
+    estimated_duration: z.coerce.number().min(0).optional(),
     drip_enabled: z.boolean().default(false),
     certificate_enabled: z.boolean().default(false),
     // SEO Settings
@@ -63,11 +65,13 @@ export function SettingsStep({ courseId, initialData, onSave, onSaveAndContinue,
         defaultValues: {
             is_free: initialData?.is_free || false,
             price: initialData?.price || 0,
-            original_price: initialData?.original_price || undefined,
-            discount_percentage: initialData?.discount_percentage || undefined,
+            original_price: initialData?.original_price || '',
+            discount_percentage: initialData?.discount_percentage || '',
             is_private: initialData?.is_private || false,
             password: initialData?.password || '',
-            max_students: initialData?.max_students || undefined,
+            max_students: initialData?.max_students || '',
+            access_days_limit: initialData?.access_days_limit || '',
+            estimated_duration: initialData?.estimated_duration || '',
             drip_enabled: initialData?.drip_enabled || false,
             certificate_enabled: initialData?.certificate_enabled || false,
             meta_title: initialData?.meta_title || '',
@@ -360,6 +364,26 @@ export function SettingsStep({ courseId, initialData, onSave, onSaveAndContinue,
                                         </FormItem>
                                     )}
                                 />
+
+                                <FormField
+                                    control={form.control}
+                                    name="access_days_limit"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-sm font-medium text-gray-700 ml-1">Access Duration (Days)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0 for lifetime"
+                                                    className="h-12 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 focus:ring-0 transition-all"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription className="ml-1 text-xs text-gray-400">Leave 0/Empty for lifetime access.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </CardContent>
                         </Card>
 
@@ -377,6 +401,25 @@ export function SettingsStep({ courseId, initialData, onSave, onSaveAndContinue,
                                 </div>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="estimated_duration"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-sm font-medium text-gray-700 ml-1">Estimated Duration (Minutes)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="e.g. 120"
+                                                    className="h-12 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-orange-500 focus:ring-0 transition-all"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription className="ml-1 text-xs text-gray-400">Total time displayed on certificate.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <FormField
                                     control={form.control}
                                     name="drip_enabled"

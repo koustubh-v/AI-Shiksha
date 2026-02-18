@@ -1,211 +1,240 @@
+import { useState } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Bot,
-  Brain,
-  Zap,
-  DollarSign,
-  TrendingUp,
-  Activity,
-  Settings,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bot, MessageSquare, Smartphone, Zap, ExternalLink, Key, Plus, Trash2, Edit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
 
-const usageData = [
-  { date: "Jan 1", tokens: 45000 },
-  { date: "Jan 8", tokens: 52000 },
-  { date: "Jan 15", tokens: 48000 },
-  { date: "Jan 22", tokens: 61000 },
-  { date: "Jan 29", tokens: 55000 },
-  { date: "Feb 5", tokens: 67000 },
-  { date: "Feb 12", tokens: 72000 },
-];
+type BotStatus = "active" | "inactive";
 
-const aiModels = [
-  { name: "GPT-4", status: "active", usage: 78, cost: "$1,245" },
-  { name: "GPT-3.5 Turbo", status: "active", usage: 92, cost: "$345" },
-  { name: "Claude 3", status: "inactive", usage: 0, cost: "$0" },
-  { name: "Gemini Pro", status: "active", usage: 45, cost: "$189" },
-];
+interface Chatbot {
+  id: string;
+  name: string;
+  role: string;
+  status: BotStatus;
+}
 
 export default function AIControlPage() {
-  return (
-    <AdminDashboardLayout title="AI Control Center" subtitle="Monitor and manage AI integrations">
-      <div className="space-y-4 md:space-y-6">
-        {/* Stats */}
-        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Total Tokens Used</p>
-                  <p className="text-lg md:text-2xl font-bold">2.4M</p>
-                </div>
-                <Bot className="h-6 w-6 md:h-8 md:w-8 text-primary/50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Monthly Cost</p>
-                  <p className="text-lg md:text-2xl font-bold">$1,779</p>
-                </div>
-                <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-chart-3/50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">AI Interactions</p>
-                  <p className="text-lg md:text-2xl font-bold">45.2K</p>
-                </div>
-                <Brain className="h-6 w-6 md:h-8 md:w-8 text-accent/50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Avg Response Time</p>
-                  <p className="text-lg md:text-2xl font-bold">1.2s</p>
-                </div>
-                <Zap className="h-6 w-6 md:h-8 md:w-8 text-chart-4/50" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+  const { toast } = useToast();
+  const [isAiEnabled, setIsAiEnabled] = useState(true);
+  const [apiKey, setApiKey] = useState("");
+  const [chatbots, setChatbots] = useState<Chatbot[]>([
+    { id: "1", name: "Support Assistant", role: "Customer Support", status: "active" },
+    { id: "2", name: "Course Advisor", role: "Sales", status: "inactive" },
+  ]);
+  const [whatsappBots, setWhatsappBots] = useState<Chatbot[]>([
+    { id: "1", name: "Enrollment Helper", role: "Onboarding", status: "active" },
+  ]);
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Usage Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Token Usage Trend
-              </CardTitle>
+  const handleSaveApiKey = () => {
+    // In a real app, this would save to backend/localStorage
+    toast({
+      title: "API Key Saved",
+      description: "Your Gemini API key has been securely stored.",
+    });
+  };
+
+  const handleToggleAi = (enabled: boolean) => {
+    setIsAiEnabled(enabled);
+    toast({
+      title: enabled ? "AI Enabled" : "AI Disabled",
+      description: `Artificial Intelligence features are now ${enabled ? "active" : "disabled"} across the platform.`,
+      variant: enabled ? "default" : "destructive",
+    });
+  };
+
+  return (
+    <AdminDashboardLayout title="Ai Control Center" subtitle="Manage your AI integrations and automated agents">
+      <div className="space-y-6 max-w-6xl mx-auto pb-10">
+
+        {/* Global Control & API Key Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+
+          {/* Global AI Switch */}
+          <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-xl">Global AI Control</CardTitle>
+                <CardDescription>Master switch for all AI features</CardDescription>
+              </div>
+              <Zap className={`h-8 w-8 ${isAiEnabled ? "text-primary fill-primary/20" : "text-muted-foreground"}`} />
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={usageData}>
-                    <defs>
-                      <linearGradient id="tokenGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} className="text-xs" />
-                    <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(v) => `${v / 1000}K`} />
-                    <Tooltip formatter={(value: number) => [`${value.toLocaleString()} tokens`, "Usage"]} />
-                    <Area
-                      type="monotone"
-                      dataKey="tokens"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      fill="url(#tokenGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="flex items-center justify-between mt-2 p-4 bg-muted/30 rounded-lg border">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Enable AI Features</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Turn on/off AI generation, chatbots, and automation across the entire website.
+                  </p>
+                </div>
+                <Switch
+                  checked={isAiEnabled}
+                  onCheckedChange={handleToggleAi}
+                  className="scale-125"
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* AI Models */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                AI Models
+          {/* Gemini API Key */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Key className="h-5 w-5 text-yellow-500" />
+                Gemini API Configuration
               </CardTitle>
+              <CardDescription>Enter your Google Gemini API key to power the AI</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {aiModels.map((model) => (
-                <div key={model.name} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-2 w-2 rounded-full ${model.status === "active" ? "bg-accent" : "bg-muted-foreground"}`} />
-                    <div>
-                      <p className="font-medium">{model.name}</p>
-                      <p className="text-sm text-muted-foreground">{model.cost} this month</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {model.usage > 0 && (
-                      <div className="w-24">
-                        <Progress value={model.usage} className="h-2" />
-                      </div>
-                    )}
-                    <Switch checked={model.status === "active"} />
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="api-key">Gemini API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="api-key"
+                      type="password"
+                      placeholder="AIzaSy..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button onClick={handleSaveApiKey}>Save</Button>
                   </div>
                 </div>
-              ))}
+                <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                  <ExternalLink className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Don't have an API key?</p>
+                    <p>
+                      Get your free Gemini API key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900 dark:hover:text-blue-200">Google AI Studio</a>.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">AI Tutor Enabled</Label>
-                  <p className="text-sm text-muted-foreground">Enable AI tutor for all courses</p>
+        {/* Bots Management */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold tracking-tight">Automated Agents</h2>
+          </div>
+
+          <Tabs defaultValue="chatbots" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+              <TabsTrigger value="chatbots" className="flex items-center gap-2">
+                <Bot className="h-4 w-4" /> Web Chatbots
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4" /> WhatsApp Bots
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Web Chatbots Content */}
+            <TabsContent value="chatbots" className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-medium">Manage Web Chatbots</h3>
+                  <p className="text-sm text-muted-foreground">Configure AI assistants deployed on your website.</p>
                 </div>
-                <Switch defaultChecked />
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Bot
+                </Button>
               </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">Auto-Moderation</Label>
-                  <p className="text-sm text-muted-foreground">AI content moderation</p>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {chatbots.map((bot) => (
+                  <Card key={bot.id} className="overflow-hidden border-t-4 border-t-purple-500">
+                    <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                          {bot.name}
+                        </CardTitle>
+                        <CardDescription>{bot.role}</CardDescription>
+                      </div>
+                      <Badge variant={bot.status === "active" ? "default" : "secondary"}>
+                        {bot.status}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="mt-4 flex gap-2">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Edit className="h-3 w-3 mr-2" /> Configure
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Add New Card Placeholder */}
+                <Button variant="outline" className="h-[140px] flex flex-col items-center justify-center border-dashed gap-2 hover:bg-muted/50">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="font-medium">Add Chatbot</span>
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* WhatsApp Bots Content */}
+            <TabsContent value="whatsapp" className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-medium">Manage WhatsApp Bots</h3>
+                  <p className="text-sm text-muted-foreground">Automate conversations on WhatsApp Business API.</p>
                 </div>
-                <Switch defaultChecked />
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Link WhatsApp Number
+                </Button>
               </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">AI Insights</Label>
-                  <p className="text-sm text-muted-foreground">Generate learning insights</p>
-                </div>
-                <Switch defaultChecked />
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {whatsappBots.map((bot) => (
+                  <Card key={bot.id} className="overflow-hidden border-t-4 border-t-green-500">
+                    <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          <Smartphone className="h-4 w-4 text-muted-foreground" />
+                          {bot.name}
+                        </CardTitle>
+                        <CardDescription>{bot.role}</CardDescription>
+                      </div>
+                      <Badge variant={bot.status === "active" ? "default" : "secondary"} className="bg-green-600 hover:bg-green-700">
+                        {bot.status}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="mt-4 flex gap-2">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Edit className="h-3 w-3 mr-2" /> Configure
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Add New Card Placeholder */}
+                <Button variant="outline" className="h-[140px] flex flex-col items-center justify-center border-dashed gap-2 hover:bg-muted/50">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="font-medium">Connect Number</span>
+                </Button>
               </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">Plagiarism Detection</Label>
-                  <p className="text-sm text-muted-foreground">Scan submissions for plagiarism</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">Safety Filters</Label>
-                  <p className="text-sm text-muted-foreground">Block inappropriate content</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label className="font-medium">Usage Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Alert on high usage</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </AdminDashboardLayout>
   );

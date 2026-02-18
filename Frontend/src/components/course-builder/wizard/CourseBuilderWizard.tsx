@@ -73,6 +73,7 @@ export function CourseBuilderWizard() {
             };
 
             console.log('Saving course features:', cleanedData.course_features);
+            console.log('Full settings payload:', JSON.stringify(cleanedData, null, 2));
             await Courses.update(courseId!, cleanedData);
             setCourse({ ...course, ...cleanedData }); // Update local state with cleaned data
             toast.success(shouldNavigate ? 'Settings saved, proceeding...' : 'Settings saved successfully');

@@ -13,7 +13,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/editors/RichTextEditor';
-import { Video, FileText, Link as LinkIcon, Type, Clock, CheckCircle2, Eye, Save, X, UploadCloud, Loader2 } from 'lucide-react';
+import { Video, FileText, Link as LinkIcon, Type, Clock, CheckCircle2, Eye, Save, X, UploadCloud, Loader2, BookOpen } from 'lucide-react';
 import type { SectionItem, LectureContentType } from '@/types/courseBuilder';
 
 interface LessonEditorProps {
@@ -43,6 +43,7 @@ export function LessonEditor({
     const [textContent, setTextContent] = useState<string | object>('');
     const [videoUrl, setVideoUrl] = useState('');
     const [attachmentUrl, setAttachmentUrl] = useState('');
+    const [pdfUrl, setPdfUrl] = useState('');
     const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
@@ -58,6 +59,7 @@ export function LessonEditor({
                 // Initialize all fields if they exist
                 setVideoUrl(content.video_url || '');
                 setAttachmentUrl(content.file_url || '');
+                setPdfUrl(content.pdf_url || '');
 
                 if (content.text_content) {
                     if (typeof content.text_content === 'object') {
@@ -83,7 +85,7 @@ export function LessonEditor({
         }
     }, [open, item]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'VIDEO' | 'FILE') => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'VIDEO' | 'FILE' | 'PDF') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -108,6 +110,9 @@ export function LessonEditor({
                 // Construct full URL if backend returns relative
                 const url = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
                 setVideoUrl(url);
+            } else if (type === 'PDF') {
+                const url = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
+                setPdfUrl(url);
             } else {
                 const url = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
                 setAttachmentUrl(url);
@@ -168,6 +173,7 @@ export function LessonEditor({
                 text_content: typeof textContent === 'string' ? textContent : JSON.stringify(textContent),
                 video_url: videoUrl,
                 file_url: attachmentUrl,
+                pdf_url: pdfUrl,
                 content_type: 'TEXT' // Default, or maybe 'MIXED' if permitted
             } as any);
         }
@@ -274,10 +280,51 @@ export function LessonEditor({
                                 )}
                             </div>
 
+                            {/* PDF Flipbook Source Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-b">
+                                    <BookOpen className="h-5 w-5 text-red-600" />
+                                    <h3 className="font-semibold text-gray-900">Upload PDF Source (Flipbook)</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label>Upload PDF for Flipbook Viewer</Label>
+                                        <div className="relative">
+                                            <Input
+                                                type="file"
+                                                accept="application/pdf"
+                                                className="pl-10 pt-2"
+                                                onChange={(e) => handleFileUpload(e, 'PDF')}
+                                                disabled={isUploading}
+                                            />
+                                            <UploadCloud className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Or Paste PDF URL</Label>
+                                        <Input
+                                            placeholder="https://..."
+                                            value={pdfUrl}
+                                            onChange={(e) => setPdfUrl(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                {pdfUrl && (
+                                    <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-2 text-sm text-red-600 break-all">
+                                        <FileText className="h-4 w-4 shrink-0" />
+                                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                            {pdfUrl}
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+
+
+
                             {/* Attachments Section */}
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-b">
-                                    <FileText className="h-5 w-5 text-orange-600" />
+                                    <LinkIcon className="h-5 w-5 text-orange-600" />
                                     <h3 className="font-semibold text-gray-900">Downloadable Material</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

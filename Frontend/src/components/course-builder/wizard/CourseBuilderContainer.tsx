@@ -27,9 +27,9 @@ export function CourseBuilderContainer({ children }: CourseBuilderContainerProps
         return <Navigate to="/login" replace />;
     }
 
-    const isInstructor = user.role !== "admin";
-    const SidebarComponent = isInstructor ? UnifiedSidebar : AdminSidebar;
-    const MobileSidebarComponent = isInstructor ? UnifiedMobileSidebar : AdminMobileSidebar;
+    const isAdmin = ["admin", "super_admin", "franchise_admin"].includes(user.role?.toLowerCase() || "");
+    const SidebarComponent = isAdmin ? AdminSidebar : UnifiedSidebar;
+    const MobileSidebarComponent = isAdmin ? AdminMobileSidebar : UnifiedMobileSidebar;
 
     return (
         <div className="flex min-h-screen w-full bg-muted/30">
@@ -55,7 +55,7 @@ export function CourseBuilderContainer({ children }: CourseBuilderContainerProps
             <div
                 className={cn(
                     "flex flex-1 flex-col transition-all duration-300 min-h-screen",
-                    collapsed ? "md:pl-[70px]" : isInstructor ? "md:pl-[260px]" : "md:pl-[280px]",
+                    collapsed ? "md:pl-[70px]" : !isAdmin ? "md:pl-[260px]" : "md:pl-[280px]",
                     "pt-16 md:pt-0" // Add padding top on mobile for the fixed header
                 )}
             >

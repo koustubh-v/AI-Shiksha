@@ -25,11 +25,11 @@ export class CoursesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new course' })
   create(@Request() req, @Body() createCourseDto: CreateCourseDto) {
-    return this.coursesService.create(req.user.userId, createCourseDto);
+    return this.coursesService.create(req.user.userId, createCourseDto, req.user.franchise_id);
   }
 
   @Get('my')
@@ -38,7 +38,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List instructor courses' })
   findMyCourses(@Request() req) {
-    return this.coursesService.findMyCourses(req.user.userId);
+    return this.coursesService.findMyCourses(req.user.userId, req.user.franchise_id);
   }
 
   @Get('admin/all')
@@ -46,26 +46,31 @@ export class CoursesController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all courses (Admin)' })
-  findAllAdmin() {
-    return this.coursesService.findAll(true);
+  findAllAdmin(@Request() req) {
+    return this.coursesService.findAll(true, req.user.franchise_id);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all published courses' })
-  findAll() {
-    return this.coursesService.findAll();
+  findAll(@Request() req) {
+    // For public access, we might need tenant context from middleware if not logged in
+    // TenantMiddleware injects franchiseId into request object directly
+    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    return this.coursesService.findAll(false, franchiseId);
   }
 
   @Get('slug/:slug')
   @ApiOperation({ summary: 'Get course by slug (published only)' })
-  findBySlug(@Param('slug') slug: string) {
-    return this.coursesService.findBySlug(slug);
+  findBySlug(@Param('slug') slug: string, @Request() req) {
+    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    return this.coursesService.findBySlug(slug, franchiseId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get course details' })
-  findOne(@Param('id') id: string) {
-    return this.coursesService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    return this.coursesService.findOne(id, franchiseId);
   }
 
   @Patch(':id')
@@ -83,6 +88,7 @@ export class CoursesController {
       updateCourseDto,
       req.user.userId,
       req.user.role,
+      req.user.franchise_id
     );
   }
 
@@ -92,7 +98,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete course' })
   remove(@Request() req, @Param('id') id: string) {
-    return this.coursesService.remove(id, req.user.userId);
+    return this.coursesService.remove(id, req.user.userId, req.user.franchise_id);
   }
 
   // ========== APPROVAL WORKFLOW ==========
@@ -103,7 +109,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit course for admin approval' })
   submitForApproval(@Request() req, @Param('id') id: string) {
-    return this.coursesService.submitForApproval(id, req.user.userId);
+    return this.coursesService.submitForApproval(id, req.user.userId, req.user.franchise_id);
   }
 
   @Post(':id/approve')
@@ -112,7 +118,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve course (Admin only)' })
   approveCourse(@Request() req, @Param('id') id: string) {
-    return this.coursesService.approveCourse(id, req.user.userId);
+    return this.coursesService.approveCourse(id, req.user.userId, req.user.franchise_id);
   }
 
   @Post(':id/reject')
@@ -129,6 +135,7 @@ export class CoursesController {
       id,
       req.user.userId,
       body.rejection_reason,
+      req.user.franchise_id
     );
   }
 
@@ -138,7 +145,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Publish course' })
   publishCourse(@Request() req, @Param('id') id: string) {
-    return this.coursesService.publishCourse(id, req.user.userId);
+    return this.coursesService.publishCourse(id, req.user.userId, req.user.franchise_id);
   }
 
   @Get('pending-approval/list')
@@ -146,7 +153,8 @@ export class CoursesController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get courses pending approval (Admin only)' })
-  getPendingApproval() {
-    return this.coursesService.getPendingApproval();
+  getPendingApproval(@Request() req) {
+    return this.coursesService.getPendingApproval(req.user.franchise_id);
   }
 }
+

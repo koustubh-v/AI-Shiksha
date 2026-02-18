@@ -16,7 +16,11 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    // Assuming user is attached to request by AuthGuard
+    // SUPER_ADMIN bypasses all role restrictions
+    if (user?.role === Role.SUPER_ADMIN) {
+      return true;
+    }
     return requiredRoles.some((role) => user.role === role);
   }
 }
+

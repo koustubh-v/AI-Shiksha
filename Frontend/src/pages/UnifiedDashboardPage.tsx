@@ -10,12 +10,16 @@ export default function UnifiedDashboardPage() {
   const { user } = useAuth();
 
   const getTitle = () => {
-    switch (user?.role) {
+    const role = user?.role?.toLowerCase();
+    switch (role) {
       case "teacher":
+      case "instructor":
         return "Instructor Dashboard";
       case "student":
         return "My Learning Dashboard";
       case "admin":
+      case "super_admin":
+      case "franchise_admin":
         return "Admin Dashboard";
       default:
         return "Dashboard";
@@ -26,8 +30,10 @@ export default function UnifiedDashboardPage() {
     return `Welcome back, ${user?.name || "User"}!`;
   };
 
+  const isAdminRole = ["admin", "super_admin", "franchise_admin"].includes(user?.role?.toLowerCase() || "");
+
   // Admin uses the new AdminDashboardLayout
-  if (user?.role === "admin") {
+  if (isAdminRole) {
     return (
       <AdminDashboardLayout title={getTitle()} subtitle={getSubtitle()}>
         <AdminDashboardContent />
@@ -37,13 +43,16 @@ export default function UnifiedDashboardPage() {
 
   // Other roles use UnifiedDashboard
   const renderContent = () => {
-    switch (user?.role) {
+    const role = user?.role?.toLowerCase();
+    switch (role) {
       case "teacher":
+      case "instructor":
         return <TeacherDashboardContent />;
       case "student":
         return <StudentDashboard />;
       default:
-        return <div>Invalid role</div>;
+        // Fallback for unexpected roles, but unlikely with typical use
+        return <div>Invalid role: {user?.role}</div>;
     }
   };
 

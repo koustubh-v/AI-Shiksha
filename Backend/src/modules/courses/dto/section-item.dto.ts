@@ -127,6 +127,10 @@ export class CreateLectureContentDto {
   @IsOptional()
   file_size?: number;
 
+  @IsString()
+  @IsOptional()
+  pdf_url?: string;
+
   // External link
   @IsString()
   @IsOptional()

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useFranchise } from "@/contexts/FranchiseContext";
 import {
   LayoutDashboard,
   Users,
@@ -58,6 +59,7 @@ import {
   Plus,
   Award,
   CheckSquare,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -113,33 +115,18 @@ const adminNavItems: NavItem[] = [
     ],
   },
   {
-    icon: Brain,
-    label: "AI & Automation",
-    children: [
-      { icon: Bot, label: "AI Control Center", href: "/dashboard/ai-control" },
-      { icon: Sparkles, label: "AI Tutor Settings", href: "/dashboard/ai-tutor" },
-      { icon: AlertCircle, label: "AI Moderation", href: "/dashboard/ai-moderation" },
-      { icon: Zap, label: "AI Insights", href: "/dashboard/ai-insights" },
-    ],
-  },
-  {
     icon: DollarSign,
     label: "Revenue",
     children: [
-      { icon: TrendingUp, label: "Overview", href: "/dashboard/revenue" },
-      { icon: CreditCard, label: "Transactions", href: "/dashboard/transactions" },
-      { icon: Wallet, label: "Payouts", href: "/dashboard/payouts", badge: "12" },
+      { icon: TrendingUp, label: "Transactions", href: "/dashboard/revenue" },
       { icon: Tag, label: "Coupons", href: "/dashboard/coupons" },
-      { icon: Crown, label: "Subscriptions", href: "/dashboard/subscriptions" },
+      { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
     ],
   },
   {
-    icon: BarChart3,
-    label: "Analytics",
-    children: [
-      { icon: BarChart3, label: "Overview", href: "/dashboard/analytics" },
-      { icon: FileText, label: "Reports", href: "/dashboard/reports" },
-    ],
+    icon: Bot,
+    label: "Ai Control Center",
+    href: "/dashboard/ai-control",
   },
   {
     icon: Building2,
@@ -155,17 +142,12 @@ const adminNavItems: NavItem[] = [
     children: [
       { icon: Megaphone, label: "Announcements", href: "/dashboard/announcements" },
       { icon: Ticket, label: "Support Tickets", href: "/dashboard/tickets", badge: "8" },
-      { icon: MessagesSquare, label: "Community", href: "/dashboard/community" },
     ],
   },
   {
     icon: Shield,
     label: "Security",
-    children: [
-      { icon: Shield, label: "Overview", href: "/dashboard/security" },
-      { icon: History, label: "Audit Logs", href: "/dashboard/audit-logs" },
-      { icon: Database, label: "Data Privacy", href: "/dashboard/data-privacy" },
-    ],
+    href: "/dashboard/security",
   },
   {
     icon: Settings,
@@ -173,17 +155,6 @@ const adminNavItems: NavItem[] = [
     children: [
       { icon: Palette, label: "Platform", href: "/dashboard/platform-settings" },
       { icon: Search, label: "SEO Settings", href: "/dashboard/seo-settings" },
-      { icon: Link2, label: "Integrations", href: "/dashboard/integrations" },
-      { icon: Bell, label: "Notifications", href: "/dashboard/notification-settings" },
-    ],
-  },
-  {
-    icon: Key,
-    label: "Developer",
-    children: [
-      { icon: Key, label: "API Keys", href: "/dashboard/api-keys" },
-      { icon: Webhook, label: "Webhooks", href: "/dashboard/webhooks" },
-      { icon: Flag, label: "Feature Flags", href: "/dashboard/feature-flags" },
     ],
   },
   {
@@ -203,6 +174,7 @@ export function AdminSidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { collapsed, setCollapsed } = useSidebarContext();
+  const { branding } = useFranchise();
 
   // Determine which group contains the active route
   const getActiveGroups = (): string[] => {
@@ -380,15 +352,20 @@ export function AdminSidebar() {
       {/* Logo & Collapse */}
       <div className="flex h-14 items-center justify-between border-b border-white/10 px-4 flex-shrink-0">
         <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", collapsed ? "w-9" : "w-full")}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0">
-            <GraduationCap className="h-5 w-5 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0 overflow-hidden">
+            {branding.logo_url ? (
+              <img src={branding.logo_url} alt={branding.lms_name} className="h-9 w-9 object-cover" />
+            ) : (
+              <GraduationCap className="h-5 w-5 text-white" />
+            )}
           </div>
           <div className={cn("whitespace-nowrap transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
-            <span className="font-bold text-white">LearnAI</span>
+            <span className="font-bold text-white">{branding.lms_name}</span>
             <p className="text-[10px] text-white/50 uppercase tracking-wider">Admin Panel</p>
           </div>
         </div>
       </div>
+
 
       {/* Collapse Toggle Button */}
       <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
@@ -415,7 +392,15 @@ export function AdminSidebar() {
       {/* Main Navigation */}
       <ScrollArea className="flex-1 px-3 py-3">
         <nav className="space-y-0.5">
-          {adminNavItems.map((item) => renderNavItem(item))}
+          {adminNavItems
+            .filter((item) => {
+              // Hide Franchise menu for non-super_admins
+              if (item.label === "Franchise" && user.role !== "super_admin") {
+                return false;
+              }
+              return true;
+            })
+            .map((item) => renderNavItem(item))}
         </nav>
       </ScrollArea>
 

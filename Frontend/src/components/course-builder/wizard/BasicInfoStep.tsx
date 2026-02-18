@@ -97,9 +97,13 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
         u.role === 'ADMIN' ||
         u.role === 'INSTRUCTOR' ||
         u.role === 'TEACHER' ||
+        u.role === 'SUPER_ADMIN' ||
+        u.role === 'FRANCHISE_ADMIN' ||
         u.role === 'admin' ||
         u.role === 'instructor' ||
-        u.role === 'teacher'
+        u.role === 'teacher' ||
+        u.role === 'super_admin' ||
+        u.role === 'franchise_admin'
     );
 
     const form = useForm<z.infer<typeof formSchema>>({

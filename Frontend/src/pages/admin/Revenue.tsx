@@ -198,7 +198,9 @@ export default function RevenuePage() {
     </div>
   );
 
-  if (user?.role === "admin") {
+  const isAdminRole = ["admin", "super_admin", "franchise_admin"].includes(user?.role?.toLowerCase() || "");
+
+  if (isAdminRole) {
     return (
       <AdminDashboardLayout title="Revenue" subtitle="Track revenue and financial performance">
         {content}

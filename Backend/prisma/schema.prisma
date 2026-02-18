@@ -11,6 +11,30 @@ enum Role {
   STUDENT
   INSTRUCTOR
   ADMIN
+  SUPER_ADMIN
+  FRANCHISE_ADMIN
+}
+
+model Franchise {
+  id              String   @id @default(uuid())
+  name            String
+  lms_name        String?
+  domain          String   @unique
+  logo_url        String?
+  primary_color   String?  @default("#6366f1")
+  support_email   String?
+  is_active       Boolean  @default(true)
+  domain_verified Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  users        User[]
+  courses      Course[]
+  enrollments  Enrollment[]
+  payments     Payment[]
+  certificates Certificate[]
+
+  @@map("franchises")
 }
 
 model User {
@@ -24,6 +48,10 @@ model User {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
   xp            Int      @default(0)
+
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
 
   instructor_profile InstructorProfile?
   enrollments        Enrollment[]
@@ -103,6 +131,10 @@ model Course {
   language          String? @default("English")
   learning_outcomes Json? // Array of learning outcomes
 
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+
   // Approval Workflow
   status                    String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, PUBLISHED, REJECTED
   submitted_for_approval_at DateTime?
@@ -132,6 +164,10 @@ model Course {
   certificate_title       String?
   certificate_description String?
   course_features         Json? // Customizable features: downloadable_resources, lifetime_access, mobile_access, etc.
+
+  // New Fields for Time Bound Access & Certificate
+  access_days_limit  Int? // Null = Lifetime access. Value = Days of access.
+  estimated_duration Int? // Estimated time to complete in minutes (for certificate)
 
   // SEO Settings
   meta_title       String?
@@ -243,21 +279,32 @@ model Enrollment {
   terms_accepted      Boolean   @default(false)
   terms_accepted_at   DateTime?
 
+  expires_at          DateTime? // When the enrollment expires (if course is time-bound)
+  total_learning_time Int       @default(0) // Actual time spent in minutes
+
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+
   @@unique([student_id, course_id])
   @@map("enrollments")
 }
 
 model Payment {
-  id               String   @id @default(uuid())
+  id               String  @id @default(uuid())
   user_id          String
-  user             User     @relation(fields: [user_id], references: [id])
+  user             User    @relation(fields: [user_id], references: [id])
   course_id        String
-  course           Course   @relation(fields: [course_id], references: [id])
+  course           Course  @relation(fields: [course_id], references: [id])
   amount           Float
   payment_provider String // stripe
   payment_status   String // pending, completed, failed, refunded
   transaction_id   String?
-  created_at       DateTime @default(now())
+
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+  created_at   DateTime   @default(now())
 
   @@map("payments")
 }
@@ -321,13 +368,20 @@ model Review {
 }
 
 model Certificate {
-  id              String   @id @default(uuid())
-  student_id      String
-  user            User     @relation(fields: [student_id], references: [id], onDelete: Cascade)
-  course_id       String
-  course          Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  certificate_url String
-  issued_at       DateTime @default(now())
+  id                 String   @id @default(uuid())
+  student_id         String
+  user               User     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  course_id          String
+  course             Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  certificate_url    String
+  issued_at          DateTime @default(now())
+  certificate_number String   @unique // Human-readable certificate number (e.g., CERT-2024-001234)
+  qr_validation_url  String? // Full validation URL for QR code
+  verification_hash  String? // Optional: Additional security hash
+
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
 
   @@unique([student_id, course_id])
   @@map("certificates")
@@ -474,6 +528,7 @@ model LectureContent {
   file_url  String?
   file_type String? // PDF, ZIP, PPT, etc
   file_size Int? // in bytes
+  pdf_url   String? // Specific for Flipbook display
 
   // External link
   external_link String?

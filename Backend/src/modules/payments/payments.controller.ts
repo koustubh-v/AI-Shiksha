@@ -16,7 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) { }
 
   @Post('checkout/:courseId')
   @UseGuards(AuthGuard('jwt'))
@@ -26,6 +26,7 @@ export class PaymentsController {
     return this.paymentsService.createCheckoutSession(
       req.user.userId,
       courseId,
+      req.user.franchise_id
     );
   }
 
@@ -48,3 +49,4 @@ export class PaymentsController {
     return this.paymentsService.handleWebhook(signature, req.rawBody);
   }
 }
+

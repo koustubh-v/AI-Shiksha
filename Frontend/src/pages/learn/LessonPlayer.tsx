@@ -72,6 +72,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarLogo } from "@/components/layout/SidebarLogo";
 import QuizPlayer from "@/components/learn/QuizPlayer";
 import AssignmentPlayer from "@/components/learn/AssignmentPlayer";
+import { CertificateViewModal } from "@/components/certificates/CertificateViewModal";
+
+import PDFFlipbook from "@/components/learn/PDFFlipbook";
+
+// PDF worker setup moved to PDFFlipbook component
 
 interface SectionItem {
   id: string;
@@ -90,6 +95,7 @@ interface SectionItem {
     text_content?: string;
     file_url?: string;
     external_link?: string;
+    pdf_url?: string;
   };
   sectionItemProgresses?: { completed: boolean }[];
   description?: string;
@@ -126,6 +132,7 @@ export default function LessonPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionTime, setSessionTime] = useState(0); // In seconds
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   // New Design State
   const [sidebarTab, setSidebarTab] = useState("content"); // content | ai
@@ -207,7 +214,9 @@ export default function LessonPlayer() {
 
     // Sync to backend every 60s
     const syncInterval = setInterval(() => {
-      Completions.updateTimeSpent(1).catch(console.error);
+      if (course?.id) {
+        Completions.updateTimeSpent(1, course.id).catch(console.error);
+      }
     }, 60000); // 1 minute
 
     return () => {
@@ -354,7 +363,9 @@ export default function LessonPlayer() {
     calculateProgress,
     formatDuration,
     expandedModules,
-    setExpandedModules
+    setExpandedModules,
+    showCertificateModal,
+    setShowCertificateModal
   };
 
   if (loading) {
@@ -395,9 +406,7 @@ export default function LessonPlayer() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="p-0 w-80 sm:w-[400px]">
-              <SheetContent side="right" className="p-0 w-80 sm:w-[400px]">
-                <SidebarContent {...sidebarProps} />
-              </SheetContent>
+              <SidebarContent {...sidebarProps} />
             </SheetContent>
           </Sheet>
 
@@ -463,11 +472,31 @@ export default function LessonPlayer() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,400px] overflow-hidden">
 
         {/* Left Column - Video & Content */}
-        <div className="h-full overflow-y-auto scrollbar-thin">
+        <div className="h-full max-h-screen overflow-y-auto scrollbar-thin">
           <div className="p-4 md:p-6 lg:p-8 pb-24 max-w-5xl mx-auto space-y-6 md:space-y-8">
+            {/* Lesson Title & Info - Hide for Quiz/Assignment (MOVED TO TOP) */}
+            {currentItem.type !== "QUIZ" && currentItem.type !== "ASSIGNMENT" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wide">
+                    Lesson {currentItem.order_index + 1}
+                  </span>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{currentItem.title}</h2>
+                {/* Show Section Description if available */}
+                {currentSection?.description && (
+                  <div className="text-base md:text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: currentSection.description }} />
+                )}
+              </div>
+            )}
+
+            {/* PDF Flipbook Viewer */}
+            {currentItem.lecture_content?.pdf_url && (
+              <PDFFlipbook pdfUrl={currentItem.lecture_content.pdf_url} />
+            )}
 
             {/* Video Player */}
-            {getVideoUrl() && (
+            {!currentItem.lecture_content?.pdf_url && getVideoUrl() && (
               <div className="relative aspect-video bg-black rounded-xl md:rounded-2xl overflow-hidden shadow-lg group">
                 {isYoutube() ? (
                   <iframe
@@ -493,22 +522,6 @@ export default function LessonPlayer() {
               </div>
             )}
 
-            {/* Lesson Title & Info - Hide for Quiz/Assignment */}
-            {currentItem.type !== "QUIZ" && currentItem.type !== "ASSIGNMENT" && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wide">
-                    Lesson {currentItem.order_index + 1}
-                  </span>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{currentItem.title}</h2>
-                {/* Show Section Description if available */}
-                {currentSection?.description && (
-                  <div className="text-base md:text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: currentSection.description }} />
-                )}
-              </div>
-            )}
-
             {/* Content Logic Check */}
             {currentItem.type === "QUIZ" && currentItem.quiz_id ? (
               <QuizPlayer
@@ -522,48 +535,98 @@ export default function LessonPlayer() {
               />
             ) : (
               /* Default Lecture Content with Tabs */
-              <Tabs defaultValue="overview" className="w-full">
+              <Tabs defaultValue={
+                (currentItem.description || currentItem.lecture_content?.text_content || currentItem.content?.text_content) ? "overview" :
+                  (currentItem.lecture_content?.file_url || currentItem.lecture_content?.external_link) ? "resources" : "q&a"
+              } className="w-full">
                 <TabsList className="w-full justify-start h-auto p-0 bg-transparent border-b rounded-none gap-8 overflow-x-auto no-scrollbar">
-                  {["Overview", "Resources", "Q&A"].map((tab) => (
+                  {/* Overview Tab Trigger */}
+                  {(currentItem.description || currentItem.lecture_content?.text_content || currentItem.content?.text_content) && (
                     <TabsTrigger
-                      key={tab}
-                      value={tab.toLowerCase()}
+                      value="overview"
                       className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent text-muted-foreground font-medium whitespace-nowrap"
                     >
-                      {tab}
+                      Overview
                     </TabsTrigger>
-                  ))}
+                  )}
+
+                  {/* Resources Tab Trigger */}
+                  {(currentItem.lecture_content?.file_url || currentItem.lecture_content?.external_link) && (
+                    <TabsTrigger
+                      value="resources"
+                      className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent text-muted-foreground font-medium whitespace-nowrap"
+                    >
+                      Resources
+                    </TabsTrigger>
+                  )}
+
+                  {/* Q&A Tab Trigger - Always Static */}
+                  <TabsTrigger
+                    value="q&a"
+                    className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent text-muted-foreground font-medium whitespace-nowrap"
+                  >
+                    Q&A
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overview" className="mt-8 space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-                  <div className="prose prose-gray max-w-none">
-                    <h3 className="text-xl font-semibold mb-8">Course Content Overview</h3>
-                    {currentItem.description ? (
-                      <div dangerouslySetInnerHTML={{ __html: currentItem.description }} />
-                    ) : currentItem.lecture_content?.text_content ? (
-                      <div dangerouslySetInnerHTML={{
-                        __html: formatContent(currentItem.lecture_content.text_content)
-                      }} />
-                    ) : currentItem.content?.text_content ? (
-                      <div dangerouslySetInnerHTML={{
-                        __html: formatContent(currentItem.content.text_content)
-                      }} />
-                    ) : (
-                      <p className="text-muted-foreground">
-                        No description available for this lesson.
-                      </p>
-                    )}
-                  </div>
-                </TabsContent>
+                {/* Overview Content */}
+                {(currentItem.description || currentItem.lecture_content?.text_content || currentItem.content?.text_content) && (
+                  <TabsContent value="overview" className="mt-8 space-y-6 animate-in slide-in-from-bottom-2 duration-500">
+                    <div className="prose prose-gray max-w-none">
+                      <h3 className="text-xl font-semibold mb-8">Course Content Overview</h3>
+                      {currentItem.description ? (
+                        <div dangerouslySetInnerHTML={{ __html: currentItem.description }} />
+                      ) : currentItem.lecture_content?.text_content ? (
+                        <div dangerouslySetInnerHTML={{
+                          __html: formatContent(currentItem.lecture_content.text_content)
+                        }} />
+                      ) : currentItem.content?.text_content ? (
+                        <div dangerouslySetInnerHTML={{
+                          __html: formatContent(currentItem.content.text_content)
+                        }} />
+                      ) : null}
+                    </div>
+                  </TabsContent>
+                )}
 
-                {/* Resources Tab Placeholder */}
-                <TabsContent value="resources" className="mt-8">
-                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                    <p>No additional resources available for this lesson.</p>
-                  </div>
-                </TabsContent>
+                {/* Resources Content */}
+                {(currentItem.lecture_content?.file_url || currentItem.lecture_content?.external_link) && (
+                  <TabsContent value="resources" className="mt-8">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold">Downloadable Resources</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {currentItem.lecture_content?.file_url && (
+                          <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="bg-orange-100 p-2 rounded-lg text-orange-600">
+                              <FileText className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">Lecture Attachment</h4>
+                              <a href={currentItem.lecture_content.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                                Download / View File
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                        {currentItem.lecture_content?.external_link && (
+                          <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                              <BookOpen className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">External Resource</h4>
+                              <a href={currentItem.lecture_content.external_link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                                Visit Link
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                )}
 
-                {/* Q&A Tab Placeholder */}
+                {/* Q&A Content */}
                 <TabsContent value="q&a" className="mt-8">
                   <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                     <p>Q&A section is coming soon.</p>
@@ -614,10 +677,8 @@ export default function LessonPlayer() {
         </div>
 
         {/* Right Sidebar - Desktop Only (Hidden on Mobile) */}
-        <div className="hidden lg:flex border-l bg-white flex-col h-full">
-          <div className="hidden lg:flex border-l bg-white flex-col h-full">
-            <SidebarContent {...sidebarProps} />
-          </div>
+        <div className="hidden lg:flex border-l bg-white flex-col h-[calc(100vh-64px)] overflow-hidden sticky top-16">
+          <SidebarContent {...sidebarProps} />
         </div>
       </div >
     </div >
@@ -636,6 +697,8 @@ interface SidebarContentProps {
   formatDuration: (minutes?: number) => string;
   expandedModules: string[];
   setExpandedModules: (value: string[]) => void;
+  showCertificateModal: boolean;
+  setShowCertificateModal: (value: boolean) => void;
 }
 
 const SidebarContent = ({
@@ -648,127 +711,179 @@ const SidebarContent = ({
   calculateProgress,
   formatDuration,
   expandedModules,
-  setExpandedModules
-}: SidebarContentProps) => (
-  <div className="flex flex-col h-full bg-white overflow-hidden">
-    {/* Sidebar Tabs */}
-    <Tabs value={sidebarTab} onValueChange={setSidebarTab} className="w-full flex flex-col h-full overflow-hidden">
-      <div className="px-6 pt-6 pb-2 shrink-0">
-        <TabsList className="w-full grid grid-cols-2 bg-muted/50 p-1">
-          <TabsTrigger value="content" className="gap-2">
-            <BookOpen className="h-4 w-4" /> Content
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="gap-2">
-            <Sparkles className="h-4 w-4" /> AI Assistant
-          </TabsTrigger>
-        </TabsList>
-      </div>
+  setExpandedModules,
+  showCertificateModal,
+  setShowCertificateModal
+}: SidebarContentProps) => {
 
-      {/* Course Content Tab */}
-      <TabsContent value="content" className="flex-1 flex flex-col min-h-0 mt-0 data-[state=inactive]:hidden overflow-hidden">
-        {/* Progress Section */}
-        <div className="px-6 py-4 border-b shrink-0">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Your Progress</span>
-            <span className="text-sm font-bold text-primary">{calculateProgress()}% Completed</span>
-          </div>
-          <Progress value={calculateProgress()} className="h-2 bg-muted [&>div]:bg-primary" />
+  const handleDownloadCertificate = async () => {
+    if (!course) return;
+    try {
+      const { default: api } = await import('@/lib/api');
+      const response = await api.get(`/certificates/course/${course.id}/download`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Certificate-${course.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-white overflow-hidden">
+      {/* Sidebar Tabs */}
+      <Tabs value={sidebarTab} onValueChange={setSidebarTab} className="w-full flex flex-col h-full">
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <TabsList className="w-full grid grid-cols-2 bg-muted/50 p-1">
+            <TabsTrigger value="content" className="gap-2">
+              <BookOpen className="h-4 w-4" /> Content
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="gap-2">
+              <Sparkles className="h-4 w-4" /> AI Assistant
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        {/* Modules Accordion */}
-        <div className="flex-1 w-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-          <Accordion
-            type="multiple"
-            value={expandedModules}
-            onValueChange={setExpandedModules}
-            className="w-full"
-          >
-            {course?.sections.sort((a, b) => a.order_index - b.order_index).map((section) => (
-              <AccordionItem key={section.id} value={section.id} className="border-b-0">
-                <AccordionTrigger className="px-6 py-4 hover:bg-muted/30 data-[state=open]:bg-muted/30">
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Module {section.order_index + 1}
-                    </p>
-                    <p className="font-semibold text-sm">{section.title}</p>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-0">
-                  <div className="flex flex-col">
-                    {section.items?.sort((a, b) => a.order_index - b.order_index).map((item) => {
-                      const isActive = item.slug === lessonSlug;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            navigate(`/learn/${course.slug}/lesson/${item.slug}`);
-                          }}
-                          className={cn(
-                            "flex items-start gap-4 px-6 py-4 transition-all border-l-[3px]",
-                            isActive
-                              ? "bg-primary/5 border-l-primary"
-                              : "border-l-transparent hover:bg-muted/30"
-                          )}
-                        >
-                          <div className="mt-0.5 shrink-0">
-                            {isActive ? (
-                              <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                                <Play className="h-2.5 w-2.5 text-white fill-white ml-0.5" />
-                              </div>
-                            ) : item.sectionItemProgresses?.[0]?.completed ? (
-                              <div className="h-5 w-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                                <CheckCircle2 className="h-4 w-4" />
-                              </div>
-                            ) : (
-                              <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
-                                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-                              </div>
+        {/* Course Content Tab */}
+        <TabsContent value="content" className="flex-1 flex flex-col min-h-0 mt-0 data-[state=inactive]:hidden overflow-hidden">
+          {/* Progress Section */}
+          <div className="px-6 py-4 border-b shrink-0">
+            <div className="flex justify-between items-end mb-2">
+              <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Your Progress</span>
+              <span className="text-sm font-bold text-primary">{calculateProgress()}% Completed</span>
+            </div>
+            <Progress value={calculateProgress()} className="h-2 bg-muted [&>div]:bg-primary" />
+          </div>
+
+          {/* Modules Accordion */}
+          <div className="flex-1 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            <Accordion
+              type="multiple"
+              value={expandedModules}
+              onValueChange={setExpandedModules}
+              className="w-full"
+            >
+              {course?.sections.sort((a, b) => a.order_index - b.order_index).map((section) => (
+                <AccordionItem key={section.id} value={section.id} className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:bg-muted/30 data-[state=open]:bg-muted/30">
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                        Module {section.order_index + 1}
+                      </p>
+                      <p className="font-semibold text-sm">{section.title}</p>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-0">
+                    <div className="flex flex-col">
+                      {section.items?.sort((a, b) => a.order_index - b.order_index).map((item) => {
+                        const isActive = item.slug === lessonSlug;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              if (course?.slug && item.slug) {
+                                navigate(`/learn/${course.slug}/lesson/${item.slug}`);
+                              }
+                            }}
+                            className={cn(
+                              "flex items-start gap-4 px-6 py-4 transition-all border-l-[3px]",
+                              isActive
+                                ? "bg-primary/5 border-l-primary"
+                                : "border-l-transparent hover:bg-muted/30"
                             )}
-                          </div>
-                          <div className="text-left space-y-1">
-                            <p className={cn(
-                              "text-sm font-medium leading-snug",
-                              isActive ? "text-primary" : "text-gray-700"
-                            )}>
-                              {item.order_index + 1}. {item.title}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              {isActive && (
-                                <span className="text-[10px] font-bold bg-primary text-white px-1.5 py-0.5 rounded uppercase tracking-wide">
-                                  Playing
-                                </span>
+                          >
+                            <div className="mt-0.5 shrink-0">
+                              {isActive ? (
+                                <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                                  <Play className="h-2.5 w-2.5 text-white fill-white ml-0.5" />
+                                </div>
+                              ) : item.sectionItemProgresses?.[0]?.completed ? (
+                                <div className="h-5 w-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                  <CheckCircle2 className="h-4 w-4" />
+                                </div>
+                              ) : (
+                                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                                </div>
                               )}
-                              <span className="text-xs text-muted-foreground">
-                                {formatDuration(item.duration_minutes)}
-                              </span>
                             </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </TabsContent>
+                            <div className="text-left space-y-1">
+                              <p className={cn(
+                                "text-sm font-medium leading-snug",
+                                isActive ? "text-primary" : "text-gray-700"
+                              )}>
+                                {item.order_index + 1}. {item.title}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                {isActive && (
+                                  <span className="text-[10px] font-bold bg-primary text-white px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                    Playing
+                                  </span>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDuration(item.duration_minutes)}
+                                </span>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
 
-      {/* AI Assistant Tab - Coming Soon */}
-      <TabsContent value="ai" className="flex-1 flex flex-col items-center justify-center p-8 text-center mt-0 data-[state=inactive]:hidden">
-        <div className="flex flex-col items-center justify-center h-full w-full">
-          <div className="bg-primary/10 p-6 rounded-full mb-6 animate-pulse">
-            <Sparkles className="h-12 w-12 text-primary" />
+            {/* Certificate Section - Show when course is 100% complete */}
+            {course && course.enrollments && course.enrollments[0]?.progress_percentage === 100 && (
+              <div className="p-6">
+                <div className="bg-white border rounded-xl p-5 shadow-sm text-center space-y-4">
+                  <div className="mx-auto w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-2">
+                    <Trophy className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Course Completed</h4>
+                    <p className="text-sm text-gray-500 mt-1">You have successfully finished this course.</p>
+                  </div>
+                  <Button
+                    onClick={handleDownloadCertificate}
+                    className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 shadow-sm"
+                    variant="ghost"
+                  >
+                    <Download className="h-4 w-4 mr-2 text-gray-500" />
+                    Download Certificate
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-          <h3 className="text-xl font-bold mb-2">AI Assistant Coming Soon</h3>
-          <p className="text-muted-foreground mb-8 max-w-[260px] mx-auto">
-            We're building an intelligent tutor to help you learn faster and answer your questions 24/7.
-          </p>
-          <Button variant="outline" onClick={() => setSidebarTab("content")}>
-            Back to Content
-          </Button>
-        </div>
-      </TabsContent>
-    </Tabs>
-  </div>
-);
+        </TabsContent>
+
+        {/* AI Assistant Tab - Coming Soon */}
+        <TabsContent value="ai" className="flex-1 flex flex-col items-center justify-center p-8 text-center mt-0 data-[state=inactive]:hidden">
+          <div className="flex flex-col items-center justify-center h-full w-full">
+            <div className="bg-primary/10 p-6 rounded-full mb-6 animate-pulse">
+              <Sparkles className="h-12 w-12 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">AI Assistant Coming Soon</h3>
+            <p className="text-muted-foreground mb-8 max-w-[260px] mx-auto">
+              We're building an intelligent tutor to help you learn faster and answer your questions 24/7.
+            </p>
+            <Button variant="outline" onClick={() => setSidebarTab("content")}>
+              Back to Content
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Certificate View Modal - Removed/Hidden as we do direct download now */}
+    </div>
+  );
+};

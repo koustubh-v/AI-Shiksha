@@ -57,3 +57,17 @@ export const useDeleteUser = () => {
         },
     });
 };
+
+export const useUpdateUserRole = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+            const { data } = await api.patch(`/users/${userId}/role`, { role });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+    });
+};

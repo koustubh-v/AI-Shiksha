@@ -25,7 +25,7 @@ export class EnrollmentsService {
     });
   }
 
-  async findMyEnrollments(studentId: string, franchiseId?: string) {
+  async findMyEnrollments(studentId: string, franchiseId?: string | null) {
     // Ideally user is already scoped to franchise, but good to double check or strictly filter if needed.
     // However, if a user belongs to Franchise A, they should only have enrollments in Franchise A.
     // But if we want to be strict:
@@ -49,7 +49,7 @@ export class EnrollmentsService {
     return !!enrollment && enrollment.status === 'active';
   }
 
-  async create(userId: string, courseId: string, franchiseId?: string) {
+  async create(userId: string, courseId: string, franchiseId?: string | null) {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
@@ -116,7 +116,7 @@ export class EnrollmentsService {
   }
 
   // Admin methods
-  async findAll(search?: string, status?: string, franchiseId?: string) {
+  async findAll(search?: string, status?: string, franchiseId?: string | null) {
     // Use AND array to safely combine multiple conditions including ORs
     const where: any = { AND: [] };
 
@@ -174,7 +174,7 @@ export class EnrollmentsService {
     return enrollments;
   }
 
-  async getStats(franchiseId?: string) {
+  async getStats(franchiseId?: string | null) {
     const whereClause: any = { AND: [] };
 
     if (franchiseId) {
@@ -238,7 +238,7 @@ export class EnrollmentsService {
     };
   }
 
-  async adminEnroll(studentEmail: string, courseId: string, franchiseId?: string) {
+  async adminEnroll(studentEmail: string, courseId: string, franchiseId?: string | null) {
     // Find student by email
     const student = await this.prisma.user.findUnique({
       where: { email: studentEmail },
@@ -300,7 +300,7 @@ export class EnrollmentsService {
     });
   }
 
-  async bulkEnroll(studentIds: string[], courseIds: string[], franchiseId?: string) {
+  async bulkEnroll(studentIds: string[], courseIds: string[], franchiseId?: string | null) {
     const results = {
       total: studentIds.length * courseIds.length,
       success: 0,
@@ -368,7 +368,7 @@ export class EnrollmentsService {
     return results;
   }
 
-  async updateStatus(id: string, status: string, franchiseId?: string) {
+  async updateStatus(id: string, status: string, franchiseId?: string | null) {
     const whereClause: any = { id, AND: [] };
 
     if (franchiseId) {
@@ -396,7 +396,7 @@ export class EnrollmentsService {
     });
   }
 
-  async remove(id: string, franchiseId?: string) {
+  async remove(id: string, franchiseId?: string | null) {
     const whereClause: any = { id, AND: [] };
 
     if (franchiseId) {
@@ -424,7 +424,7 @@ export class EnrollmentsService {
   }
 
   // Course completion management methods
-  async getCourseStudents(courseId: string, franchiseId?: string) {
+  async getCourseStudents(courseId: string, franchiseId?: string | null) {
     // Verify course belongs to franchise
     if (franchiseId) {
       const course = await this.prisma.course.findUnique({ where: { id: courseId } });
@@ -471,7 +471,7 @@ export class EnrollmentsService {
     };
   }
 
-  async bulkComplete(dto: { enrollment_ids: string[]; completion_date?: string }, franchiseId?: string) {
+  async bulkComplete(dto: { enrollment_ids: string[]; completion_date?: string }, franchiseId?: string | null) {
     const completionDate = dto.completion_date ? new Date(dto.completion_date) : new Date();
 
     // Results tracking
@@ -535,7 +535,7 @@ export class EnrollmentsService {
     };
   }
 
-  async updateCompletionDate(enrollmentId: string, dto: { completion_date: string }, franchiseId?: string) {
+  async updateCompletionDate(enrollmentId: string, dto: { completion_date: string }, franchiseId?: string | null) {
     const whereClause: any = { id: enrollmentId };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -570,7 +570,7 @@ export class EnrollmentsService {
     });
   }
 
-  async manualComplete(enrollmentId: string, dto: { completion_date?: string }, franchiseId?: string) {
+  async manualComplete(enrollmentId: string, dto: { completion_date?: string }, franchiseId?: string | null) {
     const whereClause: any = { id: enrollmentId, AND: [] };
 
     if (franchiseId) {
@@ -622,7 +622,7 @@ export class EnrollmentsService {
     };
   }
 
-  async bulkUpdateDates(dto: { enrollment_ids: string[]; enrollment_date?: string; completion_date?: string }, franchiseId?: string) {
+  async bulkUpdateDates(dto: { enrollment_ids: string[]; enrollment_date?: string; completion_date?: string }, franchiseId?: string | null) {
     const updates: any = {};
     if (dto.enrollment_date) {
       updates.enrolled_at = new Date(dto.enrollment_date);
@@ -694,7 +694,7 @@ export class EnrollmentsService {
     };
   }
 
-  async bulkIncomplete(dto: { enrollment_ids: string[] }, franchiseId?: string) {
+  async bulkIncomplete(dto: { enrollment_ids: string[] }, franchiseId?: string | null) {
     const whereClause: any = {
       id: { in: dto.enrollment_ids },
       AND: [] // Safe initialization

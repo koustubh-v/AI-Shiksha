@@ -13,17 +13,59 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeft,
   LogOut,
   HelpCircle,
-  Server,
+  Activity,
+  UserCheck,
+  UserCog,
+  Lock,
+  Folder,
+  FileCheck,
+  AlertCircle,
   Bot,
+  Sparkles,
+  Zap,
+  TrendingUp,
+  CreditCard,
+  Receipt,
+  Wallet,
+  Tag,
+  Crown,
+  FileText,
+  Download,
+  Building2,
+  Globe,
+  Megaphone,
+  Ticket,
+  MessagesSquare,
+  History,
+  AlertTriangle,
+  Database,
+  Palette,
+  Mail,
+  Link2,
+  Bell,
+  Key,
+  Webhook,
+  ScrollText,
+  Flag,
+  Server,
+  HardDrive,
+  User,
+  Search,
+  Plus,
+  Award,
+  CheckSquare,
   Landmark,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarContext } from "@/contexts/SidebarContext";
+import { useFranchise } from "@/contexts/FranchiseContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Collapsible,
@@ -36,40 +78,92 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   href?: string;
-  children?: { icon: React.ElementType; label: string; href: string }[];
+  children?: NavItem[];
+  badge?: string;
+  badgeColor?: string;
 }
 
-const mobileNavItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+const adminNavItems: NavItem[] = [
+  {
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    href: "/dashboard",
+  },
   {
     icon: Users,
-    label: "Users",
+    label: "User Management",
     children: [
       { icon: Users, label: "All Users", href: "/dashboard/users" },
       { icon: GraduationCap, label: "Students", href: "/dashboard/students" },
-      { icon: Users, label: "Teachers", href: "/dashboard/teachers" },
-      { icon: Shield, label: "Roles", href: "/dashboard/roles" },
+      { icon: UserCheck, label: "Teachers", href: "/dashboard/teachers" },
     ],
   },
   {
     icon: BookOpen,
-    label: "Courses",
+    label: "Course Management",
     children: [
       { icon: BookOpen, label: "All Courses", href: "/dashboard/courses" },
-      { icon: BookOpen, label: "Add Course", href: "/dashboard/courses/new" },
-      { icon: BookOpen, label: "Categories", href: "/dashboard/categories" },
-      { icon: Users, label: "Enrollment", href: "/dashboard/enrollment" },
-      { icon: BookOpen, label: "Certificates", href: "/dashboard/certificates" },
-      { icon: BookOpen, label: "Completion", href: "/dashboard/completion" },
-      { icon: BookOpen, label: "Approval", href: "/dashboard/course-approval" },
+      { icon: FileText, label: "Assignments", href: "/dashboard/assignments" },
+      { icon: HelpCircle, label: "Quizzes", href: "/dashboard/quizzes" },
+      { icon: Plus, label: "Add Course", href: "/dashboard/courses/new" },
+      { icon: Folder, label: "Categories", href: "/dashboard/categories" },
+      { icon: UserCog, label: "Enrollment", href: "/dashboard/enrollment" },
+      { icon: Award, label: "Certificate Templates", href: "/dashboard/certificate-templates" },
+      { icon: CheckSquare, label: "Completion", href: "/dashboard/completion" },
+      { icon: FileCheck, label: "Course Approval", href: "/dashboard/course-approval" },
+      { icon: ScrollText, label: "Terms & Conditions", href: "/dashboard/system-settings/terms" },
     ],
   },
-  { icon: Bot, label: "Ai Control Center", href: "/dashboard/ai-control" },
-  { icon: DollarSign, label: "Revenue", href: "/dashboard/revenue" },
-  { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
-  { icon: MessageSquare, label: "Communication", href: "/dashboard/announcements" },
-  { icon: Shield, label: "Security", href: "/dashboard/security" },
-  { icon: Settings, label: "Settings", href: "/dashboard/platform-settings" },
+  {
+    icon: DollarSign,
+    label: "Revenue",
+    children: [
+      { icon: TrendingUp, label: "Transactions", href: "/dashboard/revenue" },
+      { icon: Tag, label: "Coupons", href: "/dashboard/coupons" },
+      { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
+    ],
+  },
+  {
+    icon: Bot,
+    label: "Ai Control Center",
+    href: "/dashboard/ai-control",
+  },
+  {
+    icon: Building2,
+    label: "Franchise",
+    href: "/dashboard/franchises",
+  },
+  {
+    icon: MessageSquare,
+    label: "Communication",
+    children: [
+      { icon: Megaphone, label: "Announcements", href: "/dashboard/announcements" },
+      { icon: Ticket, label: "Support Tickets", href: "/dashboard/tickets" },
+    ],
+  },
+  {
+    icon: Shield,
+    label: "Security",
+    href: "/dashboard/security",
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    children: [
+      { icon: Palette, label: "Platform", href: "/dashboard/platform-settings" },
+      { icon: Search, label: "SEO Settings", href: "/dashboard/seo-settings" },
+    ],
+  },
+  {
+    icon: User,
+    label: "Profile Settings",
+    href: "/dashboard/settings",
+  },
+];
+
+const bottomNavItems: NavItem[] = [
+  { icon: HelpCircle, label: "Help & Docs", href: "/dashboard/help" },
+  { icon: Server, label: "System Status", href: "/dashboard/system-status" },
 ];
 
 export function AdminMobileSidebar() {
@@ -78,6 +172,7 @@ export function AdminMobileSidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { setMobileOpen } = useSidebarContext();
+  const { branding } = useFranchise();
 
   if (!user) return null;
 
@@ -114,11 +209,15 @@ export function AdminMobileSidebar() {
     <div className="flex h-full flex-col bg-gradient-to-b from-[hsl(220,50%,15%)] to-[hsl(220,50%,12%)]">
       {/* Header */}
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-          <GraduationCap className="h-5 w-5 text-white" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
+          {branding.favicon_url || branding.logo_url ? (
+            <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-9 w-9 object-cover" />
+          ) : (
+            <GraduationCap className="h-5 w-5 text-white" />
+          )}
         </div>
         <div>
-          <span className="font-bold text-white">LearnAI</span>
+          <span className="font-bold text-white">{branding.lms_name}</span>
           <p className="text-[10px] text-white/50 uppercase tracking-wider">Admin</p>
         </div>
       </div>
@@ -126,7 +225,7 @@ export function AdminMobileSidebar() {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
-          {mobileNavItems.map((item) => {
+          {adminNavItems.map((item) => {
             if (item.children) {
               const isOpen = openGroups.includes(item.label);
               return (
@@ -140,9 +239,9 @@ export function AdminMobileSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pl-4 mt-1 space-y-1">
                     {item.children.map((child) => (
-                      <SheetClose asChild key={child.href}>
+                      <SheetClose asChild key={child.href || child.label}>
                         <Link
-                          to={child.href}
+                          to={child.href || "#"}
                           className={cn(
                             "flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
                             isActive(child.href)
@@ -182,24 +281,17 @@ export function AdminMobileSidebar() {
 
       {/* Bottom */}
       <div className="border-t border-white/10 p-3 space-y-1">
-        <SheetClose asChild>
-          <Link
-            to="/dashboard/help"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-          >
-            <HelpCircle className="h-5 w-5" />
-            <span>Help</span>
-          </Link>
-        </SheetClose>
-        <SheetClose asChild>
-          <Link
-            to="/dashboard/system-status"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-          >
-            <Server className="h-5 w-5" />
-            <span>System Status</span>
-          </Link>
-        </SheetClose>
+        {bottomNavItems.map((item) => (
+          <SheetClose asChild key={item.label}>
+            <Link
+              to={item.href || "#"}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          </SheetClose>
+        ))}
       </div>
 
       {/* User */}

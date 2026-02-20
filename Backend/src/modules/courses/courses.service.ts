@@ -12,7 +12,7 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 export class CoursesService {
   constructor(private prisma: PrismaService) { }
 
-  async create(instructorUserId: string, createCourseDto: CreateCourseDto, franchiseId: string) {
+  async create(instructorUserId: string, createCourseDto: CreateCourseDto, franchiseId?: string | null) {
     // Override instructor if author_id is provided (e.g. by Admin)
     const targetUserId = createCourseDto.author_id || instructorUserId;
 
@@ -113,7 +113,7 @@ export class CoursesService {
     });
   }
 
-  async findAll(adminRequest = false, franchiseId?: string, userRole?: string) {
+  async findAll(adminRequest = false, franchiseId?: string | null, userRole?: string) {
     const whereClause: any = {};
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -182,7 +182,7 @@ export class CoursesService {
     }));
   }
 
-  async findMyCourses(userId: string, franchiseId?: string) {
+  async findMyCourses(userId: string, franchiseId?: string | null) {
     const instructor = await this.prisma.instructorProfile.findUnique({
       where: { user_id: userId },
     });
@@ -235,7 +235,7 @@ export class CoursesService {
     }));
   }
 
-  async findOne(id: string, franchiseId?: string) {
+  async findOne(id: string, franchiseId?: string | null) {
     const whereClause: any = { id };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -289,7 +289,7 @@ export class CoursesService {
     return course;
   }
 
-  async findBySlug(slug: string, franchiseId?: string) {
+  async findBySlug(slug: string, franchiseId?: string | null) {
     const whereClause: any = { slug };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -353,7 +353,7 @@ export class CoursesService {
     updateCourseDto: UpdateCourseDto,
     userId: string,
     userRole?: string,
-    franchiseId?: string
+    franchiseId?: string | null
   ) {
     console.log(`[CoursesService.update] ID: ${id}, DTO:`, JSON.stringify(updateCourseDto, null, 2));
 
@@ -528,7 +528,7 @@ export class CoursesService {
     });
   }
 
-  async remove(id: string, userId: string, franchiseId?: string) {
+  async remove(id: string, userId: string, franchiseId?: string | null) {
     const whereClause: any = { id };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -553,7 +553,7 @@ export class CoursesService {
 
   // ========== APPROVAL WORKFLOW METHODS ==========
 
-  async submitForApproval(courseId: string, userId: string, franchiseId?: string) {
+  async submitForApproval(courseId: string, userId: string, franchiseId?: string | null) {
     const whereClause: any = { id: courseId };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -592,7 +592,7 @@ export class CoursesService {
     });
   }
 
-  async approveCourse(courseId: string, adminUserId: string, franchiseId?: string) {
+  async approveCourse(courseId: string, adminUserId: string, franchiseId?: string | null) {
     const whereClause: any = { id: courseId };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -627,7 +627,7 @@ export class CoursesService {
     });
   }
 
-  async rejectCourse(courseId: string, adminUserId: string, reason: string, franchiseId?: string) {
+  async rejectCourse(courseId: string, adminUserId: string, reason: string, franchiseId?: string | null) {
     const whereClause: any = { id: courseId };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -660,7 +660,7 @@ export class CoursesService {
     });
   }
 
-  async publishCourse(courseId: string, adminUserId: string, franchiseId?: string) {
+  async publishCourse(courseId: string, adminUserId: string, franchiseId?: string | null) {
     const whereClause: any = { id: courseId };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -690,7 +690,7 @@ export class CoursesService {
     });
   }
 
-  async getPendingApproval(franchiseId?: string) {
+  async getPendingApproval(franchiseId?: string | null) {
     const whereClause: any = { status: 'PENDING_APPROVAL' };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;

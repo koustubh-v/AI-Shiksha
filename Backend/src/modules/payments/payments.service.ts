@@ -19,7 +19,7 @@ export class PaymentsService {
     );
   }
 
-  async createCheckoutSession(userId: string, courseId: string, franchiseId?: string) {
+  async createCheckoutSession(userId: string, courseId: string, franchiseId?: string | null) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: { instructor: { include: { user: true } } },

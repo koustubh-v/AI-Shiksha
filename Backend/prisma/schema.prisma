@@ -21,10 +21,18 @@ model Franchise {
   lms_name        String?
   domain          String   @unique
   logo_url        String?
+  favicon_url     String?
   primary_color   String?  @default("#6366f1")
   support_email   String?
+  description     String?  @db.Text
   is_active       Boolean  @default(true)
   domain_verified Boolean  @default(false)
+  maintenance_mode Boolean @default(false)
+
+  // SEO Settings
+  seo_title       String?
+  seo_description String?  @db.Text
+  seo_keywords    String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -35,6 +43,8 @@ model Franchise {
   certificates Certificate[]
   categories   Category[]
   tags         Tag[]
+  support_tickets SupportTicket[]
+  announcements   Announcement[]
 
   @@map("franchises")
 }
@@ -80,6 +90,9 @@ model User {
   weekly_minutes_spent  Int                   @default(0)
   milestones            Milestone[]
   sectionItemProgresses SectionItemProgress[]
+  support_tickets       SupportTicket[]        @relation("StudentTickets")
+  support_messages      SupportTicketMessage[]
+  announcements         Announcement[]         @relation("AnnouncementAuthor")
 
   @@map("users")
 }
@@ -702,4 +715,62 @@ model SectionItemProgress {
 
   @@unique([student_id, item_id])
   @@map("section_item_progress")
+}
+
+// ============================================
+// SUPPORT & COMMUNICATION MODELS
+// ============================================
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  student_id  String
+  student     User     @relation("StudentTickets", fields: [student_id], references: [id], onDelete: Cascade)
+  subject     String
+  description String   @db.Text
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  closed_at   DateTime?
+
+  // Multi-tenant franchise
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+
+  messages SupportTicketMessage[]
+
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id         String   @id @default(uuid())
+  ticket_id  String
+  ticket     SupportTicket @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  sender_id  String
+  sender     User     @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  message    String   @db.Text
+  is_admin   Boolean  @default(false)
+
+  created_at DateTime @default(now())
+
+  @@map("support_ticket_messages")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  is_active   Boolean  @default(true)
+  created_by  String
+  author      User     @relation("AnnouncementAuthor", fields: [created_by], references: [id], onDelete: Cascade)
+
+  // Multi-tenant franchise constraints
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("announcements")
 }

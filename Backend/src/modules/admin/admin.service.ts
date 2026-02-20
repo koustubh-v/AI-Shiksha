@@ -168,21 +168,37 @@ export class AdminService {
     const pendingActions: any[] = [];
     const franchiseWhere = franchiseId ? { franchise_id: franchiseId } : {};
 
-    // Check for draft courses
-    const draftCourses = await (this.prisma as any).course.findMany({
-      where: { status: 'DRAFT', ...franchiseWhere },
+    // Check for courses pending approval
+    const pendingCourses = await (this.prisma as any).course.findMany({
+      where: { status: 'PENDING_APPROVAL', ...franchiseWhere },
       take: 5,
       include: { instructor: { include: { user: true } } },
     });
 
-    const draftActions = draftCourses.map((c) => ({
+    const courseActions = pendingCourses.map((c) => ({
       title: `Course Approval: ${c.title}`,
       priority: 'high',
-      href: `/admin/courses/${c.id}`,
-      status: 'draft',
+      href: `/dashboard/course-approval`,
+      status: 'pending',
       teacher: c.instructor?.user?.name || 'Unknown',
     }));
-    pendingActions.push(...draftActions);
+    pendingActions.push(...courseActions);
+
+    // Check for open support tickets
+    const openTickets = await this.prisma.supportTicket.findMany({
+      where: { status: 'OPEN', ...franchiseWhere },
+      take: 5,
+      include: { student: true },
+    });
+
+    const ticketActions = openTickets.map((t) => ({
+      title: `Support Ticket: ${t.subject}`,
+      priority: t.priority?.toLowerCase() === 'high' ? 'high' : 'medium',
+      href: `/dashboard/tickets`,
+      status: 'open',
+      user: t.student?.name || 'Unknown',
+    }));
+    pendingActions.push(...ticketActions);
 
     // Check for unverified instructors
     const unverifiedInstructors = await this.prisma.instructorProfile.findMany({
@@ -194,7 +210,7 @@ export class AdminService {
     const verifyActions = unverifiedInstructors.map((i) => ({
       title: `Verify Instructor: ${i.user.name}`,
       priority: 'medium',
-      href: `/admin/users/${i.user.id}`,
+      href: `/dashboard/teachers`,
       status: 'pending',
       user: i.user.name,
     }));

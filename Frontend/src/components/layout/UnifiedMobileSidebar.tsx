@@ -17,10 +17,11 @@ import {
   Tag,
   HelpCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useFranchise } from "@/contexts/FranchiseContext";
 import { SheetClose } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -57,6 +58,7 @@ export function UnifiedMobileSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { branding } = useFranchise();
 
   if (!user) return null;
 
@@ -75,10 +77,14 @@ export function UnifiedMobileSidebar() {
     <div className="flex h-full flex-col bg-gradient-to-b from-[hsl(220,50%,15%)] to-[hsl(220,50%,12%)]">
       {/* Header */}
       <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4 flex-shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-          <GraduationCap className="h-5 w-5 text-white" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
+          {branding.favicon_url || branding.logo_url ? (
+            <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-cover" />
+          ) : (
+            <GraduationCap className="h-5 w-5 text-white" />
+          )}
         </div>
-        <span className="text-lg font-bold text-white">LearnAI</span>
+        <span className="text-lg font-bold text-white truncate max-w-[150px]">{branding.lms_name}</span>
       </div>
 
       {/* User Profile */}

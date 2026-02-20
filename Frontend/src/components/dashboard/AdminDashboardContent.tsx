@@ -1,18 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Users,
   BookOpen,
@@ -23,256 +13,190 @@ import {
   Shield,
   GraduationCap,
   UserCog,
-  Building2,
   Search,
   ArrowUpRight,
   Plus,
+  Clock,
+  ChevronRight,
+  Settings,
+  Bell,
+  Server,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 import * as LucideIcons from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 export function AdminDashboardContent() {
-  const [isFranchiseDialogOpen, setIsFranchiseDialogOpen] = useState(false);
-  const [newFranchise, setNewFranchise] = useState({
-    name: "",
-    location: "",
-    adminEmail: "",
-  });
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const { stats, pendingActions: apiPendingActions, isLoading } = useAdminDashboard();
 
-  const handleAddFranchise = () => {
-    if (!newFranchise.name || !newFranchise.location || !newFranchise.adminEmail) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-    toast({
-      title: "Franchise Created",
-      description: `${newFranchise.name} has been successfully created.`,
-    });
-    setNewFranchise({ name: "", location: "", adminEmail: "" });
-    setIsFranchiseDialogOpen(false);
-  };
-
   const quickActions = [
-    { label: "Manage Users", icon: Users, href: "/dashboard/users", color: "bg-primary" },
-    { label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses", color: "bg-accent" },
-    { label: "Manage Teachers", icon: GraduationCap, href: "/dashboard/teachers", color: "bg-chart-4" },
-    { label: "Manage Students", icon: UserCog, href: "/dashboard/students", color: "bg-chart-3" },
-    { label: "SEO Settings", icon: Search, href: "/dashboard/seo-settings", color: "bg-chart-2" },
+    { label: "Manage Users", icon: Users, href: "/dashboard/users", color: "bg-blue-600", lightBg: "bg-blue-50" },
+    { label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses", color: "bg-indigo-600", lightBg: "bg-indigo-50" },
+    { label: "Manage Teachers", icon: GraduationCap, href: "/dashboard/teachers", color: "bg-purple-600", lightBg: "bg-purple-50" },
+    { label: "Manage Students", icon: UserCog, href: "/dashboard/students", color: "bg-emerald-600", lightBg: "bg-emerald-50" },
+    { label: "SEO Config", icon: Search, href: "/dashboard/seo-settings", color: "bg-rose-600", lightBg: "bg-rose-50" },
+    { label: "Platform Setup", icon: Settings, href: "/dashboard/platform-settings", color: "bg-slate-700", lightBg: "bg-slate-100" },
   ];
 
   const systemHealth = [
-    { label: "Server Uptime", value: "99.9%", healthy: true },
-    { label: "Database", value: "100%", healthy: true },
-    { label: "API Response", value: "45ms", healthy: true },
-    { label: "Storage", value: "68%", healthy: false },
+    { label: "Server Uptime", value: "99.99%", healthy: true },
+    { label: "Database Load", value: "Healthy", healthy: true },
+    { label: "API Response", value: "42ms", healthy: true },
+    { label: "Storage Used", value: "68%", healthy: false },
   ];
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
+    return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading workspace...</div>;
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Stats Row */}
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-        {stats?.map((stat) => {
-          // Dynamic icon rendering
-          const IconComponent = (LucideIcons as any)[stat.icon] || LucideIcons.HelpCircle;
+    <div className="space-y-6 md:space-y-8 max-w-[1600px] mx-auto pb-10">
 
+      {/* Header and Call to Action */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Welcome to Mission Control</h2>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">Here's what's happening across your learning platform today.</p>
+        </div>
+        <Link to="/dashboard/courses/new">
+          <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-md hover:shadow-lg transition-all px-6 h-12">
+            <Plus className="h-5 w-5" />
+            <span className="font-semibold tracking-wide">Add Course</span>
+          </Button>
+        </Link>
+      </div>
+
+      {/* Material Stats Row  */}
+      <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+        {stats?.map((stat) => {
+          const IconComponent = (LucideIcons as any)[stat.icon] || LucideIcons.HelpCircle;
           return (
-            <Card key={stat.label} className={`border bg-gradient-to-br ${stat.gradient}`}>
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <IconComponent className={`h-4 w-4 md:h-5 md:w-5 ${stat.iconColor}`} />
-                  <span className="text-[10px] md:text-xs text-accent flex items-center gap-0.5">
-                    <ArrowUpRight className="h-2.5 w-2.5 md:h-3 md:w-3" />
+            <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-3xl bg-card overflow-hidden relative group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-2xl ${stat.gradient} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <IconComponent className={`h-6 w-6 ${stat.iconColor} drop-shadow-sm`} />
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold bg-green-50 text-green-700 border-green-200 gap-1 rounded-full px-2 py-0.5 shadow-sm">
+                    <ArrowUpRight className="h-3 w-3" />
                     {stat.change}
-                  </span>
+                  </Badge>
                 </div>
-                <p className="text-lg md:text-2xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-[10px] md:text-xs text-muted-foreground">{stat.label}</p>
+                <div className="space-y-1">
+                  <p className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{stat.value}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                </div>
               </CardContent>
             </Card>
           )
         })}
       </div>
 
-      {/* Admin Control Center */}
-      <Card className="border bg-gradient-to-br from-muted/50 to-background">
-        <CardHeader className="pb-3 md:pb-4">
-          <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-            <Shield className="h-4 w-4 text-primary" />
-            Admin Control Center
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:gap-3 grid-cols-2 lg:grid-cols-3">
-            {quickActions.map((action) => (
-              <Link key={action.label} to={action.href}>
-                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer rounded-lg">
-                  <div className={`h-8 w-8 md:h-10 md:w-10 ${action.color} flex items-center justify-center flex-shrink-0 rounded-lg`}>
-                    <action.icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
-                  </div>
-                  <span className="font-medium text-xs md:text-sm text-foreground">{action.label}</span>
-                </div>
-              </Link>
-            ))}
-            {/* Add Franchise with Dialog */}
-            <Dialog open={isFranchiseDialogOpen} onOpenChange={setIsFranchiseDialogOpen}>
-              <DialogTrigger asChild>
-                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer rounded-lg">
-                  <div className="h-8 w-8 md:h-10 md:w-10 bg-destructive flex items-center justify-center flex-shrink-0 rounded-lg">
-                    <Building2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
-                  </div>
-                  <span className="font-medium text-xs md:text-sm text-foreground">Add Franchise</span>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create New Franchise</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="franchiseName">Franchise Name *</Label>
-                    <Input
-                      id="franchiseName"
-                      placeholder="e.g., NYC Learning Hub"
-                      value={newFranchise.name}
-                      onChange={(e) => setNewFranchise({ ...newFranchise, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="franchiseLocation">Location *</Label>
-                    <Input
-                      id="franchiseLocation"
-                      placeholder="e.g., New York, USA"
-                      value={newFranchise.location}
-                      onChange={(e) => setNewFranchise({ ...newFranchise, location: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="franchiseAdmin">Admin Email *</Label>
-                    <Input
-                      id="franchiseAdmin"
-                      type="email"
-                      placeholder="admin@franchise.com"
-                      value={newFranchise.adminEmail}
-                      onChange={(e) => setNewFranchise({ ...newFranchise, adminEmail: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setIsFranchiseDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      onClick={handleAddFranchise}
-                    >
-                      Create Franchise
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
 
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
-        {/* Pending Actions */}
-        <Card className="border bg-gradient-to-br from-destructive/5 to-background">
-          <CardHeader className="pb-2 md:pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xs md:text-sm">Pending Actions</CardTitle>
-              <Badge variant="destructive" className="text-[10px] md:text-xs">20</Badge>
-            </div>
+        {/* Quick Actions Panel */}
+        <Card className="border-0 shadow-sm rounded-3xl bg-card lg:col-span-2 overflow-hidden flex flex-col">
+          <CardHeader className="border-b px-6 py-5 bg-muted/10">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Shield className="h-5 w-5 text-primary" />
+              Administrative Toolkit
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {apiPendingActions?.map((action, index) => (
-              <Link key={index} to={action.href}>
-                <div className="flex items-center gap-2 md:gap-3 p-2 bg-muted/50 hover:bg-muted transition-colors rounded-lg cursor-pointer">
-                  <AlertTriangle className={`h-3 w-3 md:h-4 md:w-4 ${action.priority === "high" ? "text-destructive" : "text-chart-3"}`} />
-                  <span className="text-xs md:text-sm text-foreground">{action.title}</span>
-                </div>
-              </Link>
-            ))}
-            <Link to="/dashboard/tickets">
-              <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
-                View All
-              </Button>
-            </Link>
+          <CardContent className="p-6 flex-1">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+              {quickActions.map((action) => (
+                <Link key={action.label} to={action.href}>
+                  <div className="group flex flex-col items-center justify-center gap-3 p-4 h-full rounded-2xl border border-border/50 bg-background hover:bg-muted/30 hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-pointer">
+                    <div className={`h-12 w-12 ${action.lightBg} ${action.color.replace('bg-', 'text-')} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                      <action.icon className="h-6 w-6" />
+                    </div>
+                    <span className="font-semibold text-sm text-center text-foreground group-hover:text-primary transition-colors">{action.label}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        {/* System Health */}
-        <Card className="border lg:col-span-2 bg-gradient-to-br from-accent/5 to-background">
-          <CardHeader className="pb-2 md:pb-3">
-            <CardTitle className="text-xs md:text-sm">System Health</CardTitle>
+        {/* Priority Inbox (Pending Actions) */}
+        <Card className="border-0 shadow-sm rounded-3xl bg-card overflow-hidden flex flex-col">
+          <CardHeader className="border-b px-6 py-5 bg-muted/10 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Bell className="h-5 w-5 text-amber-500" />
+              Action Required
+            </CardTitle>
+            <Badge variant="destructive" className="rounded-full px-2.5 shadow-sm font-bold">
+              {apiPendingActions?.length || 0}
+            </Badge>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 md:gap-3 grid-cols-2">
+          <CardContent className="p-0 flex-1">
+            <ScrollArea className="h-[320px]">
+              {apiPendingActions && apiPendingActions.length > 0 ? (
+                <div className="flex flex-col">
+                  {apiPendingActions.map((action, index) => (
+                    <div key={index} className="flex flex-col">
+                      <Link to={action.href} className="group flex items-start gap-4 p-5 hover:bg-muted/50 transition-colors cursor-pointer">
+                        <div className={`mt-0.5 h-10 w-10 shrink-0 rounded-full flex items-center justify-center shadow-sm ${action.priority === "high" ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-600"}`}>
+                          {action.priority === "high" ? <AlertTriangle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                            {action.title}
+                          </p>
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {action.priority === 'high' ? 'Urgent Review' : 'Pending Request'}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary transition-colors self-center" />
+                      </Link>
+                      {index < apiPendingActions.length - 1 && <Separator />}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full space-y-3 text-muted-foreground opacity-70 p-8 text-center mt-10">
+                  <CheckCircle className="h-12 w-12 text-green-500/50" />
+                  <p className="text-sm font-semibold text-foreground">You're all caught up!</p>
+                  <p className="text-xs">No pending actions require your attention.</p>
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+          <div className="p-4 border-t bg-muted/10">
+            <Button variant="outline" className="w-full rounded-xl font-semibold hover:bg-background" onClick={() => navigate('/dashboard/tickets')}>
+              View All Communications
+            </Button>
+          </div>
+        </Card>
+
+        {/* System Health Module */}
+        <Card className="border-0 shadow-sm rounded-3xl bg-card lg:col-span-3 overflow-hidden">
+          <CardHeader className="border-b px-6 py-5 bg-muted/10">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Server className="h-5 w-5 text-slate-500" />
+              Infrastructure Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
               {systemHealth.map((metric) => (
-                <div key={metric.label} className="flex items-center justify-between p-2 md:p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className={`h-3 w-3 md:h-4 md:w-4 ${metric.healthy ? "text-accent" : "text-chart-3"}`} />
-                    <span className="text-xs md:text-sm text-foreground">{metric.label}</span>
+                <div key={metric.label} className="flex flex-col p-4 rounded-2xl bg-muted/30 border border-border/50 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between space-x-2 mb-3">
+                    <span className="text-sm font-semibold text-muted-foreground">{metric.label}</span>
+                    <div className={`h-2.5 w-2.5 rounded-full shadow-sm ${metric.healthy ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
                   </div>
-                  <span className="text-xs md:text-sm font-medium text-foreground">{metric.value}</span>
+                  <span className="text-2xl font-extrabold text-foreground tracking-tight">{metric.value}</span>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Franchise Overview */}
-      <Card className="border bg-gradient-to-br from-chart-4/5 to-background">
-        <CardHeader className="pb-2 md:pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xs md:text-sm">
-              <Building2 className="h-4 w-4" />
-              Franchise Network
-            </CardTitle>
-            <Link to="/dashboard/franchises">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs h-7 md:h-8">
-                View All
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-            <div className="text-center p-2 md:p-3 bg-muted/50 rounded-lg">
-              <p className="text-lg md:text-2xl font-bold text-foreground">24</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">Franchises</p>
-            </div>
-            <div className="text-center p-2 md:p-3 bg-muted/50 rounded-lg">
-              <p className="text-lg md:text-2xl font-bold text-foreground">8,542</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">Users</p>
-            </div>
-            <div className="text-center p-2 md:p-3 bg-muted/50 rounded-lg">
-              <p className="text-lg md:text-2xl font-bold text-accent">$45.2K</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">Revenue</p>
-            </div>
-            <div className="text-center p-2 md:p-3 bg-muted/50 rounded-lg">
-              <p className="text-lg md:text-2xl font-bold text-chart-4">+18%</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground">Growth</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

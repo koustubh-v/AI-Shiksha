@@ -15,6 +15,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { Categories } from "@/lib/api";
+import { useFranchise } from "@/contexts/FranchiseContext";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -27,6 +29,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function UnifiedNavbar() {
+    const { branding } = useFranchise();
     const { user, logout, isAuthenticated } = useAuth();
     const { items } = useCart();
     const navigate = useNavigate();
@@ -83,8 +86,12 @@ export default function UnifiedNavbar() {
                         <SheetContent side="left" className="w-[300px] p-0">
                             <div className="p-4 border-b">
                                 <div className="flex items-center gap-2 font-bold text-xl text-[#a435f0]">
-                                    <GraduationCap className="h-6 w-6" />
-                                    <span>LearnAI</span>
+                                    {branding.favicon_url || branding.logo_url ? (
+                                        <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-6 w-6 object-cover rounded-md" />
+                                    ) : (
+                                        <GraduationCap className="h-6 w-6" />
+                                    )}
+                                    <span>{branding.lms_name}</span>
                                 </div>
                             </div>
                             <div className="p-4 space-y-4">
@@ -106,10 +113,14 @@ export default function UnifiedNavbar() {
 
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
-                        <div className="bg-[#a435f0] p-1.5 rounded-lg hidden sm:block">
-                            <GraduationCap className="h-6 w-6 text-white" />
+                        <div className="hidden sm:block overflow-hidden">
+                            {branding.favicon_url || branding.logo_url ? (
+                                <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-cover rounded-md" />
+                            ) : (
+                                <GraduationCap className="h-8 w-8 text-[#a435f0]" />
+                            )}
                         </div>
-                        <span className="text-xl font-bold text-[#2d2f31] tracking-tight">LearnAI</span>
+                        <span className="text-xl font-bold text-[#2d2f31] tracking-tight">{branding.lms_name}</span>
                     </Link>
 
                     {/* Explore Button (Desktop) */}

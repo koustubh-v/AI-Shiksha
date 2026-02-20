@@ -64,9 +64,15 @@ export class FranchisesService {
                 name: true,
                 lms_name: true,
                 logo_url: true,
+                favicon_url: true,
                 primary_color: true,
                 support_email: true,
                 domain_verified: true,
+                maintenance_mode: true,
+                description: true,
+                seo_title: true,
+                seo_description: true,
+                seo_keywords: true,
             },
         });
 
@@ -77,13 +83,106 @@ export class FranchisesService {
                 name: 'AI Shiksha',
                 lms_name: 'AI Shiksha',
                 logo_url: null,
+                favicon_url: null,
                 primary_color: '#6366f1',
                 support_email: null,
                 domain_verified: false,
+                maintenance_mode: false,
+                description: null,
+                seo_title: null,
+                seo_description: null,
+                seo_keywords: null,
             };
         }
 
         return franchise;
+    }
+
+    /**
+     * Get settings for the currently authenticated user's franchise
+     */
+    async getMySettings(franchiseId: string | null) {
+        if (!franchiseId) {
+            // Return default for system admins, or find the localhost franchise
+            const systemFranchise = await this.prisma.franchise.findFirst({
+                where: { domain: 'localhost' }
+            });
+
+            if (systemFranchise) {
+                return systemFranchise;
+            }
+
+            return {
+                id: null,
+                name: 'AI Shiksha',
+                lms_name: 'AI Shiksha',
+                domain: 'localhost',
+                logo_url: null,
+                favicon_url: null,
+                primary_color: '#6366f1',
+                support_email: 'support@aishiksha.com',
+                description: 'AI-powered learning management system.',
+                is_active: true,
+                domain_verified: true,
+                maintenance_mode: false,
+                seo_title: null,
+                seo_description: null,
+                seo_keywords: null,
+            };
+        }
+
+        const franchise = await this.prisma.franchise.findUnique({
+            where: { id: franchiseId },
+        });
+
+        if (!franchise) {
+            throw new NotFoundException('Franchise not found');
+        }
+
+        return franchise;
+    }
+
+    /**
+     * Update settings for the currently authenticated user's franchise 
+     */
+    async updateMySettings(franchiseId: string | null, dto: UpdateFranchiseDto) {
+        if (!franchiseId) {
+            // SUPER_ADMIN attempting to update system settings without a franchise model
+            // Let's find or create a franchise for 'localhost'
+            let systemFranchise = await this.prisma.franchise.findFirst({
+                where: { domain: 'localhost' }
+            });
+
+            if (!systemFranchise) {
+                systemFranchise = await this.prisma.franchise.create({
+                    data: {
+                        name: dto.name || 'AI Shiksha',
+                        domain: 'localhost',
+                        is_active: true,
+                        domain_verified: true,
+                    }
+                });
+            }
+
+            return this.prisma.franchise.update({
+                where: { id: systemFranchise.id },
+                data: dto,
+            });
+        }
+
+        if (dto.domain) {
+            const existing = await this.prisma.franchise.findFirst({
+                where: { domain: dto.domain, NOT: { id: franchiseId } },
+            });
+            if (existing) {
+                throw new ConflictException(`Domain "${dto.domain}" is already taken`);
+            }
+        }
+
+        return this.prisma.franchise.update({
+            where: { id: franchiseId },
+            data: dto,
+        });
     }
 
     /**

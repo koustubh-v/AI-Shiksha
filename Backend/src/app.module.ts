@@ -31,6 +31,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 import { FranchisesModule } from './modules/franchises/franchises.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
 @Module({
@@ -68,6 +69,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     TransactionsModule,
     SystemSettingsModule,
     FranchisesModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -21,7 +21,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Clock, CheckCircle2, AlertCircle, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { supportService, SupportTicket, CreateTicketDto } from "@/lib/api/supportService";
+import { Support as supportApi } from "@/lib/api";
+
+interface SupportTicket {
+    id: string;
+    subject: string;
+    description: string;
+    priority: "LOW" | "MEDIUM" | "HIGH" | string;
+    status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | string;
+    created_at: string;
+    updated_at: string;
+}
 
 export default function Support() {
     const { toast } = useToast();
@@ -29,11 +39,10 @@ export default function Support() {
     const [activeTab, setActiveTab] = useState("create");
     const [loading, setLoading] = useState(false);
     const [loadingTickets, setLoadingTickets] = useState(true);
-    const [newTicket, setNewTicket] = useState<CreateTicketDto>({
+    const [newTicket, setNewTicket] = useState({
         subject: "",
-        category: "technical",
         description: "",
-        priority: "medium",
+        priority: "MEDIUM",
     });
 
     // Load tickets on mount
@@ -44,7 +53,7 @@ export default function Support() {
     const loadTickets = async () => {
         try {
             setLoadingTickets(true);
-            const data = await supportService.getMyTickets();
+            const data = await supportApi.getStudentTickets();
             setTickets(data);
         } catch (error) {
             console.error('Error loading tickets:', error);
@@ -63,15 +72,15 @@ export default function Support() {
 
         try {
             setLoading(true);
-            const createdTicket = await supportService.createTicket(newTicket);
+            const createdTicket = await supportApi.createTicket(newTicket);
 
             setTickets([createdTicket, ...tickets]);
             toast({
                 title: "Ticket Created",
-                description: `Support team has been notified. ID: TICK-${createdTicket.id}`,
+                description: `Support team has been notified. ID: TICK-${createdTicket.id.split('-')[0]}`,
             });
 
-            setNewTicket({ subject: "", category: "technical", description: "", priority: "medium" });
+            setNewTicket({ subject: "", description: "", priority: "MEDIUM" });
             setActiveTab("recent");
         } catch (error) {
             console.error('Error creating ticket:', error);
@@ -86,19 +95,20 @@ export default function Support() {
     };
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case "open": return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
-            case "closed": return "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
-            case "pending": return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
+        switch (status.toUpperCase()) {
+            case "OPEN": return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+            case "IN_PROGRESS": return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
+            case "RESOLVED": return "bg-green-100 text-green-700 hover:bg-green-200 border-green-200";
+            case "CLOSED": return "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
             default: return "bg-gray-100 text-gray-700";
         }
     };
 
     const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case "high": return "text-red-600 bg-red-50 border-red-100";
-            case "medium": return "text-amber-600 bg-amber-50 border-amber-100";
-            case "low": return "text-green-600 bg-green-50 border-green-100";
+        switch (priority.toUpperCase()) {
+            case "HIGH": return "text-red-600 bg-red-50 border-red-100";
+            case "MEDIUM": return "text-amber-600 bg-amber-50 border-amber-100";
+            case "LOW": return "text-green-600 bg-green-50 border-green-100";
             default: return "text-gray-600";
         }
     };
@@ -114,8 +124,8 @@ export default function Support() {
                             <MessageSquare className="h-6 w-6 text-lms-blue" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-[#1F1F1F]">{tickets.filter(t => t.status === 'open').length}</p>
-                            <p className="text-sm text-gray-500">Open Tickets</p>
+                            <p className="text-2xl font-bold text-[#1F1F1F]">{tickets.filter(t => t.status !== 'CLOSED').length}</p>
+                            <p className="text-sm text-gray-500">Active Tickets</p>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -123,7 +133,7 @@ export default function Support() {
                             <CheckCircle2 className="h-6 w-6 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-[#1F1F1F]">{tickets.filter(t => t.status === 'closed').length}</p>
+                            <p className="text-2xl font-bold text-[#1F1F1F]">{tickets.filter(t => t.status === 'CLOSED' || t.status === 'RESOLVED').length}</p>
                             <p className="text-sm text-gray-500">Solved Issues</p>
                         </div>
                     </div>
@@ -169,36 +179,18 @@ export default function Support() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-sm font-medium text-gray-700">Category</label>
-                                                <Select
-                                                    value={newTicket.category}
-                                                    onValueChange={(val) => setNewTicket({ ...newTicket, category: val as "technical" | "billing" | "content" | "account" | "other" })}
-                                                >
-                                                    <SelectTrigger className="bg-gray-50 border-gray-200">
-                                                        <SelectValue placeholder="Select Category" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="technical">Technical Issue</SelectItem>
-                                                        <SelectItem value="billing">Billing & Payments</SelectItem>
-                                                        <SelectItem value="content">Course Content</SelectItem>
-                                                        <SelectItem value="account">Account & Security</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
                                                 <label className="text-sm font-medium text-gray-700">Priority</label>
                                                 <Select
                                                     value={newTicket.priority}
-                                                    onValueChange={(val) => setNewTicket({ ...newTicket, priority: val as "low" | "medium" | "high" })}
+                                                    onValueChange={(val) => setNewTicket({ ...newTicket, priority: val })}
                                                 >
                                                     <SelectTrigger className="bg-gray-50 border-gray-200">
                                                         <SelectValue placeholder="Select Priority" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="low">Low</SelectItem>
-                                                        <SelectItem value="medium">Medium</SelectItem>
-                                                        <SelectItem value="high">High</SelectItem>
+                                                        <SelectItem value="LOW">Low</SelectItem>
+                                                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                                                        <SelectItem value="HIGH">High</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -216,7 +208,7 @@ export default function Support() {
                                         </div>
 
                                         <div className="flex justify-end gap-3 pt-4">
-                                            <Button type="button" variant="outline" onClick={() => setNewTicket({ subject: "", category: "technical", description: "", priority: "medium" })}>Clear</Button>
+                                            <Button type="button" variant="outline" onClick={() => setNewTicket({ subject: "", description: "", priority: "MEDIUM" })}>Clear</Button>
                                             <Button type="submit" disabled={loading} className="bg-[#0056D2] hover:bg-[#0041a3] text-white px-8">
                                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                 Submit Ticket
@@ -275,17 +267,16 @@ export default function Support() {
                                         <div>
                                             <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
                                             <div className="flex flex-wrap gap-2 mt-2">
-                                                <Badge variant="outline" className="font-normal text-xs bg-gray-50">TICK-{ticket.id}</Badge>
+                                                <Badge variant="outline" className="font-normal text-xs bg-gray-50">TICK-{ticket.id.split('-')[0]}</Badge>
                                                 <Badge variant="outline" className={`font-normal text-xs border ${getStatusColor(ticket.status)}`}>{ticket.status.toUpperCase()}</Badge>
                                                 <Badge variant="outline" className={`font-normal text-xs border ${getPriorityColor(ticket.priority)}`}>{ticket.priority}</Badge>
-                                                <span className="text-xs text-gray-400 flex items-center mt-1 sm:mt-0 sm:ml-2">Category: {ticket.category}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between sm:justify-end gap-6 min-w-[200px]">
                                         <div className="text-right">
                                             <p className="text-xs text-gray-400">Created</p>
-                                            <p className="text-sm font-medium text-gray-700">{new Date(ticket.createdAt).toLocaleDateString()}</p>
+                                            <p className="text-sm font-medium text-gray-700">{new Date(ticket.created_at).toLocaleDateString()}</p>
                                         </div>
                                         <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">View Details</Button>
                                     </div>
@@ -299,13 +290,13 @@ export default function Support() {
                             <div className="flex justify-center py-12">
                                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                             </div>
-                        ) : tickets.filter(t => t.status === 'closed').length === 0 ? (
+                        ) : tickets.filter(t => t.status === 'CLOSED').length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                                 <CheckCircle2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                                 <p className="text-gray-500 font-medium">No closed tickets found</p>
                             </div>
                         ) : (
-                            tickets.filter(t => t.status === 'closed').map((ticket) => (
+                            tickets.filter(t => t.status === 'CLOSED').map((ticket) => (
                                 <div key={ticket.id} className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm opacity-75 hover:opacity-100 transition-opacity flex flex-col sm:flex-row justify-between gap-4">
                                     <div className="flex items-start gap-4">
                                         <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
@@ -314,14 +305,14 @@ export default function Support() {
                                         <div>
                                             <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
                                             <div className="flex flex-wrap gap-2 mt-2">
-                                                <Badge variant="outline" className="font-normal text-xs bg-gray-50">TICK-{ticket.id}</Badge>
+                                                <Badge variant="outline" className="font-normal text-xs bg-gray-50">TICK-{ticket.id.split('-')[0]}</Badge>
                                                 <Badge variant="outline" className="font-normal text-xs bg-green-100 text-green-700 border-green-200">SOLVED</Badge>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-gray-400">Closed On</p>
-                                        <p className="text-sm font-medium text-gray-700">{new Date(ticket.updatedAt).toLocaleDateString()}</p>
+                                        <p className="text-sm font-medium text-gray-700">{new Date(ticket.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             ))

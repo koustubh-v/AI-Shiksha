@@ -1,5 +1,5 @@
 import { GraduationCap } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { useFranchise } from "@/contexts/FranchiseContext";
 
 interface SidebarLogoProps {
@@ -12,8 +12,8 @@ export function SidebarLogo({ collapsed }: SidebarLogoProps) {
     return (
         <div className={cn("flex items-center gap-2 overflow-hidden transition-all duration-300", collapsed ? "w-8" : "w-full")}>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0 overflow-hidden">
-                {branding.logo_url ? (
-                    <img src={branding.logo_url} alt={branding.lms_name} className="h-8 w-8 object-cover" />
+                {branding.favicon_url || branding.logo_url ? (
+                    <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-cover" />
                 ) : (
                     <GraduationCap className="h-5 w-5 text-white" />
                 )}

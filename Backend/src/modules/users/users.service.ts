@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createUserDto: CreateUserDto, franchiseId?: string): Promise<User> {
+  async create(createUserDto: CreateUserDto, franchiseId?: string | null): Promise<User> {
     const { password, ...rest } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
     return this.prisma.user.create({
@@ -147,7 +147,7 @@ export class UsersService {
     }) as any;
   }
 
-  async findAll(role?: string, franchiseId?: string, isSuperAdmin = false) {
+  async findAll(role?: string, franchiseId?: string | null, isSuperAdmin = false) {
     let mappedRole = role;
     if (role) {
       const upper = role.toUpperCase();
@@ -196,7 +196,7 @@ export class UsersService {
     });
   }
 
-  async delete(id: string, franchiseId?: string): Promise<User> {
+  async delete(id: string, franchiseId?: string | null): Promise<User> {
     // Prevent deletion of the last admin
     const userToDelete = await this.prisma.user.findUnique({
       where: { id },
@@ -233,7 +233,7 @@ export class UsersService {
     });
   }
 
-  async getLeaderboard(franchiseId?: string) {
+  async getLeaderboard(franchiseId?: string | null) {
     const whereClause: any = { role: 'STUDENT' };
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
@@ -258,7 +258,7 @@ export class UsersService {
     }));
   }
 
-  async getStudentStats(franchiseId?: string) {
+  async getStudentStats(franchiseId?: string | null) {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -342,7 +342,7 @@ export class UsersService {
     };
   }
 
-  async getTeacherStats(franchiseId?: string) {
+  async getTeacherStats(franchiseId?: string | null) {
     // Get only instructors (not admins)
     const whereUser: any = {};
     if (franchiseId) {
@@ -427,5 +427,38 @@ export class UsersService {
       avgRating,
     };
   }
+
+  async updateRole(id: string, newRole: string, franchiseId?: string | null) {
+    const upperRole = newRole.toUpperCase() as Role;
+    if (!Object.values(Role).includes(upperRole)) {
+      throw new BadRequestException(`Invalid role specified: ${newRole}`);
+    }
+
+    const whereClause: any = { id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: whereClause,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { role: upperRole },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        franchise_id: true,
+      },
+    });
+  }
 }
+
 

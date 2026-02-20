@@ -9,6 +9,8 @@ import {
   Delete,
   Param,
   BadRequestException,
+  NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -29,6 +31,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
   updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+    console.log("UPDATE_PROFILE_REQUEST", { body: updateProfileDto });
     return this.usersService.updateProfile(req.user.userId, updateProfileDto);
   }
 
@@ -123,6 +126,23 @@ export class UsersController {
     const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
     const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
     return this.usersService.delete(id, franchiseId);
+  }
+
+  @Patch(':id/role')
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a user role (Admin only)' })
+  async updateRole(
+    @Param('id') id: string,
+    @Body('role') newRole: string,
+    @Request() req,
+  ) {
+    if (id === req.user.userId) {
+      throw new BadRequestException('Cannot change your own role this way');
+    }
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.usersService.updateRole(id, newRole, franchiseId);
   }
 }
 

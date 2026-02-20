@@ -10,7 +10,7 @@ export class CertificatesService {
         private pdfGenerator: PdfGeneratorService,
     ) { }
 
-    async getMyCertificates(userId: number, franchiseId?: string) {
+    async getMyCertificates(userId: string | number, franchiseId?: string | null) {
         const whereClause: any = {
             student_id: userId.toString(),
         };
@@ -67,7 +67,7 @@ export class CertificatesService {
         }));
     }
 
-    async getCertificateById(certificateId: string, userId: number, franchiseId?: string) {
+    async getCertificateById(certificateId: string, userId: string | number, franchiseId?: string | null) {
         const whereClause: any = {
             id: certificateId,
             student_id: userId.toString(),
@@ -125,7 +125,7 @@ export class CertificatesService {
         };
     }
 
-    async downloadCertificateByCourse(courseId: string, userId: string, res: Response, franchiseId?: string) {
+    async downloadCertificateByCourse(courseId: string, userId: string, res: Response, franchiseId?: string | null) {
         // Find certificate by course and user
         const whereClause: any = {
             course_id: courseId,
@@ -175,7 +175,7 @@ export class CertificatesService {
         res.send(pdfBuffer);
     }
 
-    async downloadCertificate(certificateId: string, userId: number, res: Response, franchiseId?: string) {
+    async downloadCertificate(certificateId: string, userId: string | number, res: Response, franchiseId?: string | null) {
         // Verify ownership
         const whereClause: any = {
             id: certificateId,
@@ -218,7 +218,7 @@ export class CertificatesService {
         res.send(pdfBuffer);
     }
 
-    async validateCertificate(userId: string, courseSlug: string, franchiseId?: string) {
+    async validateCertificate(userId: string, courseSlug: string, franchiseId?: string | null) {
         // Find certificate by user ID and course slug
         const whereClause: any = {
             student_id: userId,

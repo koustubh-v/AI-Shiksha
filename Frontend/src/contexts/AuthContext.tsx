@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setToken(null);
       }
+
       setIsLoading(false);
     };
 

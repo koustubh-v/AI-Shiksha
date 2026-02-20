@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -34,13 +34,28 @@ export class TenantMiddleware implements NestMiddleware {
             });
 
             if (franchise) {
-                (req as any).tenantId = franchise.id;
+                // If it's the auto-created system franchise (localhost), treat as System Context
+                if (domain === 'localhost') {
+                    (req as any).tenantId = null;
+                } else {
+                    (req as any).tenantId = franchise.id;
+                }
                 (req as any).tenantBranding = franchise;
             } else {
+                // If it's not localhost and no franchise is found, it's an invalid franchise domain.
+                // We should block access rather than falling back to the system context.
+                if (domain !== 'localhost') {
+                    throw new UnauthorizedException('Invalid Franchise Domain');
+                }
+
+                // Allow localhost to fallback to System for Super Admin login
                 (req as any).tenantId = null;
                 (req as any).tenantBranding = null;
             }
-        } catch {
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                throw error;
+            }
             // If DB lookup fails, continue without tenant context
             (req as any).tenantId = null;
             (req as any).tenantBranding = null;

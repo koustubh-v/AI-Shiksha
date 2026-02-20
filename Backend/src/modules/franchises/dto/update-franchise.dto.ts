@@ -41,4 +41,34 @@ export class UpdateFranchiseDto {
     @IsOptional()
     @IsBoolean()
     domain_verified?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    favicon_url?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    maintenance_mode?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_title?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_keywords?: string;
 }

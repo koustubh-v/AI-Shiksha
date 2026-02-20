@@ -21,6 +21,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 
+// Maintenance Page
+import MaintenancePage from "./pages/Maintenance";
+
 // Unified Dashboard
 import UnifiedDashboardPage from "./pages/UnifiedDashboardPage";
 import UnifiedLayout from "./components/layout/UnifiedLayout";
@@ -40,7 +43,6 @@ import Moderation from "./pages/dashboard/Moderation";
 // Admin Pages
 import StudentsPage from "./pages/admin/Students";
 import TeachersPage from "./pages/admin/Teachers";
-import RolesPage from "./pages/admin/Roles";
 import CategoriesPage from "./pages/admin/Categories";
 import CourseApprovalPage from "./pages/admin/CourseApproval";
 import AIControlPage from "./pages/admin/AIControl";
@@ -95,8 +97,30 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 
 // Other
 import NotFound from "./pages/NotFound";
+import { useFranchise } from "./contexts/FranchiseContext";
+import { useAuth, UserRole } from "./contexts/AuthContext";
+import { Outlet } from "react-router-dom";
 
 const queryClient = new QueryClient();
+
+// Maintenance Wrapper to protect routes when maintenance mode is active
+const MaintenanceWrapper = () => {
+  const { branding, isLoading: isFranchiseLoading } = useFranchise();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  if (isFranchiseLoading || isAuthLoading) {
+    return <div className="min-h-screen bg-background flex justify-center items-center">Loading...</div>;
+  }
+
+  // Allow admins, super_admins, and franchise_admins to bypass maintenance mode
+  const canBypass = user && ['admin', 'super_admin', 'franchise_admin'].includes(user.role);
+
+  if (branding.maintenance_mode && !canBypass) {
+    return <MaintenancePage />;
+  }
+
+  return <Outlet />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -109,111 +133,108 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  {/* Marketing Routes */}
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-
-                  {/* Auth Routes */}
+                  {/* Auth Routes (Never Blocked by Maintenance Mode) */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                  {/* Unified Dashboard - Main */}
-                  <Route path="/dashboard" element={<UnifiedDashboardPage />} />
+                  {/* Maintenance Wrapper protects everything below this point */}
+                  <Route element={<MaintenanceWrapper />}>
+                    {/* Marketing Routes */}
+                    <Route path="/" element={<Landing />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
 
-                  {/* Unified Dashboard - Main */}
+                    {/* Unified Dashboard - Main */}
+                    <Route path="/dashboard" element={<UnifiedDashboardPage />} />
 
+                    {/* Dashboard Sub-routes (shared + role-specific) */}
+                    <Route path="/dashboard/my-courses" element={<MyCourses />} />
+                    <Route path="/dashboard/courses" element={<CourseManagement />} />
+                    <Route path="/dashboard/courses/new" element={<CreateCourseRedirect />} />
+                    <Route path="/dashboard/courses/:courseId/edit" element={<CourseBuilder />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/dashboard/assignments" element={<AdminAssignments />} />
+                    </Route>
+                    <Route path="/dashboard/quizzes" element={<QuizManagement />} />
+                    <Route path="/dashboard/quizzes/new" element={<QuizCreator />} />
+                    <Route path="/dashboard/quizzes/:id/edit" element={<QuizCreator />} />
 
-              // ...
+                    <Route path="/dashboard/settings" element={<Settings />} />
+                    <Route path="/dashboard/messages" element={<Messages />} />
+                    <Route path="/dashboard/certificates" element={<Certificates />} />
+                    <Route path="/dashboard/ai-assistant" element={<AIAssistant />} />
+                    <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
+                    <Route path="/dashboard/transactions" element={<Transactions />} />
+                    <Route path="/dashboard/support" element={<Support />} />
+                    <Route path="/dashboard/users" element={<UsersPage />} />
+                    <Route path="/dashboard/moderation" element={<Moderation />} />
 
-                  {/* Dashboard Sub-routes (shared + role-specific) */}
-                  <Route path="/dashboard/my-courses" element={<MyCourses />} />
-                  <Route path="/dashboard/courses" element={<CourseManagement />} />
-                  <Route path="/dashboard/courses/new" element={<CreateCourseRedirect />} />
-                  <Route path="/dashboard/courses/:courseId/edit" element={<CourseBuilder />} />
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/dashboard/assignments" element={<AdminAssignments />} />
+                    {/* Admin Routes */}
+                    <Route path="/dashboard/students" element={<StudentsPage />} />
+                    <Route path="/dashboard/teachers" element={<TeachersPage />} />
+                    <Route path="/dashboard/categories" element={<CategoriesPage />} />
+                    <Route path="/dashboard/course-approval" element={<CourseApprovalPage />} />
+                    <Route path="/dashboard/ai-control" element={<AIControlPage />} />
+                    <Route path="/dashboard/ai-tutor" element={<AIControlPage />} />
+                    <Route path="/dashboard/ai-moderation" element={<AIControlPage />} />
+                    <Route path="/dashboard/ai-insights" element={<AIControlPage />} />
+                    <Route path="/dashboard/revenue" element={<RevenuePage />} />
+                    <Route path="/dashboard/revenue" element={<RevenuePage />} />
+                    <Route path="/dashboard/add-bank-details" element={<AddBankDetailsPage />} />
+                    <Route path="/dashboard/payouts" element={<PayoutsPage />} />
+                    <Route path="/dashboard/coupons" element={<CouponsPage />} />
+                    <Route path="/dashboard/subscriptions" element={<RevenuePage />} />
+
+                    <Route path="/dashboard/enrollment" element={<EnrollmentPage />} />
+                    <Route path="/dashboard/completion" element={<CompletionPage />} />
+                    <Route path="/dashboard/franchises" element={<FranchisesPage />} />
+                    <Route path="/dashboard/institutions" element={<FranchisesPage />} />
+                    <Route path="/dashboard/announcements" element={<AnnouncementsPage />} />
+                    <Route path="/dashboard/tickets" element={<TicketsPage />} />
+                    <Route path="/dashboard/community" element={<TicketsPage />} />
+                    <Route path="/dashboard/security" element={<SecurityPage />} />
+                    <Route path="/dashboard/audit-logs" element={<SecurityPage />} />
+                    <Route path="/dashboard/data-privacy" element={<SecurityPage />} />
+                    <Route path="/dashboard/platform-settings" element={<PlatformSettingsPage />} />
+                    <Route path="/dashboard/seo-settings" element={<SEOSettingsPage />} />
+                    <Route path="/dashboard/integrations" element={<IntegrationsPage />} />
+                    <Route path="/dashboard/notification-settings" element={<PlatformSettingsPage />} />
+                    <Route path="/dashboard/api-keys" element={<IntegrationsPage />} />
+                    <Route path="/dashboard/webhooks" element={<IntegrationsPage />} />
+                    <Route path="/dashboard/feature-flags" element={<IntegrationsPage />} />
+                    <Route path="/dashboard/help" element={<HelpPage />} />
+                    <Route path="/dashboard/system-status" element={<SystemStatusPage />} />
+                    <Route path="/dashboard/certificate-templates" element={<CertificateTemplatesPage />} />
+                    <Route path="/dashboard/my-certificates" element={<MyCertificatesPage />} />
+                    <Route path="/dashboard/system-settings/terms" element={<ManageTerms />} />
+
+                    {/* Unified Layout Routes */}
+                    <Route element={<UnifiedLayout />}>
+                      {/* Public Course Pages */}
+                      <Route path="/courses" element={<PublicCourseCatalog />} />
+                      <Route path="/courses/:slug" element={<CoursePreview />} />
+                      <Route path="/course/:slug/view" element={<EnrolledCourseView />} />
+                      <Route path="/dashboard/courses/:slug/preview" element={<CoursePreview />} />
+
+                      {/* E-commerce */}
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/order-success" element={<OrderSuccess />} />
+                    </Route>
+
+                    {/* Learning Player (Fullscreen) - using SEO-friendly slugs */}
+                    <Route path="/learn/:courseSlug/lesson/:lessonSlug" element={<LessonPlayer />} />
+
+                    {/* Certificate Validation (Public) */}
+                    <Route path="/courses/:courseSlug/validation/:userId" element={<CertificateValidation />} />
+
+                    {/* Catch all */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Route>
-                  <Route path="/dashboard/quizzes" element={<QuizManagement />} />
-                  <Route path="/dashboard/quizzes/new" element={<QuizCreator />} />
-                  <Route path="/dashboard/quizzes/:id/edit" element={<QuizCreator />} />
-
-                  <Route path="/dashboard/settings" element={<Settings />} />
-                  <Route path="/dashboard/messages" element={<Messages />} />
-                  <Route path="/dashboard/certificates" element={<Certificates />} />
-                  <Route path="/dashboard/ai-assistant" element={<AIAssistant />} />
-                  <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
-                  <Route path="/dashboard/transactions" element={<Transactions />} />
-                  <Route path="/dashboard/support" element={<Support />} />
-                  <Route path="/dashboard/users" element={<UsersPage />} />
-                  <Route path="/dashboard/moderation" element={<Moderation />} />
-
-                  {/* Admin Routes */}
-                  <Route path="/dashboard/students" element={<StudentsPage />} />
-                  <Route path="/dashboard/teachers" element={<TeachersPage />} />
-                  <Route path="/dashboard/roles" element={<RolesPage />} />
-                  <Route path="/dashboard/categories" element={<CategoriesPage />} />
-                  <Route path="/dashboard/course-approval" element={<CourseApprovalPage />} />
-                  <Route path="/dashboard/ai-control" element={<AIControlPage />} />
-                  <Route path="/dashboard/ai-tutor" element={<AIControlPage />} />
-                  <Route path="/dashboard/ai-moderation" element={<AIControlPage />} />
-                  <Route path="/dashboard/ai-insights" element={<AIControlPage />} />
-                  <Route path="/dashboard/revenue" element={<RevenuePage />} />
-                  <Route path="/dashboard/revenue" element={<RevenuePage />} />
-                  <Route path="/dashboard/add-bank-details" element={<AddBankDetailsPage />} />
-                  <Route path="/dashboard/payouts" element={<PayoutsPage />} />
-                  <Route path="/dashboard/coupons" element={<CouponsPage />} />
-                  <Route path="/dashboard/subscriptions" element={<RevenuePage />} />
-
-                  <Route path="/dashboard/enrollment" element={<EnrollmentPage />} />
-                  <Route path="/dashboard/completion" element={<CompletionPage />} />
-                  <Route path="/dashboard/franchises" element={<FranchisesPage />} />
-                  <Route path="/dashboard/institutions" element={<FranchisesPage />} />
-                  <Route path="/dashboard/announcements" element={<AnnouncementsPage />} />
-                  <Route path="/dashboard/tickets" element={<TicketsPage />} />
-                  <Route path="/dashboard/community" element={<TicketsPage />} />
-                  <Route path="/dashboard/security" element={<SecurityPage />} />
-                  <Route path="/dashboard/audit-logs" element={<SecurityPage />} />
-                  <Route path="/dashboard/data-privacy" element={<SecurityPage />} />
-                  <Route path="/dashboard/platform-settings" element={<PlatformSettingsPage />} />
-                  <Route path="/dashboard/seo-settings" element={<SEOSettingsPage />} />
-                  <Route path="/dashboard/integrations" element={<IntegrationsPage />} />
-                  <Route path="/dashboard/notification-settings" element={<PlatformSettingsPage />} />
-                  <Route path="/dashboard/api-keys" element={<IntegrationsPage />} />
-                  <Route path="/dashboard/webhooks" element={<IntegrationsPage />} />
-                  <Route path="/dashboard/feature-flags" element={<IntegrationsPage />} />
-                  <Route path="/dashboard/help" element={<HelpPage />} />
-                  <Route path="/dashboard/system-status" element={<SystemStatusPage />} />
-                  <Route path="/dashboard/certificate-templates" element={<CertificateTemplatesPage />} />
-                  <Route path="/dashboard/my-certificates" element={<MyCertificatesPage />} />
-                  <Route path="/dashboard/system-settings/terms" element={<ManageTerms />} />
-
-                  {/* Unified Layout Routes */}
-                  <Route element={<UnifiedLayout />}>
-                    {/* Public Course Pages */}
-                    <Route path="/courses" element={<PublicCourseCatalog />} />
-                    <Route path="/courses/:slug" element={<CoursePreview />} />
-                    <Route path="/course/:slug/view" element={<EnrolledCourseView />} />
-                    <Route path="/dashboard/courses/:slug/preview" element={<CoursePreview />} />
-
-                    {/* E-commerce */}
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/order-success" element={<OrderSuccess />} />
-                  </Route>
-
-                  {/* Learning Player (Fullscreen) - using SEO-friendly slugs */}
-                  <Route path="/learn/:courseSlug/lesson/:lessonSlug" element={<LessonPlayer />} />
-
-                  {/* Certificate Validation (Public) */}
-                  <Route path="/courses/:courseSlug/validation/:userId" element={<CertificateValidation />} />
-
-                  {/* Catch all */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
             </SidebarProvider>

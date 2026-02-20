@@ -72,6 +72,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SidebarLogo } from "./SidebarLogo";
 
 interface NavItem {
   icon: React.ElementType;
@@ -95,7 +96,6 @@ const adminNavItems: NavItem[] = [
       { icon: Users, label: "All Users", href: "/dashboard/users" },
       { icon: GraduationCap, label: "Students", href: "/dashboard/students" },
       { icon: UserCheck, label: "Teachers", href: "/dashboard/teachers" },
-      { icon: Lock, label: "Roles & Permissions", href: "/dashboard/roles" },
     ],
   },
   {
@@ -131,17 +131,14 @@ const adminNavItems: NavItem[] = [
   {
     icon: Building2,
     label: "Franchise",
-    children: [
-      { icon: Building2, label: "All Franchises", href: "/dashboard/franchises" },
-      { icon: Globe, label: "Institutions", href: "/dashboard/institutions" },
-    ],
+    href: "/dashboard/franchises",
   },
   {
     icon: MessageSquare,
     label: "Communication",
     children: [
       { icon: Megaphone, label: "Announcements", href: "/dashboard/announcements" },
-      { icon: Ticket, label: "Support Tickets", href: "/dashboard/tickets", badge: "8" },
+      { icon: Ticket, label: "Support Tickets", href: "/dashboard/tickets" },
     ],
   },
   {
@@ -351,19 +348,7 @@ export function AdminSidebar() {
     >
       {/* Logo & Collapse */}
       <div className="flex h-14 items-center justify-between border-b border-white/10 px-4 flex-shrink-0">
-        <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", collapsed ? "w-9" : "w-full")}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent flex-shrink-0 overflow-hidden">
-            {branding.logo_url ? (
-              <img src={branding.logo_url} alt={branding.lms_name} className="h-9 w-9 object-cover" />
-            ) : (
-              <GraduationCap className="h-5 w-5 text-white" />
-            )}
-          </div>
-          <div className={cn("whitespace-nowrap transition-opacity duration-200", collapsed ? "opacity-0" : "opacity-100")}>
-            <span className="font-bold text-white">{branding.lms_name}</span>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider">Admin Panel</p>
-          </div>
-        </div>
+        <SidebarLogo collapsed={collapsed} />
       </div>
 
 

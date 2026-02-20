@@ -38,7 +38,8 @@ export class TagsController {
   findAll(@Request() req) {
     const user = req.user;
     if (!user) {
-      return this.tagsService.findAll(undefined);
+      const tenantId = (req as any).tenantId;
+      return this.tagsService.findAll(tenantId);
     }
     const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
     const franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
@@ -46,9 +47,19 @@ export class TagsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get tag details' })
-  findOne(@Param('id') id: string) {
-    return this.tagsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    const user = req.user;
+    let franchiseId: string | undefined | null;
+
+    if (!user) {
+      franchiseId = (req as any).tenantId;
+    } else {
+      const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
+      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    }
+    return this.tagsService.findOne(id, franchiseId);
   }
 
   @Delete(':id')
@@ -56,7 +67,9 @@ export class TagsController {
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete tag (Admin only)' })
-  remove(@Param('id') id: string) {
-    return this.tagsService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id ?? null);
+    return this.tagsService.remove(id, franchiseId);
   }
 }

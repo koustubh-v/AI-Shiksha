@@ -17,6 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../enums/role.enum';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -51,25 +52,50 @@ export class CoursesController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'List all published courses' })
   findAll(@Request() req) {
-    // For public access, we might need tenant context from middleware if not logged in
-    // TenantMiddleware injects franchiseId into request object directly
-    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    const user = req.user;
+    let franchiseId: string | undefined | null;
+
+    if (!user) {
+      franchiseId = (req as any).tenantId;
+    } else {
+      const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
+      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    }
     return this.coursesService.findAll(false, franchiseId);
   }
 
   @Get('slug/:slug')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get course by slug (published only)' })
   findBySlug(@Param('slug') slug: string, @Request() req) {
-    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    const user = req.user;
+    let franchiseId: string | undefined | null;
+
+    if (!user) {
+      franchiseId = (req as any).tenantId;
+    } else {
+      const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
+      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    }
     return this.coursesService.findBySlug(slug, franchiseId);
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get course details' })
   findOne(@Param('id') id: string, @Request() req) {
-    const franchiseId = req.user?.franchise_id || req['franchise_id'];
+    const user = req.user;
+    let franchiseId: string | undefined | null;
+
+    if (!user) {
+      franchiseId = (req as any).tenantId;
+    } else {
+      const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
+      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    }
     return this.coursesService.findOne(id, franchiseId);
   }
 

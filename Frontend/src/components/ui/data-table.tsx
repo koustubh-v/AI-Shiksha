@@ -152,8 +152,8 @@ export function DataTable<TData, TValue>({
                     </DropdownMenu>
                 </div>
             </div>
-            <div className="rounded-xl border bg-white overflow-hidden">
-                <Table>
+            <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
+                <Table className="hidden md:table">
                     <TableHeader className="bg-gray-50/50">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -208,6 +208,53 @@ export function DataTable<TData, TValue>({
                         )}
                     </TableBody>
                 </Table>
+
+                {/* Mobile Responsive List View */}
+                <div className="md:hidden flex flex-col divide-y divide-border">
+                    {isLoading ? (
+                        <div className="p-8 flex justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                            <div key={row.id} className="flex flex-col p-4 gap-3 bg-white hover:bg-gray-50/50 transition-colors">
+                                {row.getVisibleCells().map((cell) => {
+                                    if (cell.column.id === 'select') {
+                                        return (
+                                            <div key={cell.id} className="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
+                                                <span className="text-sm font-medium text-muted-foreground">Select</span>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </div>
+                                        )
+                                    }
+                                    if (cell.column.id === 'actions') {
+                                        return (
+                                            <div key={cell.id} className="pt-2 flex justify-end">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </div>
+                                        )
+                                    }
+                                    return (
+                                        <div key={cell.id} className="flex flex-col gap-1">
+                                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                {typeof cell.column.columnDef.header === 'string'
+                                                    ? cell.column.columnDef.header
+                                                    : cell.column.id}
+                                            </span>
+                                            <div className="text-sm text-foreground overflow-hidden">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-muted-foreground text-sm">
+                            No results.
+                        </div>
+                    )}
+                </div>
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
@@ -235,6 +282,6 @@ export function DataTable<TData, TValue>({
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

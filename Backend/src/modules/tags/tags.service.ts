@@ -52,9 +52,14 @@ export class TagsService {
     });
   }
 
-  async findOne(id: string) {
-    const tag = await this.prisma.tag.findUnique({
-      where: { id },
+  async findOne(id: string, franchiseId?: string | null) {
+    const where: any = { id };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId;
+    }
+
+    const tag = await this.prisma.tag.findFirst({
+      where,
       include: {
         courses: {
           include: {
@@ -75,10 +80,13 @@ export class TagsService {
     return tag;
   }
 
-  async remove(id: string) {
-    const tag = await this.prisma.tag.findUnique({
-      where: { id },
-    });
+  async remove(id: string, franchiseId?: string | null) {
+    const where: any = { id };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId;
+    }
+
+    const tag = await this.prisma.tag.findFirst({ where });
 
     if (!tag) {
       throw new NotFoundException('Tag not found');

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +56,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import { useUsers, useCreateUser, useDeleteUser } from "@/hooks/useUsers";
+import { useUsers, useCreateUser, useDeleteUser, useUpdateUserRole } from "@/hooks/useUsers";
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,6 +78,7 @@ export default function UsersPage() {
 
   const createUserMutation = useCreateUser();
   const deleteUserMutation = useDeleteUser();
+  const updateUserRoleMutation = useUpdateUserRole();
 
   // Filter users based on active tab
   const tabFilteredUsers = allUsers.filter((user) => {
@@ -234,7 +236,11 @@ export default function UsersPage() {
     if (!roleChangeUser) return;
 
     try {
-      // TODO: Call update user API when backend endpoint is ready
+      await updateUserRoleMutation.mutateAsync({
+        userId: roleChangeUser.id,
+        role: newRole,
+      });
+
       toast({
         title: "Role Updated",
         description: `${roleChangeUser.name}'s role has been changed to ${newRole}.`,
@@ -378,21 +384,41 @@ export default function UsersPage() {
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role *</Label>
-                    <Select
+                  <div className="space-y-3 pt-2">
+                    <Label className="text-sm font-medium">Role *</Label>
+                    <RadioGroup
                       value={newUser.role}
                       onValueChange={(value) => setNewUser({ ...newUser, role: value })}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-3"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="teacher">Teacher</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <div>
+                        <RadioGroupItem value="student" id="role-student" className="peer sr-only" />
+                        <Label
+                          htmlFor="role-student"
+                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                        >
+                          Student
+                        </Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="teacher" id="role-teacher" className="peer sr-only" />
+                        <Label
+                          htmlFor="role-teacher"
+                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                        >
+                          Teacher
+                        </Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="admin" id="role-admin" className="peer sr-only" />
+                        <Label
+                          htmlFor="role-admin"
+                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                        >
+                          Admin
+                        </Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password *</Label>
@@ -489,7 +515,7 @@ export default function UsersPage() {
           <TabsContent value={activeTab} className="mt-4">
             <Card className="border-border/50">
               <CardContent className="p-0">
-                <Table>
+                <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-12">
@@ -584,6 +610,99 @@ export default function UsersPage() {
                     ))}
                   </TableBody>
                 </Table>
+
+                {/* Mobile Responsive Cards View */}
+                <div className="md:hidden flex flex-col">
+                  {filteredUsers.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/20">
+                        <Checkbox
+                          id="mobile-select-all"
+                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                        <Label htmlFor="mobile-select-all" className="text-sm font-medium cursor-pointer">
+                          Select All Users
+                        </Label>
+                      </div>
+                      <div className="flex flex-col gap-3 p-4">
+                        {filteredUsers.map((user) => (
+                          <Card key={user.id} className="border border-border/50 shadow-sm">
+                            <CardContent className="p-4 space-y-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Checkbox
+                                    checked={selectedUsers.includes(user.id)}
+                                    onCheckedChange={() => handleSelectUser(user.id)}
+                                  />
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user.avatar_url} />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                      {user.name.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex flex-col overflow-hidden">
+                                    <span className="font-semibold text-sm line-clamp-1">{user.name}</span>
+                                    <span className="text-xs text-muted-foreground line-clamp-1">{user.email}</span>
+                                  </div>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem className="gap-2" onClick={() => handleSendEmail(user)}>
+                                      <Mail className="h-4 w-4" />
+                                      Send Email
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
+                                      <Shield className="h-4 w-4" />
+                                      Change Role
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleDeleteUser(user.id, user.name)}>
+                                      <Ban className="h-4 w-4" />
+                                      Delete User
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 pl-[3.25rem]">
+                                <Badge
+                                  variant="secondary"
+                                  className={
+                                    user.role === "ADMIN" || user.role === "admin"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : user.role === "INSTRUCTOR" || user.role === "teacher"
+                                        ? "bg-primary/10 text-primary"
+                                        : "bg-muted text-muted-foreground"
+                                  }
+                                >
+                                  {user.role === "INSTRUCTOR" ? "Instructor" : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
+                                </Badge>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-emerald-100 text-emerald-700"
+                                >
+                                  Active
+                                </Badge>
+                                <span className="text-xs text-muted-foreground ml-auto">
+                                  {new Date(user.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      No users found.
+                    </div>
+                  )}
+                </div>
+
               </CardContent>
             </Card>
           </TabsContent>
@@ -599,18 +718,41 @@ export default function UsersPage() {
               <p className="text-sm text-muted-foreground">
                 Change role for <span className="font-medium text-foreground">{roleChangeUser?.name}</span>
               </p>
-              <div className="space-y-2">
-                <Label>New Role</Label>
-                <Select onValueChange={handleConfirmRoleChange} defaultValue={roleChangeUser?.currentRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select new role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="STUDENT">Student</SelectItem>
-                    <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-medium">New Role</Label>
+                <RadioGroup
+                  value={roleChangeUser?.currentRole}
+                  onValueChange={handleConfirmRoleChange}
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                >
+                  <div>
+                    <RadioGroupItem value="STUDENT" id="change-role-student" className="peer sr-only" />
+                    <Label
+                      htmlFor="change-role-student"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      Student
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem value="INSTRUCTOR" id="change-role-teacher" className="peer sr-only" />
+                    <Label
+                      htmlFor="change-role-teacher"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      Instructor
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem value="ADMIN" id="change-role-admin" className="peer sr-only" />
+                    <Label
+                      htmlFor="change-role-admin"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      Admin
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
           </DialogContent>

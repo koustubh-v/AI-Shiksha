@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,17 +7,55 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  Globe,
-  Share2,
-  Code,
-  Save,
-  FileText,
-  Image,
-} from "lucide-react";
+import { Search, Globe, Share2, Code, Save, FileText, Image } from "lucide-react";
+import { Settings as PlatformSettingsAPI } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useFranchise } from "@/contexts/FranchiseContext";
 
 export default function SEOSettingsPage() {
+  const { toast } = useToast();
+  const { refresh: refreshFranchise } = useFranchise();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [seoKeywords, setSeoKeywords] = useState("");
+
+  const refresh = async () => {
+    try {
+      const data = await PlatformSettingsAPI.getPlatformSettings();
+      setSeoTitle(data.seo_title || "");
+      setSeoDescription(data.seo_description || "");
+      setSeoKeywords(data.seo_keywords || "");
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load SEO settings", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const handleSaveSEO = async () => {
+    setSaving(true);
+    try {
+      await PlatformSettingsAPI.updatePlatformSettings({
+        seo_title: seoTitle,
+        seo_description: seoDescription,
+        seo_keywords: seoKeywords,
+      });
+      await refreshFranchise();
+      toast({ title: "Success", description: "SEO settings updated successfully." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update SEO settings", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AdminDashboardLayout title="SEO Settings" subtitle="Optimize your platform for search engines">
       <div className="space-y-6">
@@ -38,27 +77,36 @@ export default function SEOSettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label>Site Title</Label>
-                  <Input defaultValue="LearnAI - AI-Powered Learning Platform" />
+                  <Input
+                    value={seoTitle}
+                    onChange={(e) => setSeoTitle(e.target.value)}
+                    placeholder="e.g. LearnAI - AI-Powered Learning Platform"
+                    disabled={loading || saving}
+                  />
                   <p className="text-sm text-muted-foreground">Recommended: 50-60 characters</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Meta Description</Label>
                   <Textarea
-                    defaultValue="Transform your learning journey with LearnAI. Access thousands of AI-powered courses, personalized learning paths, and expert instructors. Start learning today!"
+                    value={seoDescription}
+                    onChange={(e) => setSeoDescription(e.target.value)}
+                    placeholder="Brief description of your platform for search engines..."
                     rows={3}
+                    disabled={loading || saving}
                   />
                   <p className="text-sm text-muted-foreground">Recommended: 150-160 characters</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Keywords</Label>
-                  <Input defaultValue="online learning, AI courses, e-learning platform, online education, skill development" />
+                  <Input
+                    value={seoKeywords}
+                    onChange={(e) => setSeoKeywords(e.target.value)}
+                    placeholder="online learning, AI courses, e-learning platform"
+                    disabled={loading || saving}
+                  />
                   <p className="text-sm text-muted-foreground">Separate keywords with commas</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>Canonical URL</Label>
-                  <Input defaultValue="https://learnai.com" />
-                </div>
-                <Button className="gap-2">
+                <Button onClick={handleSaveSEO} disabled={loading || saving} className="gap-2">
                   <Save className="h-4 w-4" /> Save SEO Settings
                 </Button>
               </CardContent>

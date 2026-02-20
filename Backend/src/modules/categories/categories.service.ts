@@ -52,9 +52,14 @@ export class CategoriesService {
     });
   }
 
-  async findOne(id: string) {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
+  async findOne(id: string, franchiseId?: string | null) {
+    const where: any = { id };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId;
+    }
+
+    const category = await this.prisma.category.findFirst({
+      where,
       include: {
         courses: {
           include: {
@@ -71,10 +76,13 @@ export class CategoriesService {
     return category;
   }
 
-  async update(id: string, updateCategoryDto: CreateCategoryDto) {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-    });
+  async update(id: string, updateCategoryDto: CreateCategoryDto, franchiseId?: string | null) {
+    const where: any = { id };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId;
+    }
+
+    const category = await this.prisma.category.findFirst({ where });
 
     if (!category) {
       throw new NotFoundException('Category not found');
@@ -91,10 +99,13 @@ export class CategoriesService {
     });
   }
 
-  async remove(id: string) {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-    });
+  async remove(id: string, franchiseId?: string | null) {
+    const where: any = { id };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId;
+    }
+
+    const category = await this.prisma.category.findFirst({ where });
 
     if (!category) {
       throw new NotFoundException('Category not found');

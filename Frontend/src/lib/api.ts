@@ -537,4 +537,65 @@ export const Videos = {
     }
 };
 
+export const Support = {
+    createTicket: async (data: any) => {
+        const response = await api.post('/support/tickets', data);
+        return response.data;
+    },
+    getStudentTickets: async () => {
+        const response = await api.get('/support/tickets/student');
+        return response.data;
+    },
+    getAdminTickets: async () => {
+        const response = await api.get('/support/tickets/admin');
+        return response.data;
+    },
+    getTicketDetails: async (id: string) => {
+        const response = await api.get(`/support/tickets/${id}`);
+        return response.data;
+    },
+    addMessage: async (id: string, data: { message: string }) => {
+        const response = await api.post(`/support/tickets/${id}/messages`, data);
+        return response.data;
+    },
+    closeTicket: async (id: string) => {
+        const response = await api.patch(`/support/tickets/${id}/close`);
+        return response.data;
+    }
+};
+
+export const Announcements = {
+    create: async (data: any) => {
+        const response = await api.post('/announcements', data);
+        return response.data;
+    },
+    getAdminAll: async () => {
+        const response = await api.get('/announcements');
+        return response.data;
+    },
+    getStudentActive: async () => {
+        const response = await api.get('/announcements/student');
+        return response.data;
+    },
+    toggleStatus: async (id: string) => {
+        const response = await api.patch(`/announcements/${id}/toggle-status`);
+        return response.data;
+    },
+    delete: async (id: string) => {
+        const response = await api.delete(`/announcements/${id}`);
+        return response.data;
+    }
+};
+
+export const Settings = {
+    getPlatformSettings: async () => {
+        const response = await api.get('/franchises/me/settings');
+        return response.data;
+    },
+    updatePlatformSettings: async (data: any) => {
+        const response = await api.patch('/franchises/me/settings', data);
+        return response.data;
+    }
+};
+
 export default api;

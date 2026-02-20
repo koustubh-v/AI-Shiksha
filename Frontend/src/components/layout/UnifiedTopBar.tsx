@@ -4,8 +4,10 @@ import { Bell, Search, Menu, X, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFranchise } from "@/contexts/FranchiseContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { UnifiedMobileSidebar } from "./UnifiedMobileSidebar";
+import { getImageUrl } from "@/lib/utils";
 
 interface UnifiedTopBarProps {
   title?: string;
@@ -14,6 +16,7 @@ interface UnifiedTopBarProps {
 
 export function UnifiedTopBar({ title, subtitle }: UnifiedTopBarProps) {
   const { user } = useAuth();
+  const { branding } = useFranchise();
   const [showSearch, setShowSearch] = useState(false);
 
   return (
@@ -44,10 +47,14 @@ export function UnifiedTopBar({ title, subtitle }: UnifiedTopBarProps) {
 
       {/* Mobile Logo */}
       <Link to="/dashboard" className="flex items-center gap-2 md:hidden">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-          <GraduationCap className="h-5 w-5 text-white" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
+          {branding.favicon_url || branding.logo_url ? (
+            <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-cover" />
+          ) : (
+            <GraduationCap className="h-5 w-5 text-white" />
+          )}
         </div>
-        <span className="text-lg font-bold">LearnAI</span>
+        <span className="text-lg font-bold truncate max-w-[120px]">{branding.lms_name}</span>
       </Link>
 
       {/* Right Side Actions */}

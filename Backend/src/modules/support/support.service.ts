@@ -1,72 +1,150 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateSupportTicketDto } from './dto/create-support-ticket.dto';
-import { UpdateSupportTicketDto } from './dto/update-support-ticket.dto';
-import { SupportTicket } from './entities/support-ticket.entity';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { AddMessageDto } from './dto/add-message.dto';
 
 @Injectable()
 export class SupportService {
-    private tickets: SupportTicket[] = []; // In-memory store for now (will be replaced with database)
-    private idCounter = 1;
+    constructor(private prisma: PrismaService) { }
 
-    create(userId: number, createDto: CreateSupportTicketDto): SupportTicket {
-        const ticket: SupportTicket = {
-            id: this.idCounter++,
-            userId,
-            subject: createDto.subject,
-            description: createDto.description,
-            category: createDto.category,
-            priority: createDto.priority || 'medium',
-            status: 'open',
-            adminResponse: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+    async createTicket(studentId: string, franchiseId: string | null, createTicketDto: CreateTicketDto) {
+        if (!studentId) {
+            throw new ForbiddenException('Student ID is required');
+        }
 
-        this.tickets.push(ticket);
+        const ticket = await this.prisma.supportTicket.create({
+            data: {
+                student_id: studentId,
+                franchise_id: franchiseId,
+                subject: createTicketDto.subject,
+                description: createTicketDto.description,
+                priority: createTicketDto.priority || 'MEDIUM',
+            },
+        });
+
+        // Add the initial description as the first message
+        await this.prisma.supportTicketMessage.create({
+            data: {
+                ticket_id: ticket.id,
+                sender_id: studentId,
+                message: createTicketDto.description,
+                is_admin: false,
+            },
+        });
+
         return ticket;
     }
 
-    findAll(userId?: number): SupportTicket[] {
-        if (userId) {
-            return this.tickets.filter(ticket => ticket.userId === userId);
-        }
-        return this.tickets;
+    async getStudentTickets(studentId: string) {
+        return this.prisma.supportTicket.findMany({
+            where: { student_id: studentId },
+            include: {
+                _count: {
+                    select: { messages: true },
+                },
+            },
+            orderBy: { updated_at: 'desc' },
+        });
     }
 
-    findOne(id: number): SupportTicket {
-        const ticket = this.tickets.find(t => t.id === id);
+    async getAdminTickets(franchiseId: string | null) {
+        const whereClause: any = {};
+        if (franchiseId) {
+            whereClause.franchise_id = franchiseId;
+        }
+
+        return this.prisma.supportTicket.findMany({
+            where: whereClause,
+            include: {
+                student: {
+                    select: { name: true, email: true, avatar_url: true },
+                },
+                _count: {
+                    select: { messages: true },
+                },
+            },
+            orderBy: { updated_at: 'desc' },
+        });
+    }
+
+    async getTicketDetails(ticketId: string, userId: string, role: string, franchiseId: string | null) {
+        const ticket = await this.prisma.supportTicket.findUnique({
+            where: { id: ticketId },
+            include: {
+                student: {
+                    select: { name: true, email: true, avatar_url: true },
+                },
+                messages: {
+                    include: {
+                        sender: {
+                            select: { name: true, role: true, avatar_url: true },
+                        },
+                    },
+                    orderBy: { created_at: 'asc' },
+                },
+                franchise: {
+                    select: { name: true },
+                }
+            },
+        });
+
         if (!ticket) {
-            throw new NotFoundException(`Ticket #${id} not found`);
+            throw new NotFoundException('Ticket not found');
         }
+
+        // Access control:
+        if (role === 'STUDENT' && ticket.student_id !== userId) {
+            throw new ForbiddenException('Access denied');
+        }
+
+        if (role !== 'STUDENT' && franchiseId && ticket.franchise_id !== franchiseId) {
+            throw new ForbiddenException('Access denied');
+        }
+
         return ticket;
     }
 
-    update(id: number, updateDto: UpdateSupportTicketDto): SupportTicket {
-        const ticket = this.findOne(id);
+    async addMessage(ticketId: string, userId: string, role: string, franchiseId: string | null, addMessageDto: AddMessageDto) {
+        const ticket = await this.getTicketDetails(ticketId, userId, role, franchiseId);
 
-        if (updateDto.status) {
-            ticket.status = updateDto.status;
-        }
-        if (updateDto.adminResponse !== undefined) {
-            ticket.adminResponse = updateDto.adminResponse;
+        if (ticket.status === 'CLOSED') {
+            throw new ForbiddenException('Cannot reply to a closed ticket');
         }
 
-        ticket.updatedAt = new Date();
-        return ticket;
+        const isAdmin = role !== 'STUDENT';
+
+        const message = await this.prisma.supportTicketMessage.create({
+            data: {
+                ticket_id: ticketId,
+                sender_id: userId,
+                message: addMessageDto.message,
+                is_admin: isAdmin,
+            },
+            include: {
+                sender: {
+                    select: { name: true, role: true, avatar_url: true },
+                },
+            }
+        });
+
+        const newStatus = isAdmin ? 'IN_PROGRESS' : 'OPEN';
+        await this.prisma.supportTicket.update({
+            where: { id: ticketId },
+            data: { status: newStatus },
+        });
+
+        return message;
     }
 
-    getStats() {
-        const total = this.tickets.length;
-        const open = this.tickets.filter(t => t.status === 'open').length;
-        const pending = this.tickets.filter(t => t.status === 'pending').length;
-        const closed = this.tickets.filter(t => t.status === 'closed').length;
+    async closeTicket(ticketId: string, userId: string, role: string, franchiseId: string | null) {
+        await this.getTicketDetails(ticketId, userId, role, franchiseId);
 
-        return {
-            total,
-            open,
-            pending,
-            closed,
-            avgResponseTime: '~2 hrs', // Placeholder
-        };
+        return this.prisma.supportTicket.update({
+            where: { id: ticketId },
+            data: {
+                status: 'CLOSED',
+                closed_at: new Date(),
+            },
+        });
     }
 }

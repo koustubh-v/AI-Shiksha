@@ -14,9 +14,120 @@ import {
   Mail,
   Save,
   Image,
+  Loader2,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Uploads } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useFranchise } from "@/contexts/FranchiseContext";
 
 export default function PlatformSettingsPage() {
+  const { toast } = useToast();
+  const { refresh } = useFranchise();
+
+  const [loading, setLoading] = useState(true);
+  const [savingGeneral, setSavingGeneral] = useState(false);
+  const [savingBranding, setSavingBranding] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+
+  // Form State
+  const [platformName, setPlatformName] = useState("");
+  const [supportEmail, setSupportEmail] = useState("");
+  const [description, setDescription] = useState("");
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  const [logoUrl, setLogoUrl] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#6366f1");
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const data = await Settings.getPlatformSettings();
+      setPlatformName(data.lms_name || "");
+      setSupportEmail(data.support_email || "");
+      setDescription(data.description || "");
+      setMaintenanceMode(data.maintenance_mode || false);
+      setLogoUrl(data.logo_url || "");
+      setFaviconUrl(data.favicon_url || "");
+      setPrimaryColor(data.primary_color || "#6366f1");
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load platform settings", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveGeneral = async () => {
+    setSavingGeneral(true);
+    try {
+      await Settings.updatePlatformSettings({
+        lms_name: platformName,
+        support_email: supportEmail || null,
+        description: description,
+        maintenance_mode: maintenanceMode
+      });
+      toast({ title: "Success", description: "General settings updated successfully." });
+      refresh(); // Refresh global branding context
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update general settings", variant: "destructive" });
+    } finally {
+      setSavingGeneral(false);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    setSavingBranding(true);
+    try {
+      await Settings.updatePlatformSettings({
+        logo_url: logoUrl,
+        favicon_url: faviconUrl,
+        primary_color: primaryColor,
+      });
+      toast({ title: "Success", description: "Branding updated successfully." });
+      refresh(); // Refresh global branding context
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update branding", variant: "destructive" });
+    } finally {
+      setSavingBranding(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type === 'logo') setUploadingLogo(true); else setUploadingFavicon(true);
+
+    try {
+      const result = await Uploads.upload(file);
+      if (type === 'logo') {
+        setLogoUrl(result.url);
+      } else {
+        setFaviconUrl(result.url);
+      }
+      toast({ title: "Success", description: "Image uploaded successfully." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+    } finally {
+      if (type === 'logo') setUploadingLogo(false); else setUploadingFavicon(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminDashboardLayout title="Platform Settings" subtitle="Configure your platform appearance and settings">
+        <div className="flex h-[400px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
+
   return (
     <AdminDashboardLayout title="Platform Settings" subtitle="Configure your platform appearance and settings">
       <div className="space-y-6">
@@ -39,11 +150,19 @@ export default function PlatformSettingsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Platform Name</Label>
-                    <Input defaultValue="LearnAI" />
+                    <Input
+                      value={platformName}
+                      onChange={(e) => setPlatformName(e.target.value)}
+                      placeholder="e.g. AI Shiksha"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Support Email</Label>
-                    <Input defaultValue="support@learnai.com" />
+                    <Input
+                      value={supportEmail}
+                      onChange={(e) => setSupportEmail(e.target.value)}
+                      placeholder="e.g. support@domain.com"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Default Language</Label>
@@ -67,7 +186,9 @@ export default function PlatformSettingsPage() {
                 <div className="space-y-2">
                   <Label>Platform Description</Label>
                   <Textarea
-                    defaultValue="AI-powered learning management system for modern education."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe your learning platform..."
                     rows={3}
                   />
                 </div>
@@ -76,10 +197,11 @@ export default function PlatformSettingsPage() {
                     <Label>Maintenance Mode</Label>
                     <p className="text-sm text-muted-foreground">Take the platform offline for maintenance</p>
                   </div>
-                  <Switch />
+                  <Switch checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
                 </div>
-                <Button className="gap-2">
-                  <Save className="h-4 w-4" /> Save Changes
+                <Button className="gap-2" onClick={handleSaveGeneral} disabled={savingGeneral}>
+                  {savingGeneral ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Changes
                 </Button>
               </CardContent>
             </Card>
@@ -97,22 +219,47 @@ export default function PlatformSettingsPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-4">
                     <Label>Logo</Label>
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                      <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground mb-2">Drag and drop or click to upload</p>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Upload className="h-4 w-4" /> Upload Logo
-                      </Button>
+                    <div className="border border-border rounded-lg p-6 text-center space-y-4 bg-muted/20">
+                      {logoUrl ? (
+                        <div className="relative mx-auto w-32 h-16 border bg-background rounded overflow-hidden flex items-center justify-center">
+                          <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      ) : (
+                        <Image className="h-12 w-12 mx-auto text-muted-foreground" />
+                      )}
+
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-3">Recommended format: SVG, PNG (transparent, max 2MB)</p>
+                        <Label htmlFor="logo-upload" className="cursor-pointer">
+                          <Button variant="outline" size="sm" className="gap-1 relative pointer-events-none">
+                            {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            {logoUrl ? 'Change Logo' : 'Upload Logo'}
+                          </Button>
+                        </Label>
+                        <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'logo')} disabled={uploadingLogo} />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <Label>Favicon</Label>
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                      <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground mb-2">32x32 or 64x64 pixels</p>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Upload className="h-4 w-4" /> Upload Favicon
-                      </Button>
+                    <div className="border border-border rounded-lg p-6 text-center space-y-4 bg-muted/20">
+                      {faviconUrl ? (
+                        <div className="relative mx-auto w-12 h-12 border bg-background rounded overflow-hidden flex items-center justify-center">
+                          <img src={faviconUrl} alt="Favicon" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      ) : (
+                        <Globe className="h-12 w-12 mx-auto text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-3">1:1 square: 32x32 or 64x64 pixels (.ico, .png, .svg)</p>
+                        <Label htmlFor="favicon-upload" className="cursor-pointer">
+                          <Button variant="outline" size="sm" className="gap-1 relative pointer-events-none">
+                            {uploadingFavicon ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            {faviconUrl ? 'Change Favicon' : 'Upload Favicon'}
+                          </Button>
+                        </Label>
+                        <input id="favicon-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'favicon')} disabled={uploadingFavicon} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -120,27 +267,14 @@ export default function PlatformSettingsPage() {
                   <div className="space-y-2">
                     <Label>Primary Color</Label>
                     <div className="flex gap-2">
-                      <Input type="color" defaultValue="#0056D2" className="w-12 h-10 p-1" />
-                      <Input defaultValue="#0056D2" className="flex-1" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Secondary Color</Label>
-                    <div className="flex gap-2">
-                      <Input type="color" defaultValue="#2A9D8F" className="w-12 h-10 p-1" />
-                      <Input defaultValue="#2A9D8F" className="flex-1" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Accent Color</Label>
-                    <div className="flex gap-2">
-                      <Input type="color" defaultValue="#F77F00" className="w-12 h-10 p-1" />
-                      <Input defaultValue="#F77F00" className="flex-1" />
+                      <Input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-12 h-10 p-1" />
+                      <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1" />
                     </div>
                   </div>
                 </div>
-                <Button className="gap-2">
-                  <Save className="h-4 w-4" /> Save Branding
+                <Button className="gap-2" onClick={handleSaveBranding} disabled={savingBranding}>
+                  {savingBranding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Branding
                 </Button>
               </CardContent>
             </Card>

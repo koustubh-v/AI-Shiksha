@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,18 +14,149 @@ import {
   CheckCircle,
   AlertCircle,
   MessageSquare,
+  Loader2,
+  Send,
   User,
 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Support as supportApi } from "@/lib/api";
 
-const tickets = [
-  { id: "TKT-001", user: "Alex Johnson", type: "Student", subject: "Payment issue", priority: "high", status: "open", createdAt: "2024-01-20" },
-  { id: "TKT-002", user: "Dr. Emily Chen", type: "Teacher", subject: "Payout not received", priority: "high", status: "in_progress", createdAt: "2024-01-19" },
-  { id: "TKT-003", user: "Maria Garcia", type: "Student", subject: "Cannot access course", priority: "medium", status: "open", createdAt: "2024-01-19" },
-  { id: "TKT-004", user: "James Wilson", type: "Student", subject: "Refund request", priority: "medium", status: "resolved", createdAt: "2024-01-18" },
-  { id: "TKT-005", user: "Prof. Robert Smith", type: "Teacher", subject: "Video upload failed", priority: "low", status: "open", createdAt: "2024-01-17" },
-];
+interface SupportTicketMessage {
+  id: string;
+  message: string;
+  is_admin: boolean;
+  created_at: string;
+  sender: {
+    name: string;
+    role: string;
+    avatar_url: string;
+  };
+}
+
+interface SupportTicket {
+  id: string;
+  subject: string;
+  description: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | string;
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | string;
+  created_at: string;
+  updated_at: string;
+  student?: {
+    name: string;
+    email: string;
+    avatar_url: string | null;
+  };
+  messages?: SupportTicketMessage[];
+}
 
 export default function TicketsPage() {
+  const { toast } = useToast();
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
+
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const loadTickets = async () => {
+    try {
+      setLoading(true);
+      const data = await supportApi.getAdminTickets();
+      setTickets(data);
+    } catch (error) {
+      console.error('Error loading tickets:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tickets. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "OPEN": return "secondary";
+      case "IN_PROGRESS": return "default";
+      case "RESOLVED": return "accent";
+      case "CLOSED": return "outline";
+      default: return "secondary";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toUpperCase()) {
+      case "HIGH": return "destructive";
+      case "MEDIUM": return "default";
+      case "LOW": return "secondary";
+      default: return "secondary";
+    }
+  };
+
+  const filteredTickets = tickets.filter(ticket =>
+    ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (ticket.student?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleViewTicket = async (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    setIsSheetOpen(true);
+    try {
+      const details = await supportApi.getTicketDetails(ticket.id);
+      setSelectedTicket(details);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load ticket details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReply = async () => {
+    if (!replyMessage.trim() || !selectedTicket) return;
+    setIsReplying(true);
+    try {
+      await supportApi.addMessage(selectedTicket.id, { message: replyMessage });
+      setReplyMessage("");
+      const details = await supportApi.getTicketDetails(selectedTicket.id);
+      setSelectedTicket(details);
+      loadTickets();
+      toast({ title: "Success", description: "Reply sent successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to send reply", variant: "destructive" });
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  const handleCloseTicket = async () => {
+    if (!selectedTicket) return;
+    try {
+      await supportApi.closeTicket(selectedTicket.id);
+      const details = await supportApi.getTicketDetails(selectedTicket.id);
+      setSelectedTicket(details);
+      loadTickets();
+      toast({ title: "Success", description: "Ticket manually closed" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to close ticket", variant: "destructive" });
+    }
+  };
+
+  const openCount = tickets.filter(t => t.status === 'OPEN').length;
+  const inProgressCount = tickets.filter(t => t.status === 'IN_PROGRESS').length;
+  const resolvedCount = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+
   return (
     <AdminDashboardLayout title="Support Tickets" subtitle="Handle user support requests">
       <div className="space-y-6">
@@ -35,7 +167,7 @@ export default function TicketsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Open Tickets</p>
-                  <p className="text-2xl font-bold">24</p>
+                  <p className="text-2xl font-bold">{openCount}</p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-destructive/50" />
               </div>
@@ -46,7 +178,7 @@ export default function TicketsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">In Progress</p>
-                  <p className="text-2xl font-bold">8</p>
+                  <p className="text-2xl font-bold">{inProgressCount}</p>
                 </div>
                 <Clock className="h-8 w-8 text-chart-3/50" />
               </div>
@@ -56,8 +188,8 @@ export default function TicketsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Resolved Today</p>
-                  <p className="text-2xl font-bold">15</p>
+                  <p className="text-sm text-muted-foreground">Resolved</p>
+                  <p className="text-2xl font-bold">{resolvedCount}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-accent/50" />
               </div>
@@ -87,7 +219,12 @@ export default function TicketsPage() {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search tickets..." className="pl-9 w-64" />
+                  <Input
+                    placeholder="Search tickets..."
+                    className="pl-9 w-64"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
                 <Button variant="outline" size="icon">
                   <Filter className="h-4 w-4" />
@@ -96,62 +233,202 @@ export default function TicketsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ticket ID</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-mono text-sm">{ticket.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {ticket.user.split(" ").map(n => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{ticket.user}</p>
-                          <p className="text-xs text-muted-foreground">{ticket.type}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{ticket.subject}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={ticket.priority === "high" ? "destructive" : ticket.priority === "medium" ? "default" : "secondary"}
-                      >
-                        {ticket.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={ticket.status === "resolved" ? "default" : ticket.status === "in_progress" ? "secondary" : "outline"}
-                        className={ticket.status === "resolved" ? "bg-accent" : ""}
-                      >
-                        {ticket.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{ticket.createdAt}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline">View</Button>
-                    </TableCell>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredTickets.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Ticket className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p>No tickets found</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ticket ID</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredTickets.map((ticket) => (
+                    <TableRow key={ticket.id}>
+                      <TableCell className="font-mono text-sm">TICK-{ticket.id.split('-')[0]}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary uppercase">
+                              {ticket.student?.name?.[0] || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{ticket.student?.name || 'Unknown'}</p>
+                            <p className="text-xs text-muted-foreground capitalize">Student</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{ticket.subject}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={getPriorityColor(ticket.priority) as any}
+                        >
+                          {ticket.priority.toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={getStatusColor(ticket.status) as any}
+                          className={ticket.status === "RESOLVED" ? "bg-accent" : ""}
+                        >
+                          {ticket.status.replace("_", " ").toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" onClick={() => handleViewTicket(ticket)}>View</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0">
+          <SheetHeader className="p-6 border-b border-border/50 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle className="text-lg pb-1">{selectedTicket?.subject}</SheetTitle>
+                <SheetDescription>
+                  Ticket ID: TICK-{selectedTicket?.id?.split('-')[0]} • Created {selectedTicket && new Date(selectedTicket.created_at).toLocaleDateString()}
+                </SheetDescription>
+              </div>
+              {selectedTicket && (
+                <Badge variant={getStatusColor(selectedTicket.status) as any}>
+                  {selectedTicket.status.replace("_", " ").toUpperCase()}
+                </Badge>
+              )}
+            </div>
+          </SheetHeader>
+
+          {selectedTicket && (
+            <ScrollArea className="flex-1 p-6">
+              <div className="space-y-6">
+                {/* Description / Initial Message */}
+                <div className="space-y-3 pb-6 border-b border-border/50">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary uppercase">
+                        {selectedTicket.student?.name?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{selectedTicket.student?.name || 'Student'}</span>
+                      <span className="text-xs text-muted-foreground">Original Request</span>
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 p-4 rounded-lg text-sm leading-relaxed border border-border/50 text-foreground">
+                    {selectedTicket.description}
+                  </div>
+                </div>
+
+                {/* Messages Timeline */}
+                <div className="space-y-4">
+                  {!selectedTicket.messages && (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {selectedTicket.messages?.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-3 max-w-[85%] ${msg.is_admin ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                    >
+                      <Avatar className="h-8 w-8 shrink-0">
+                        {msg.is_admin ? (
+                          <AvatarFallback className="bg-lms-blue text-white"><User className="h-4 w-4" /></AvatarFallback>
+                        ) : (
+                          <AvatarFallback className="bg-primary/10 text-primary uppercase">
+                            {msg.sender?.name?.[0] || 'U'}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+
+                      <div className={`space-y-1.5 flex flex-col ${msg.is_admin ? "items-end" : "items-start"}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {msg.sender?.name || (msg.is_admin ? "Admin" : "Student")}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div
+                          className={`p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.is_admin
+                            ? "bg-lms-blue text-white rounded-tr-sm"
+                            : "bg-background border border-border rounded-tl-sm text-foreground"
+                            }`}
+                        >
+                          {msg.message}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+
+          {selectedTicket?.status !== 'CLOSED' && selectedTicket?.status !== 'RESOLVED' && (
+            <div className="p-4 border-t border-border bg-muted/20">
+              <div className="flex flex-col gap-3">
+                <Textarea
+                  placeholder="Type your reply here..."
+                  className="resize-none min-h-[90px] w-full"
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                />
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    size="sm"
+                    onClick={handleCloseTicket}
+                  >
+                    Mark as Resolved
+                  </Button>
+                  <Button
+                    onClick={handleReply}
+                    disabled={isReplying || !replyMessage.trim()}
+                    className="gap-2 bg-lms-blue hover:bg-lms-blue/90"
+                    size="sm"
+                  >
+                    {isReplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Send Reply
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          {(selectedTicket?.status === 'CLOSED' || selectedTicket?.status === 'RESOLVED') && (
+            <div className="p-4 border-t border-border bg-muted/20 text-center">
+              <div className="mx-auto w-fit px-4 py-2 rounded-full bg-accent/10 border border-accent/20 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-accent" />
+                <span className="text-sm font-medium text-accent">This ticket has been resolved.</span>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminDashboardLayout>
   );
 }

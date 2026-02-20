@@ -37,6 +37,27 @@ export class FranchisesController {
         return this.franchisesService.getBrandingByDomain(hostname);
     }
 
+    @Get('me/settings')
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get current franchise settings' })
+    getMySettings(@Request() req: any) {
+        // Super Admins not attached to a franchise will get default system settings
+        const franchiseId = req.user.franchise_id || null;
+        return this.franchisesService.getMySettings(franchiseId);
+    }
+
+    @Patch('me/settings')
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update current franchise settings' })
+    updateMySettings(@Request() req: any, @Body() updateFranchiseDto: UpdateFranchiseDto) {
+        const franchiseId = req.user.franchise_id || null;
+        return this.franchisesService.updateMySettings(franchiseId, updateFranchiseDto);
+    }
+
     @Get()
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Roles(Role.SUPER_ADMIN)

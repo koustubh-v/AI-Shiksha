@@ -598,4 +598,15 @@ export const Settings = {
     }
 };
 
+export const AdminSettings = {
+    getAiSettings: async () => {
+        const { data } = await api.get('/admin/ai-settings');
+        return data;
+    },
+    updateAiSettings: async (settings: { gemini_api_key?: string; global_ai_control?: boolean }) => {
+        const { data } = await api.put('/admin/ai-settings', settings);
+        return data;
+    }
+};
+
 export default api;

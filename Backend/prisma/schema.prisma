@@ -16,18 +16,22 @@ enum Role {
 }
 
 model Franchise {
-  id              String   @id @default(uuid())
-  name            String
-  lms_name        String?
-  domain          String   @unique
-  logo_url        String?
-  favicon_url     String?
-  primary_color   String?  @default("#6366f1")
-  support_email   String?
-  description     String?  @db.Text
-  is_active       Boolean  @default(true)
-  domain_verified Boolean  @default(false)
+  id               String  @id @default(uuid())
+  name             String
+  lms_name         String?
+  domain           String  @unique
+  logo_url         String?
+  favicon_url      String?
+  primary_color    String? @default("#6366f1")
+  support_email    String?
+  description      String? @db.Text
+  is_active        Boolean @default(true)
+  domain_verified  Boolean @default(false)
   maintenance_mode Boolean @default(false)
+
+  // AI Settings
+  gemini_api_key    String?
+  global_ai_control Boolean @default(true)
 
   // SEO Settings
   seo_title       String?
@@ -36,13 +40,13 @@ model Franchise {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  users        User[]
-  courses      Course[]
-  enrollments  Enrollment[]
-  payments     Payment[]
-  certificates Certificate[]
-  categories   Category[]
-  tags         Tag[]
+  users           User[]
+  courses         Course[]
+  enrollments     Enrollment[]
+  payments        Payment[]
+  certificates    Certificate[]
+  categories      Category[]
+  tags            Tag[]
   support_tickets SupportTicket[]
   announcements   Announcement[]
 
@@ -86,8 +90,8 @@ model User {
   refresh_token_hash String?
 
   // Student Dashboard Features
-  weekly_goal_hours     Int                   @default(0)
-  weekly_minutes_spent  Int                   @default(0)
+  weekly_goal_hours     Int                    @default(0)
+  weekly_minutes_spent  Int                    @default(0)
   milestones            Milestone[]
   sectionItemProgresses SectionItemProgress[]
   support_tickets       SupportTicket[]        @relation("StudentTickets")
@@ -722,17 +726,17 @@ model SectionItemProgress {
 // ============================================
 
 model SupportTicket {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   student_id  String
-  student     User     @relation("StudentTickets", fields: [student_id], references: [id], onDelete: Cascade)
+  student     User   @relation("StudentTickets", fields: [student_id], references: [id], onDelete: Cascade)
   subject     String
-  description String   @db.Text
-  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
-  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  description String @db.Text
+  status      String @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String @default("MEDIUM") // LOW, MEDIUM, HIGH
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  closed_at   DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  closed_at  DateTime?
 
   // Multi-tenant franchise
   franchise_id String?
@@ -744,13 +748,13 @@ model SupportTicket {
 }
 
 model SupportTicketMessage {
-  id         String   @id @default(uuid())
-  ticket_id  String
-  ticket     SupportTicket @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
-  sender_id  String
-  sender     User     @relation(fields: [sender_id], references: [id], onDelete: Cascade)
-  message    String   @db.Text
-  is_admin   Boolean  @default(false)
+  id        String        @id @default(uuid())
+  ticket_id String
+  ticket    SupportTicket @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  sender_id String
+  sender    User          @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  message   String        @db.Text
+  is_admin  Boolean       @default(false)
 
   created_at DateTime @default(now())
 
@@ -758,19 +762,19 @@ model SupportTicketMessage {
 }
 
 model Announcement {
-  id          String   @id @default(uuid())
-  title       String
-  content     String   @db.Text
-  is_active   Boolean  @default(true)
-  created_by  String
-  author      User     @relation("AnnouncementAuthor", fields: [created_by], references: [id], onDelete: Cascade)
+  id         String  @id @default(uuid())
+  title      String
+  content    String  @db.Text
+  is_active  Boolean @default(true)
+  created_by String
+  author     User    @relation("AnnouncementAuthor", fields: [created_by], references: [id], onDelete: Cascade)
 
   // Multi-tenant franchise constraints
   franchise_id String?
   franchise    Franchise? @relation(fields: [franchise_id], references: [id])
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("announcements")
 }

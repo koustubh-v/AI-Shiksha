@@ -24,9 +24,11 @@ import {
   Music,
   Globe,
   Briefcase,
-  School
+  School,
+  MessageCircle
 } from "lucide-react";
 import UnifiedNavbar from "@/components/layout/UnifiedNavbar";
+import { Chatbot } from "@/components/ai/Chatbot";
 
 // --- Types & Data ---
 
@@ -547,8 +549,10 @@ const Footer = () => {
 // --- Main App ---
 
 export default function Landing() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-background-light font-sans text-text-main">
+    <div className="min-h-screen bg-background-light font-sans text-text-main relative">
       <UnifiedNavbar />
       <div className="pt-16">
         <Hero />
@@ -559,6 +563,29 @@ export default function Landing() {
         <FinalCTA />
         <Footer />
       </div>
+
+      {/* Floating Chat Button */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 z-40 bg-primary hover:bg-primary/90 text-white px-4 py-3 md:px-5 md:py-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center group gap-2 md:gap-3"
+          aria-label="Ask Sentinel AI"
+        >
+          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
+          <span className="font-semibold text-sm md:text-base whitespace-nowrap">
+            Ask Sentinel
+          </span>
+        </button>
+      )}
+
+      {/* Floating Chat Window */}
+      {isChatOpen && (
+        <Chatbot
+          endpoint="/ai/public/chat"
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 }

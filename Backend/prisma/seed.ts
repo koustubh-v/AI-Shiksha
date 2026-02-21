@@ -7,16 +7,16 @@ async function main() {
     console.log('🌱 Seeding database...');
 
     // Hash password
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('@#k$7878V', 10);
 
     // Create admin user
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@lms.com' },
+        where: { email: 'expertttrainers@gmail.com' },
         update: {
             role: 'SUPER_ADMIN',
         },
         create: {
-            email: 'admin@lms.com',
+            email: 'expertttrainers@gmail.com',
             name: 'Super Admin User',
             password_hash: hashedPassword,
             role: 'SUPER_ADMIN',
@@ -95,22 +95,6 @@ async function main() {
             return prisma.category.create({ data: { ...cat, franchise_id: null } });
         })
     );
-
-    console.log('✅ Categories created:', categories.length);
-
-    console.log('\n🎉 Seeding completed successfully!');
-    console.log('\n📝 Login credentials:');
-    console.log('─────────────────────────────');
-    console.log('Admin:');
-    console.log('  Email: admin@lms.com');
-    console.log('  Password: admin123');
-    console.log('\nInstructor:');
-    console.log('  Email: instructor@lms.com');
-    console.log('  Password: admin123');
-    console.log('\nStudent:');
-    console.log('  Email: student@lms.com');
-    console.log('  Password: admin123');
-    console.log('─────────────────────────────\n');
 }
 
 main()

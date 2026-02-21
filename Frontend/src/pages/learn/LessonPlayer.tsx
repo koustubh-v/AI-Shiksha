@@ -75,6 +75,7 @@ import AssignmentPlayer from "@/components/learn/AssignmentPlayer";
 import { CertificateViewModal } from "@/components/certificates/CertificateViewModal";
 
 import PDFFlipbook from "@/components/learn/PDFFlipbook";
+import { Chatbot } from "@/components/ai/Chatbot";
 
 // PDF worker setup moved to PDFFlipbook component
 
@@ -514,7 +515,7 @@ export default function LessonPlayer() {
                       controls
                       autoPlay={false}
                       onEnded={() => {
-                        // Optional: Auto-mark complete? 
+                        // Optional: Auto-mark complete?
                       }}
                     />
                   </div>
@@ -866,20 +867,14 @@ const SidebarContent = ({
           </div>
         </TabsContent>
 
-        {/* AI Assistant Tab - Coming Soon */}
-        <TabsContent value="ai" className="flex-1 flex flex-col items-center justify-center p-8 text-center mt-0 data-[state=inactive]:hidden">
-          <div className="flex flex-col items-center justify-center h-full w-full">
-            <div className="bg-primary/10 p-6 rounded-full mb-6 animate-pulse">
-              <Sparkles className="h-12 w-12 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">AI Assistant Coming Soon</h3>
-            <p className="text-muted-foreground mb-8 max-w-[260px] mx-auto">
-              We're building an intelligent tutor to help you learn faster and answer your questions 24/7.
-            </p>
-            <Button variant="outline" onClick={() => setSidebarTab("content")}>
-              Back to Content
-            </Button>
-          </div>
+        {/* AI Assistant Tab */}
+        <TabsContent value="ai" className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden overflow-hidden relative">
+          <Chatbot
+            endpoint="/ai/assistant/chat"
+            courseId={course?.id}
+            embedded={true}
+            className="border-0 rounded-none shadow-none h-full"
+          />
         </TabsContent>
       </Tabs>
 

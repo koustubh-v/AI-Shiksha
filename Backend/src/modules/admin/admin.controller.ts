@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../enums/role.enum';
+import { UpdateAiSettingsDto } from './dto/update-ai-settings.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -37,6 +38,36 @@ export class AdminController {
     const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
     const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
     return this.adminService.getPendingActions(franchiseId);
+  }
+
+  @Get('ai-settings')
+  getAiSettings(@Request() req) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+
+    // Fallback to tenantId from middleware if no explicit franchise is set on user
+    // Also fallback to req.tenantBranding.id mapping (which is preserved even for localhost)
+    const finalFranchiseId = franchiseId || req.tenantId || req.tenantBranding?.id;
+
+    return this.adminService.getAiSettings(finalFranchiseId);
+  }
+
+  @Put('ai-settings')
+  async updateAiSettings(@Request() req, @Body() updateAiSettingsDto: UpdateAiSettingsDto) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    let franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+
+    franchiseId = franchiseId || req.tenantId || req.tenantBranding?.id;
+
+    if (!franchiseId) {
+      throw new BadRequestException('Cannot update AI settings without a franchise context.');
+    }
+
+    return this.adminService.updateAiSettings(
+      franchiseId,
+      updateAiSettingsDto.gemini_api_key,
+      updateAiSettingsDto.global_ai_control
+    );
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bot, MessageSquare, Smartphone, Zap, ExternalLink, Key, Plus, Trash2, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { AdminSettings } from "@/lib/api";
 
 type BotStatus = "active" | "inactive";
 
@@ -23,6 +24,8 @@ export default function AIControlPage() {
   const { toast } = useToast();
   const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [apiKey, setApiKey] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [chatbots, setChatbots] = useState<Chatbot[]>([
     { id: "1", name: "Support Assistant", role: "Customer Support", status: "active" },
     { id: "2", name: "Course Advisor", role: "Sales", status: "inactive" },
@@ -31,21 +34,79 @@ export default function AIControlPage() {
     { id: "1", name: "Enrollment Helper", role: "Onboarding", status: "active" },
   ]);
 
-  const handleSaveApiKey = () => {
-    // In a real app, this would save to backend/localStorage
-    toast({
-      title: "API Key Saved",
-      description: "Your Gemini API key has been securely stored.",
-    });
+  useEffect(() => {
+    fetchAiSettings();
+  }, []);
+
+  const fetchAiSettings = async () => {
+    setIsLoading(true);
+    try {
+      const data = await AdminSettings.getAiSettings();
+      setIsAiEnabled(data.global_ai_control ?? true);
+      setApiKey(data.gemini_api_key ?? "");
+    } catch (error) {
+      console.error("Failed to fetch AI settings", error);
+      toast({
+        title: "Error",
+        description: "Failed to load AI settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleToggleAi = (enabled: boolean) => {
-    setIsAiEnabled(enabled);
-    toast({
-      title: enabled ? "AI Enabled" : "AI Disabled",
-      description: `Artificial Intelligence features are now ${enabled ? "active" : "disabled"} across the platform.`,
-      variant: enabled ? "default" : "destructive",
-    });
+  const saveSettings = async (updates: {
+    gemini_api_key?: string;
+    global_ai_control?: boolean;
+  }) => {
+    setIsSaving(true);
+    try {
+      await AdminSettings.updateAiSettings(updates);
+      return true;
+    } catch (error) {
+      console.error("Error saving AI settings", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    const success = await saveSettings({ gemini_api_key: apiKey });
+    if (success) {
+      toast({
+        title: "API Key Saved",
+        description: "Your Gemini API key has been securely stored.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to save API key.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleAi = async (enabled: boolean) => {
+    const previousState = isAiEnabled;
+    setIsAiEnabled(enabled); // Optimistic update
+
+    const success = await saveSettings({ global_ai_control: enabled });
+    if (success) {
+      toast({
+        title: enabled ? "AI Enabled" : "AI Disabled",
+        description: `Artificial Intelligence features are now ${enabled ? "active" : "disabled"} across the platform.`,
+        variant: enabled ? "default" : "destructive",
+      });
+    } else {
+      setIsAiEnabled(previousState); // Revert on failure
+      toast({
+        title: "Error",
+        description: "Failed to update AI control setting.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -75,6 +136,7 @@ export default function AIControlPage() {
                 <Switch
                   checked={isAiEnabled}
                   onCheckedChange={handleToggleAi}
+                  disabled={isLoading || isSaving}
                   className="scale-125"
                 />
               </div>
@@ -101,9 +163,12 @@ export default function AIControlPage() {
                       placeholder="AIzaSy..."
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
+                      disabled={isLoading || isSaving}
                       className="font-mono"
                     />
-                    <Button onClick={handleSaveApiKey}>Save</Button>
+                    <Button onClick={handleSaveApiKey} disabled={isLoading || isSaving}>
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
                   </div>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">

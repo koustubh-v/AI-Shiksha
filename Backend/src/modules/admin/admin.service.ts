@@ -218,5 +218,41 @@ export class AdminService {
 
     return pendingActions;
   }
+
+  async getAiSettings(franchiseId?: string) {
+    if (!franchiseId) {
+      // Super admin context: return system defaults or null
+      return { gemini_api_key: null, global_ai_control: true };
+    }
+
+    const franchise = await this.prisma.franchise.findUnique({
+      where: { id: franchiseId },
+      select: { gemini_api_key: true, global_ai_control: true } as any,
+    }) as any;
+
+    if (!franchise) {
+      throw new Error('Franchise not found');
+    }
+
+    return franchise;
+  }
+
+  async updateAiSettings(franchiseId: string, gemini_api_key?: string, global_ai_control?: boolean) {
+    if (!franchiseId) {
+      throw new Error('Super Admins cannot set AI configuration in System context. Must be done via Franchise isolation.');
+    }
+
+    const data: any = {};
+    if (gemini_api_key !== undefined) data.gemini_api_key = gemini_api_key;
+    if (global_ai_control !== undefined) data.global_ai_control = global_ai_control;
+
+    const franchise = await this.prisma.franchise.update({
+      where: { id: franchiseId },
+      data,
+      select: { gemini_api_key: true, global_ai_control: true } as any,
+    }) as any;
+
+    return franchise;
+  }
 }
 

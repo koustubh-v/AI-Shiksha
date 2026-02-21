@@ -180,7 +180,8 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
             files.map(async (file) => {
                 try {
                     const response = await Upload.uploadFile(file);
-                    return `http://localhost:3000${response.url}`; // prepend backend URL
+                    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                    return `${API_URL}${response.url}`; // prepend backend URL
                 } catch (error) {
                     console.error('Upload failed', error);
                     toast.error(`Failed to upload ${file.name}`);

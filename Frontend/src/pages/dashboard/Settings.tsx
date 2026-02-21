@@ -167,7 +167,8 @@ function SettingsContent() {
       const croppedFile = await centerCropImage(file);
 
       const { url } = await Uploads.upload(croppedFile);
-      const fullUrl = `http://localhost:3000${url}`;
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const fullUrl = `${API_URL}${url}`;
       await Users.updateProfile({ avatar_url: fullUrl });
       updateUser({ avatar_url: fullUrl });
       toast({ title: "Success", description: "Profile picture updated" });

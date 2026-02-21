@@ -64,7 +64,8 @@ export function CertificateViewModal({ open, onClose, courseId, courseTitle }: C
 
     // Construct preview URL with auth token
     const token = localStorage.getItem('lms_token');
-    const previewUrl = certificate ? `http://localhost:3000/certificates/${certificate.id}/download?token=${token}` : '';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const previewUrl = certificate ? `${API_URL}/certificates/${certificate.id}/download?token=${token}` : '';
 
     return (
         <Dialog open={open} onOpenChange={onClose}>

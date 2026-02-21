@@ -143,7 +143,8 @@ export function LessonEditor({
                 const { Uploads } = await import('@/lib/api');
                 const response = await Uploads.upload(file);
 
-                const url = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                const url = response.url.startsWith('http') ? response.url : `${API_URL}${response.url}`;
 
                 if (type === 'PDF') {
                     setPdfUrl(url);

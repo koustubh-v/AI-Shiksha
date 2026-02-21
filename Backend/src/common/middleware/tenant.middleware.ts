@@ -24,6 +24,17 @@ export class TenantMiddleware implements NestMiddleware {
         // Strip port number for local dev (e.g. "localhost:3000" → "localhost")
         const domain = hostname.split(':')[0];
 
+        // Ensure we support production Master Domains natively without Database records
+        let isSystemDomain = domain === 'localhost' || domain === '127.0.0.1';
+
+        if (process.env.SYSTEM_DOMAINS) {
+            const allowed = process.env.SYSTEM_DOMAINS.split(',').map(d => d.trim());
+            if (allowed.includes(domain)) isSystemDomain = true;
+        }
+        if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes(domain)) {
+            isSystemDomain = true;
+        }
+
         try {
             const franchise = await this.prisma.franchise.findFirst({
                 where: {
@@ -35,7 +46,7 @@ export class TenantMiddleware implements NestMiddleware {
 
             if (franchise) {
                 // If it's the auto-created system franchise (localhost), treat as System Context
-                if (domain === 'localhost') {
+                if (isSystemDomain) {
                     (req as any).tenantId = null;
                 } else {
                     (req as any).tenantId = franchise.id;
@@ -44,8 +55,8 @@ export class TenantMiddleware implements NestMiddleware {
             } else {
                 // If it's not localhost and no franchise is found, it's an invalid franchise domain.
                 // We should block access rather than falling back to the system context.
-                if (domain !== 'localhost') {
-                    throw new UnauthorizedException('Invalid Franchise Domain');
+                if (!isSystemDomain) {
+                    throw new UnauthorizedException('Invalid Franchise Domain: ' + domain);
                 }
 
                 // Allow localhost to fallback to System for Super Admin login

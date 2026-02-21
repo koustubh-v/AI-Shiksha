@@ -9,6 +9,7 @@ import {
     Request,
     HttpCode,
     HttpStatus,
+    BadRequestException,
 } from '@nestjs/common';
 import { FranchisesService } from './franchises.service';
 import { CreateFranchiseDto } from './dto/create-franchise.dto';
@@ -35,6 +36,23 @@ export class FranchisesController {
         const customDomain = req.headers['x-franchise-domain'] || req.headers['custom-franchise-domain'];
         const hostname = customDomain || req.hostname || req.headers['host'] || 'localhost';
         return this.franchisesService.getBrandingByDomain(hostname);
+    }
+
+    /**
+     * Public endpoint — used by Caddy (On-Demand TLS ask endpoint)
+     * Validates if a domain exists in the DB before Caddy issues an SSL certificate.
+     */
+    @Get('verify-domain')
+    @ApiOperation({ summary: 'Verify if a domain is registered for Caddy On-Demand TLS (public)' })
+    async verifyDomain(@Request() req) {
+        const domain = req.query.domain;
+        if (!domain) {
+            throw new BadRequestException('Domain query parameter is required');
+        }
+
+        // Caddy expects a 200 OK status if the domain is allowed, or 4xx/5xx if rejected
+        await this.franchisesService.verifyDomainForCaddy(domain);
+        return { valid: true };
     }
 
     @Get('me/settings')

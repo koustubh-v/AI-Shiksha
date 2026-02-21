@@ -3,6 +3,7 @@ import {
     NotFoundException,
     ConflictException,
     BadRequestException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateFranchiseDto } from './dto/create-franchise.dto';
@@ -96,6 +97,40 @@ export class FranchisesService {
         }
 
         return franchise;
+    }
+
+    /**
+     * Verify if a domain is registered and active (for Caddy On-Demand TLS)
+     */
+    async verifyDomainForCaddy(domain: string) {
+        // Find if the domain matches any active franchise or our main platform domains
+        // Hardcode main domains to avoid locking ourselves out during testing
+        const mainDomains = [
+            'localhost',
+            'api.technosquareacademy.com',
+            'technosquareacademy.com',
+            'www.technosquareacademy.com',
+            'mockaipro.com' // Keeping the user's test domain safe explicitly just in case
+        ];
+
+        if (mainDomains.includes(domain)) {
+            return true;
+        }
+
+        const franchise = await this.prisma.franchise.findFirst({
+            where: {
+                domain: domain,
+                is_active: true,
+            },
+            select: { id: true }
+        });
+
+        // Caddy considers any non-2xx status code as a strict rejection
+        if (!franchise) {
+            throw new ForbiddenException(`Domain ${domain} is not registered or active`);
+        }
+
+        return true;
     }
 
     /**

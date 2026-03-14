@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -28,7 +28,9 @@ import {
   MessageCircle
 } from "lucide-react";
 import UnifiedNavbar from "@/components/layout/UnifiedNavbar";
+import Footer from "@/components/marketing/Footer";
 import { Chatbot } from "@/components/ai/Chatbot";
+import { Courses as CoursesAPI, Categories as CategoriesAPI } from "@/lib/api";
 
 // --- Types & Data ---
 
@@ -229,16 +231,33 @@ const Hero = () => {
 };
 
 const Categories = () => {
-  const categories = [
-    { icon: Code, name: "Programming", count: "150+ Courses", color: "text-blue-600", bg: "bg-blue-50", border: "group-hover:border-blue-200", shadow: "group-hover:shadow-blue-100" },
-    { icon: Brain, name: "AI & Data Science", count: "80+ Courses", color: "text-purple-600", bg: "bg-purple-50", border: "group-hover:border-purple-200", shadow: "group-hover:shadow-purple-100" },
-    { icon: Palette, name: "Design", count: "120+ Courses", color: "text-pink-600", bg: "bg-pink-50", border: "group-hover:border-pink-200", shadow: "group-hover:shadow-pink-100" },
-    { icon: TrendingUp, name: "Business", count: "95+ Courses", color: "text-orange-600", bg: "bg-orange-50", border: "group-hover:border-orange-200", shadow: "group-hover:shadow-orange-100" },
-    { icon: Camera, name: "Photography", count: "50+ Courses", color: "text-yellow-600", bg: "bg-yellow-50", border: "group-hover:border-yellow-200", shadow: "group-hover:shadow-yellow-100" },
-    { icon: Music, name: "Music", count: "40+ Courses", color: "text-red-600", bg: "bg-red-50", border: "group-hover:border-red-200", shadow: "group-hover:shadow-red-100" },
-    { icon: Globe, name: "Languages", count: "60+ Courses", color: "text-teal-600", bg: "bg-teal-50", border: "group-hover:border-teal-200", shadow: "group-hover:shadow-teal-100" },
-    { icon: Briefcase, name: "Marketing", count: "70+ Courses", color: "text-indigo-600", bg: "bg-indigo-50", border: "group-hover:border-indigo-200", shadow: "group-hover:shadow-indigo-100" },
+  const [dbCategories, setDbCategories] = useState<{name: string}[]>([]);
+
+  useEffect(() => {
+    CategoriesAPI.getAll().then(data => setDbCategories(data)).catch(console.error);
+  }, []);
+
+  const styles = [
+    { icon: Code, color: "text-blue-600", bg: "bg-blue-50", border: "group-hover:border-blue-200", shadow: "group-hover:shadow-blue-100" },
+    { icon: Brain, color: "text-purple-600", bg: "bg-purple-50", border: "group-hover:border-purple-200", shadow: "group-hover:shadow-purple-100" },
+    { icon: Palette, color: "text-pink-600", bg: "bg-pink-50", border: "group-hover:border-pink-200", shadow: "group-hover:shadow-pink-100" },
+    { icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50", border: "group-hover:border-orange-200", shadow: "group-hover:shadow-orange-100" },
+    { icon: Camera, color: "text-yellow-600", bg: "bg-yellow-50", border: "group-hover:border-yellow-200", shadow: "group-hover:shadow-yellow-100" },
+    { icon: Music, color: "text-red-600", bg: "bg-red-50", border: "group-hover:border-red-200", shadow: "group-hover:shadow-red-100" },
+    { icon: Globe, color: "text-teal-600", bg: "bg-teal-50", border: "group-hover:border-teal-200", shadow: "group-hover:shadow-teal-100" },
+    { icon: Briefcase, color: "text-indigo-600", bg: "bg-indigo-50", border: "group-hover:border-indigo-200", shadow: "group-hover:shadow-indigo-100" },
   ];
+
+  const defaultCategories = [
+    { name: "Programming", count: "150+ Courses" },
+    { name: "AI & Data Science", count: "80+ Courses" },
+    { name: "Design", count: "120+ Courses" },
+    { name: "Business", count: "95+ Courses" },
+  ];
+
+  const displayCategories = dbCategories.length > 0
+    ? dbCategories.slice(0, 4).map((c, i) => ({ name: c.name, count: "Explore Courses", ...styles[i % styles.length] }))
+    : defaultCategories.map((c, i) => ({ ...c, ...styles[i % styles.length] }));
 
   return (
     <section className="bg-background-light py-20 px-6">
@@ -253,22 +272,23 @@ const Categories = () => {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.slice(0, 4).map((cat, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -5 }}
-              className={`p-6 rounded-2xl border border-transparent bg-white shadow-sm transition-all cursor-pointer group hover:shadow-xl ${cat.border} ${cat.shadow}`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-xl ${cat.bg} ${cat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <cat.icon className="h-7 w-7" />
+          {displayCategories.map((cat, idx) => (
+            <Link to={`/courses?category=${encodeURIComponent(cat.name)}`} key={idx}>
+              <motion.div
+                whileHover={{ y: -5 }}
+                className={`p-6 rounded-2xl border border-transparent bg-white shadow-sm transition-all cursor-pointer group hover:shadow-xl ${cat.border} ${cat.shadow}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 rounded-xl ${cat.bg} ${cat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <cat.icon className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-text-main group-hover:text-primary transition-colors">{cat.name}</h3>
+                    <p className="text-sm text-text-muted">{cat.count}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-text-main group-hover:text-primary transition-colors">{cat.name}</h3>
-                  <p className="text-sm text-text-muted">{cat.count}</p>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </div>
@@ -276,36 +296,44 @@ const Categories = () => {
   );
 };
 
+interface ApiCourse {
+  id: string;
+  slug: string;
+  title: string;
+  instructor: string;
+  rating?: number | string;
+  students?: number;
+  price: number;
+  level?: string;
+  thumbnail?: string;
+}
+
 const FeaturedCourses = () => {
-  const courses = [
-    {
-      title: "Complete Python Bootcamp: Go from zero to hero",
-      author: "Dr. Angela Yu",
-      rating: 4.8,
-      reviews: "45k",
-      price: "$89.99",
-      tag: "Bestseller",
-      image: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=2831&auto=format&fit=crop"
-    },
-    {
-      title: "Machine Learning A-Z™: Hands-On Python & R In Data Science",
-      author: "Kirill Eremenko",
-      rating: 4.7,
-      reviews: "32k",
-      price: "$94.99",
-      tag: "New",
-      image: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2940&auto=format&fit=crop"
-    },
-    {
-      title: "The Web Developer Bootcamp 2024",
-      author: "Colt Steele",
-      rating: 4.9,
-      reviews: "120k",
-      price: "$99.99",
-      tag: "Popular",
-      image: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80&w=2960&auto=format&fit=crop"
-    },
-  ];
+  const [dbCourses, setDbCourses] = useState<ApiCourse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    CoursesAPI.getAll(false)
+      .then(data => {
+        setDbCourses(data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsLoading(false);
+      });
+  }, []);
+
+  const displayCourses = dbCourses.slice(0, 6).map(c => ({
+    slug: c.slug,
+    title: c.title,
+    author: c.instructor,
+    rating: c.rating || "4.5",
+    reviews: c.students ? c.students.toString() : "0",
+    price: c.price > 0 ? `₹${c.price.toLocaleString('en-IN')}` : "Free",
+    tag: c.level || "Popular",
+    thumbnail: c.thumbnail || "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80"
+  }));
 
   return (
     <section className="py-24 px-6 bg-white">
@@ -315,38 +343,56 @@ const FeaturedCourses = () => {
           <p className="text-text-muted mt-2">Hand-picked courses to get you started on your journey.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -8 }}
-              className="group bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden hover:shadow-card-hover transition-all duration-300 flex flex-col h-full"
-            >
-              <div className="relative h-48 overflow-hidden">
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-text-main shadow-sm z-10">
-                  {course.tag}
-                </div>
-                <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-lg font-bold text-text-main mb-2 line-clamp-2 leading-snug group-hover:text-primary transition-colors">{course.title}</h3>
-                <p className="text-sm text-text-muted mb-4">{course.author}</p>
-
-                <div className="mt-auto pt-4 border-t border-[#f0f2f4] flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-amber-500 flex items-center gap-0.5">
-                      {course.rating} <Star className="h-4 w-4 fill-current" />
-                    </span>
-                    <span className="text-xs text-text-muted">({course.reviews})</span>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-24">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : displayCourses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayCourses.map((course, idx) => (
+              <Link to={course.slug ? `/courses/${course.slug}` : "/courses"} key={idx}>
+                <motion.div
+                  whileHover={{ y: -8 }}
+                  className="group bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden hover:shadow-card-hover transition-all duration-300 flex flex-col h-full"
+                >
+                  <div className="relative h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {course.tag && (
+                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-text-main shadow-sm z-10">
+                        {course.tag}
+                      </div>
+                    )}
+                    {course.thumbnail ? (
+                      <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <Code className="h-10 w-10 text-gray-300" />
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   </div>
-                  <p className="font-black text-text-main">{course.price}</p>
-                </div>
-                <button className="mt-4 w-full py-2.5 bg-primary text-white text-sm font-bold rounded-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">Enroll Now</button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="text-lg font-bold text-text-main mb-2 line-clamp-2 leading-snug group-hover:text-primary transition-colors">{course.title}</h3>
+                    <p className="text-sm text-text-muted mb-4">{course.author}</p>
+
+                    <div className="mt-auto pt-4 border-t border-[#f0f2f4] flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-amber-500 flex items-center gap-0.5">
+                          {course.rating} <Star className="h-4 w-4 fill-current" />
+                        </span>
+                        <span className="text-xs text-text-muted">({course.reviews} students)</span>
+                      </div>
+                      <p className="font-black text-text-main">{course.price}</p>
+                    </div>
+                    <button className="mt-4 w-full py-2.5 bg-primary text-white text-sm font-bold rounded-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">Enroll Now</button>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
+            <p>Courses are being updated. Check back soon!</p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -486,63 +532,6 @@ const FinalCTA = () => {
         </div>
       </motion.div>
     </section>
-  );
-};
-
-const Footer = () => {
-  return (
-    <footer className="bg-white border-t border-[#f0f2f4] pt-20 pb-10">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <div className="flex items-center gap-2 text-primary">
-              <School className="h-8 w-8" />
-              <h2 className="text-text-main text-xl font-bold tracking-tight">LMS SaaS</h2>
-            </div>
-            <p className="text-text-muted max-w-xs leading-relaxed">Making high-quality education accessible and personalized with the power of artificial intelligence.</p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-[#f0f2f4] flex items-center justify-center text-text-main hover:bg-primary hover:text-white transition-all transform hover:scale-110">
-                <Globe className="h-5 w-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-[#f0f2f4] flex items-center justify-center text-text-main hover:bg-primary hover:text-white transition-all transform hover:scale-110">
-                <Users className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-bold text-text-main mb-6">Platform</h4>
-            <ul className="flex flex-col gap-4 text-sm text-text-muted">
-              {['Browse Courses', 'Mentorship', 'Pricing Plans', 'Certificates'].map((item) => (
-                <li key={item}><a href="#" className="hover:text-primary transition-colors">{item}</a></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-text-main mb-6">Community</h4>
-            <ul className="flex flex-col gap-4 text-sm text-text-muted">
-              {['Success Stories', 'Become Instructor', 'Events', 'Podcast'].map((item) => (
-                <li key={item}><a href="#" className="hover:text-primary transition-colors">{item}</a></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-text-main mb-6">Support</h4>
-            <ul className="flex flex-col gap-4 text-sm text-text-muted">
-              {['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'].map((item) => (
-                <li key={item}><a href="#" className="hover:text-primary transition-colors">{item}</a></li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-[#f0f2f4] pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-text-muted">
-          <p>© 2024 LMS SaaS Learning Platform. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">Cookie Policy</a>
-            <a href="#" className="hover:text-primary transition-colors">Sitemap</a>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 };
 

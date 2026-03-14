@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Courses, LectureContent } from '@/lib/api';
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { Courses, LectureContent, Reviews as ReviewsAPI, Enrollments } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2 } from "lucide-react";
 import { LessonPreviewModal } from '@/components/preview/LessonPreviewModal';
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { useNavigate } from "react-router-dom";
 
 // --- Icon Component (Material Symbols) ---
 interface IconProps {
@@ -36,7 +35,7 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ course }) => {
-  const averageRating = course.rating || 4.5;
+  const averageRating = course._reviewStats?.averageRating ?? course.rating ?? 0;
 
   return (
     <div className="bg-[#0f172a] text-white py-8 md:py-12">
@@ -107,47 +106,89 @@ const Hero: React.FC<HeroProps> = ({ course }) => {
 };
 
 // --- Sidebar Component ---
-// --- Purchase Card / Sidebar Component ---
 interface SidebarProps {
   course: any;
+  isEnrolled?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ course }) => {
+const Sidebar: React.FC<SidebarProps> = ({ course, isEnrolled }) => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const { addToCart, items: cartItems } = useCart();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'enroll' | 'cart' | null>(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  // Check if user is already enrolled (this requires course to have is_enrolled field or check against my-courses)
-  // For now, we'll try to add to cart/enroll and handle errors
+  const isInCart = cartItems?.some((item: any) => item.course_id === course.id || item.course?.id === course.id);
 
-  const handleEnroll = async () => {
+  const doAddToCart = async () => {
+    if (isInCart) { navigate("/cart"); return; }
+    setIsAddingToCart(true);
+    try {
+      await addToCart(course.id);
+      navigate("/cart");
+    } catch (error: any) {
+      if (error.response?.data?.message?.includes("already in cart")) {
+        navigate("/cart");
+      } else {
+        toast.error("Failed to add to cart");
+      }
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleAddToCart = () => {
     if (!isAuthenticated) {
+      setPendingAction('cart');
       setShowAuthModal(true);
       return;
     }
+    doAddToCart();
+  };
 
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      setPendingAction('enroll');
+      setShowAuthModal(true);
+      return;
+    }
     setIsEnrolling(true);
     try {
       await addToCart(course.id);
       navigate("/cart");
     } catch (error: any) {
-      // If already in cart, just go to cart
       if (error.response?.data?.message?.includes("already in cart")) {
         navigate("/cart");
-      }
-      // If already enrolled (backend might return specific error), redirect to learn
-      else if (error.response?.data?.message?.includes("enrolled")) {
-        navigate(`/learn/${course.id}/lesson/1`);
-      }
-      else {
-        // Generic error, but check if it was actually successful?
-        // Assuming validation happens in addToCart
+      } else if (error.response?.data?.message?.includes("enrolled")) {
+        navigate(`/course/${course.slug || course.id}/view`);
+      } else {
+        toast.error("Failed to process. Please try again.");
       }
     } finally {
       setIsEnrolling(false);
     }
+  };
+
+  const handleAuthSuccess = async () => {
+    setShowAuthModal(false);
+    if (pendingAction === 'cart') {
+      await doAddToCart();
+    } else if (pendingAction === 'enroll') {
+      setIsEnrolling(true);
+      try {
+        await addToCart(course.id);
+        navigate("/cart");
+      } catch (error: any) {
+        if (error.response?.data?.message?.includes("already in cart")) {
+          navigate("/cart");
+        }
+      } finally {
+        setIsEnrolling(false);
+      }
+    }
+    setPendingAction(null);
   };
 
   const hasDiscount = course.original_price && course.original_price > course.price;
@@ -159,8 +200,8 @@ const Sidebar: React.FC<SidebarProps> = ({ course }) => {
     <div className="lg:-mt-[300px] lg:sticky lg:top-[88px] self-start z-20">
       <AuthModal
         open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-        onSuccess={() => handleEnroll()}
+        onOpenChange={(open) => { setShowAuthModal(open); if (!open) setPendingAction(null); }}
+        onSuccess={handleAuthSuccess}
       />
       <div className="bg-white border border-[#d1d7dc] shadow-xl overflow-hidden">
         {/* Featured Image */}
@@ -191,16 +232,33 @@ const Sidebar: React.FC<SidebarProps> = ({ course }) => {
           )}
 
           <div className="flex flex-col gap-3">
-            <button
-              onClick={handleEnroll}
-              disabled={isEnrolling}
-              className="w-full bg-[#a435f0] text-white font-bold py-3 px-4 hover:bg-[#7b1fa2] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {isEnrolling ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enroll Now"}
-            </button>
-            <button className="w-full bg-white text-[#2d2f31] border border-[#2d2f31] font-bold py-3 px-4 hover:bg-[#f7f9fa] transition-colors">
-              Add to Cart
-            </button>
+            {isEnrolled ? (
+              <button
+                onClick={() => navigate(`/course/${course.slug || course.id}/view`)}
+                className="w-full bg-green-600 text-white font-bold py-3 px-4 hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                Go to Course
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleEnroll}
+                  disabled={isEnrolling}
+                  className="w-full bg-[#a435f0] text-white font-bold py-3 px-4 hover:bg-[#7b1fa2] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isEnrolling ? <Loader2 className="w-5 h-5 animate-spin" /> : (course.is_free ? "Enroll for Free" : "Enroll Now")}
+                </button>
+                {!course.is_free && (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                    className="w-full bg-white text-[#2d2f31] border border-[#2d2f31] font-bold py-3 px-4 hover:bg-[#f7f9fa] transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+                  >
+                    {isAddingToCart ? <Loader2 className="w-5 h-5 animate-spin" /> : isInCart ? "Go to Cart" : "Add to Cart"}
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <p className="text-center text-xs text-[#6a6f73] mt-2">30-Day Money-Back Guarantee</p>
@@ -739,23 +797,51 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviews }) => {
 // --- Main Component ---
 export default function CoursePreview() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [reviewStats, setReviewStats] = useState<{ averageRating: number; totalReviews: number } | null>(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
         let courseDetails;
-
         const isUUID = slug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-
         if (isUUID) {
           courseDetails = await Courses.getOne(slug);
         } else {
           courseDetails = await Courses.getBySlug(slug!);
         }
-
         setCourse(courseDetails);
+
+        // Fetch real review stats
+        if (courseDetails?.id) {
+          try {
+            const stats = await ReviewsAPI.getStats(courseDetails.id);
+            setReviewStats({ averageRating: stats.averageRating ?? 0, totalReviews: stats.totalReviews ?? 0 });
+            // Attach stats to course for Hero component
+            courseDetails._reviewStats = { averageRating: stats.averageRating ?? 0 };
+            setCourse({ ...courseDetails });
+          } catch { /* ignore if reviews endpoint fails */ }
+        }
+
+        // Check if user is already enrolled — redirect to course view
+        if (isAuthenticated && user && courseDetails?.id) {
+          try {
+            const enrollments = await Enrollments.getMyEnrollments();
+            const enrolled = enrollments?.some((e: any) =>
+              e.course_id === courseDetails.id ||
+              e.course?.id === courseDetails.id ||
+              e.course?.slug === slug
+            );
+            if (enrolled) {
+              navigate(`/course/${slug}/view`, { replace: true });
+              return;
+            }
+          } catch { /* ignore enrollment check errors */ }
+        }
       } catch (error) {
         console.error("Failed to fetch course", error);
         toast.error("Failed to load course");
@@ -765,7 +851,7 @@ export default function CoursePreview() {
     };
 
     fetchCourse();
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   if (loading) {
     return (
@@ -836,14 +922,14 @@ export default function CoursePreview() {
               />
 
               <Reviews
-                rating={course.rating || 4.5}
+                rating={reviewStats?.averageRating ?? course.rating ?? 0}
                 reviews={course.reviews || []}
               />
             </div>
 
             {/* Sidebar Column (Right) */}
             <div className="lg:col-span-1">
-              <Sidebar course={course} />
+              <Sidebar course={course} isEnrolled={isEnrolled} />
             </div>
           </div>
         </div>

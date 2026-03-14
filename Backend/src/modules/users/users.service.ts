@@ -234,6 +234,40 @@ export class UsersService {
     }) as any;
   }
 
+  // =====================================
+  // PASSWORD RESET METHODS
+  // =====================================
+
+  async updateResetToken(userId: string, token: string, expires: Date) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        reset_password_token: token,
+        reset_password_expires: expires,
+      },
+    });
+  }
+
+  async findByResetToken(token: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        reset_password_token: token,
+      },
+      include: { franchise: true },
+    }) as any;
+  }
+
+  async updatePasswordAndClearToken(userId: string, newPasswordHash: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password_hash: newPasswordHash,
+        reset_password_token: null,
+        reset_password_expires: null,
+      },
+    });
+  }
+
   async findAll(role?: string, franchiseId?: string | null, isSuperAdmin = false) {
     let mappedRole = role;
     if (role) {

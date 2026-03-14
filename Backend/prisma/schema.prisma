@@ -54,6 +54,8 @@ model Franchise {
   qa_questions        CourseQA[]
   razorpay_setting    RazorpaySetting?
   coupons             Coupon[]
+  pages               Page[]
+  footer_setting      FooterSetting?
 
   @@map("franchises")
 }
@@ -93,6 +95,10 @@ model User {
 
   // Refresh token rotation
   refresh_token_hash String?
+
+  // Password Reset
+  reset_password_token   String?
+  reset_password_expires DateTime?
 
   // Student Dashboard Features
   weekly_goal_hours     Int                    @default(0)
@@ -922,4 +928,45 @@ model Coupon {
 
   @@unique([code, franchise_id])
   @@map("coupons")
+}
+
+// ============================================
+// POLICY PAGES AND FOOTER
+// ============================================
+
+model Page {
+  id           String    @id @default(uuid())
+  slug         String    // e.g., "privacy-policy", "terms-and-conditions", "about-us"
+  title        String
+  content      String    @db.Text // HTML content
+  is_published Boolean   @default(false)
+  
+  franchise_id String
+  franchise    Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@unique([slug, franchise_id])
+  @@map("pages")
+}
+
+model FooterSetting {
+  id                   String    @id @default(uuid())
+  site_title           String?
+  copyright_text       String?
+  show_support_section Boolean   @default(true)
+  logo_url             String?
+  
+  // Stored as JSON arrays
+  menus                Json?     // e.g. [{"label": "Home", "url": "/"}, ...]
+  social_links         Json?     // e.g. [{"platform": "twitter", "url": "..."}, ...]
+
+  franchise_id         String    @unique
+  franchise            Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  @@map("footer_settings")
 }

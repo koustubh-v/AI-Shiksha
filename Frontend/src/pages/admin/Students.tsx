@@ -24,10 +24,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useUsers } from "@/hooks/useUsers";
-import { Users as UsersAPI } from "@/lib/api";
+import { Users as UsersAPI, Instructors } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function StudentsPage() {
+  const { user } = useAuth();
+  
+  if (user?.role === 'teacher') {
+    return <TeacherStudents />;
+  }
+  
+  return <AdminStudents />;
+}
+
+function AdminStudents() {
   const { user } = useAuth();
   const { users: students, isLoading } = useUsers("student");
   const [stats, setStats] = useState({
@@ -226,6 +237,133 @@ export default function StudentsPage() {
   return (
     <UnifiedDashboard title="Students" subtitle="Manage enrolled students">
       {content}
+    </UnifiedDashboard>
+  );
+}
+
+function TeacherStudents() {
+  const [students, setStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const data = await Instructors.getStudents();
+        setStudents(data);
+      } catch (error) {
+        console.error("Failed to fetch instructor students:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, []);
+
+  const filteredStudents = students.filter((s: any) => 
+    s.name.toLowerCase().includes(search.toLowerCase()) || 
+    s.email.toLowerCase().includes(search.toLowerCase()) ||
+    s.courseTitle.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <UnifiedDashboard title="My Students" subtitle="Manage students enrolled in your courses">
+      <div className="p-6 max-w-7xl mx-auto space-y-8 font-sans">
+        
+        {/* Header Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div>
+            <h2 className="text-2xl font-light text-[#1F1F1F]">Enrolled Students</h2>
+            <p className="text-sm text-[#555555]">View progress and engagement for your learners</p>
+          </div>
+        </div>
+
+        {/* Filters & Search */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search students or courses..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 bg-gray-50 border-0 focus-visible:ring-1 focus-visible:ring-lms-blue/20 rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <Table>
+            <TableHeader className="bg-gray-50/50">
+              <TableRow>
+                <TableHead className="py-4">Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Enrolled Date</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading students...</TableCell>
+                </TableRow>
+              ) : filteredStudents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No students found matching your criteria.</TableCell>
+                </TableRow>
+              ) : (
+                filteredStudents.map((student: any, idx: number) => (
+                  <TableRow key={`${student.id}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                            <AvatarImage src={student.avatar} alt={student.name} />
+                            <AvatarFallback>{student.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">{student.name}</span>
+                            <span className="text-xs text-gray-500">{student.email}</span>
+                            </div>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium text-gray-700">{student.courseTitle}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{student.progress}%</span>
+                        <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-lms-blue transition-all" 
+                                style={{ width: `${student.progress}%` }}
+                            />
+                        </div>
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-gray-500">
+                        {new Date(student.enrolledAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                          student.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 
+                          student.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          'bg-gray-50 text-gray-700 border-gray-200'
+                      }>
+                        {student.status.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </UnifiedDashboard>
   );
 }

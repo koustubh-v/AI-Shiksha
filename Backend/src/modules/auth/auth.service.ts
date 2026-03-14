@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { MailService } from '../mail/mail.service';
 
@@ -115,6 +116,79 @@ export class AuthService {
     if (role === 'SUPER_ADMIN') return 'super_admin';
     if (role === 'FRANCHISE_ADMIN') return 'FRANCHISE_ADMIN'; // Keep uppercase for frontend checks or consistency
     return role.toLowerCase();
+  }
+
+  async forgotPassword(email: string, originFranchiseId?: string | null) {
+    // 1. Find user by email and franchise_id (to maintain strict isolation)
+    const baseUser = await this.usersService.findOne(email);
+    if (!baseUser) {
+      // Do not reveal if the user exists for security reasons
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+
+    const user = await this.usersService.findById(baseUser.id);
+    if (!user) {
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+
+    // 2. Enforce Isolation: Ensure user belongs to the requested franchise, or is SUPER_ADMIN
+    if (originFranchiseId && user.role !== 'SUPER_ADMIN' && user.franchise_id !== originFranchiseId) {
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+
+    // 3. Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenExpires = new Date();
+    tokenExpires.setHours(tokenExpires.getHours() + 1); // 1 hour expiry
+
+    // 4. Save token to user record
+    await this.usersService.updateResetToken(user.id, token, tokenExpires);
+
+    // 5. Send Email
+    // If we have an originFranchiseId, we know this came from a custom domain
+    // we need to build the correct reset link. For simplicity we assume
+    // the frontend URL is whatever domain we are on. 
+    // Usually the frontend passes an origin or we read it from req headers, 
+    // but here we can just pass the path and let the MailService or Frontend figure out the domain if needed,
+    // or we can require the frontend to send the `reset_url` base.
+    
+    // For now, let's just make the frontend handle the origin and send it, or we rely on franchise logic.
+    const frontendBaseUrl = originFranchiseId 
+        ? ((user as any).franchise?.domain ? `https://${(user as any).franchise.domain}` : process.env.FRONTEND_URL) 
+        : process.env.FRONTEND_URL;
+
+    const resetLink = `${frontendBaseUrl}/reset-password?token=${token}`;
+
+    await this.mailService.sendPasswordResetEmail({
+      email: user.email,
+      name: user.name,
+      franchise_id: user.franchise_id || null
+    }, resetLink);
+
+    return { message: 'If an account with that email exists, a password reset link has been sent.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    // 1. Find user by token
+    const user = await this.usersService.findByResetToken(token);
+    
+    if (!user) {
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+
+    // 2. Check Expiry
+    if (user.reset_password_expires && user.reset_password_expires < new Date()) {
+      throw new BadRequestException('Password reset token has expired');
+    }
+
+    // 3. Hash New Password
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(newPassword, saltRounds);
+
+    // 4. Update Password and Clear Token
+    await this.usersService.updatePasswordAndClearToken(user.id, password_hash);
+
+    return { message: 'Password has been successfully reset' };
   }
 }
 

@@ -60,6 +60,7 @@ import {
   Award,
   CheckSquare,
   Landmark,
+  PanelBottom,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,7 @@ const adminNavItems: NavItem[] = [
       { icon: BookOpen, label: "All Courses", href: "/dashboard/courses" },
       { icon: FileText, label: "Assignments", href: "/dashboard/assignments" },
       { icon: HelpCircle, label: "Quizzes", href: "/dashboard/quizzes" },
+      { icon: MessagesSquare, label: "Q/A", href: "/dashboard/qa" },
       { icon: Plus, label: "Add Course", href: "/dashboard/courses/new" },
       { icon: Folder, label: "Categories", href: "/dashboard/categories" },
       { icon: UserCog, label: "Enrollment", href: "/dashboard/enrollment" },
@@ -116,12 +118,12 @@ const adminNavItems: NavItem[] = [
   },
   {
     icon: DollarSign,
-    label: "Revenue",
+    label: "Payments",
     children: [
-      { icon: TrendingUp, label: "Transactions", href: "/dashboard/revenue" },
+      { icon: CreditCard, label: "Razorpay", href: "/dashboard/payments/razorpay" },
+      { icon: Receipt, label: "Transactions", href: "/dashboard/payments/transactions" },
       { icon: Tag, label: "Coupons", href: "/dashboard/coupons" },
-      { icon: Landmark, label: "Add Bank Details", href: "/dashboard/add-bank-details" },
-    ],
+    ]
   },
   {
     icon: Bot,
@@ -153,6 +155,16 @@ const adminNavItems: NavItem[] = [
       { icon: Palette, label: "Platform", href: "/dashboard/platform-settings" },
       { icon: Search, label: "SEO Settings", href: "/dashboard/seo-settings" },
     ],
+  },
+  {
+    icon: FileText,
+    label: "Policy Pages",
+    href: "/dashboard/policy-pages",
+  },
+  {
+    icon: PanelBottom,
+    label: "Footer Settings",
+    href: "/dashboard/footer-settings",
   },
   {
     icon: User,

@@ -5,11 +5,13 @@ import { Download, Search, Filter, Calendar, CreditCard, ExternalLink, Loader2 }
 import { UnifiedDashboard } from "@/components/layout/UnifiedDashboard";
 import { Input } from "@/components/ui/input";
 import { transactionsService, Transaction } from "@/lib/api/transactionsService";
+import { toast } from "sonner";
 
 export default function Transactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [downloadingId, setDownloadingId] = useState<string | number | null>(null);
 
     useEffect(() => {
         loadTransactions();
@@ -24,6 +26,19 @@ export default function Transactions() {
             console.error('Error loading transactions:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadInvoice = async (id: number | string) => {
+        try {
+            setDownloadingId(id);
+            await transactionsService.downloadInvoice(id);
+            toast.success("Invoice downloaded successfully");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to download invoice");
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -122,8 +137,19 @@ export default function Transactions() {
                                                 </Badge>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-black">
-                                                    <ExternalLink className="h-4 w-4" />
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-8 w-8 p-0 text-gray-500 hover:text-primary transition-colors"
+                                                    onClick={() => handleDownloadInvoice(trx.id)}
+                                                    disabled={downloadingId === trx.id}
+                                                    title="Download PDF Invoice"
+                                                >
+                                                    {downloadingId === trx.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                                    ) : (
+                                                        <Download className="h-4 w-4" />
+                                                    )}
                                                 </Button>
                                             </td>
                                         </tr>

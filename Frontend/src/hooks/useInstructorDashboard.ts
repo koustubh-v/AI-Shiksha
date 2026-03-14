@@ -5,7 +5,7 @@ export interface InstructorStats {
     stats: {
         label: string;
         value: string;
-        change: string;
+        change?: string;
         icon: string;
         gradient: string;
         iconColor: string;
@@ -13,13 +13,15 @@ export interface InstructorStats {
     topCourses: {
         title: string;
         students: number;
-        revenue: string;
+        slug?: string;
         rating: number;
     }[];
-    recentActivity: {
-        action: string;
+    recentStudents: {
+        name: string;
+        email: string;
+        avatar_url?: string;
         course: string;
-        time: string;
+        enrolled_at: string;
     }[];
 }
 

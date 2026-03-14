@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Search, Loader2, BookOpen, User, Star, Filter, LayoutGrid, List, ArrowRight, Sparkles, Users } from "lucide-react";
 import { Courses, Categories } from "@/lib/api";
 
@@ -34,10 +34,23 @@ export default function PublicCourseCatalog() {
     const [selectedLevel, setSelectedLevel] = useState<string>("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [showFilters, setShowFilters] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const categoryParam = searchParams.get('category');
+        if (categoryParam) {
+            setSelectedCategory(categoryParam);
+        }
+        const searchParam = searchParams.get('search');
+        if (searchParam) {
+            setSearchQuery(searchParam);
+        }
+    }, [location.search]);
 
     const fetchData = async () => {
         try {

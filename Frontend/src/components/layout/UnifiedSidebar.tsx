@@ -57,13 +57,12 @@ const getNavItems = (role: UserRole): NavItem[] => {
     case "teacher":
       return [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-        { icon: BookOpen, label: "My Courses", href: "/dashboard/courses", badge: "12" },
+        { icon: Plus, label: "Add Course", href: "/dashboard/courses/new" },
+        { icon: BookOpen, label: "My Courses", href: "/dashboard/my-courses" },
         { icon: Users, label: "Students", href: "/dashboard/students" },
-        { icon: DollarSign, label: "Revenue", href: "/dashboard/revenue" },
-        { icon: Tag, label: "Promotions", href: "/dashboard/promotions" },
         { icon: Star, label: "Reviews", href: "/dashboard/reviews" },
-        { icon: MessageSquare, label: "Messages", href: "/dashboard/messages", badge: "3" },
-        { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
+        { icon: MessageSquare, label: "Q/A", href: "/dashboard/qa" },
+        { icon: Settings, label: "Profile Settings", href: "/dashboard/settings" },
       ];
     case "student":
       return [
@@ -110,7 +109,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
 };
 
 const bottomNav: NavItem[] = [
-  { icon: Settings, label: "Profile Settings", href: "/dashboard/settings" },
   { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
 ];
 
@@ -329,20 +327,20 @@ export function UnifiedSidebar() {
         </nav>
       </ScrollArea>
 
-      {/* Create Course Button for Teachers */}
+      {/* Create Course Button for Teachers (Optional now since in menu) */}
       {!collapsed && user.role === "teacher" && (
         <div className="px-3 pb-3 flex-shrink-0">
           <Link to="/dashboard/courses/new">
             <Button className="w-full gap-2 bg-primary hover:bg-primary/90 text-white">
               <Plus className="h-4 w-4" />
-              Create Course
+              Quick Add Course
             </Button>
           </Link>
         </div>
       )}
 
-      {/* Bottom Navigation - Hide for Students */}
-      {user.role !== "student" && (
+      {/* Bottom Navigation - Hide for Students and Teachers (they have it in main nav) */}
+      {user.role !== "student" && user.role !== "teacher" && (
         <div className="border-t border-white/10 p-3 flex-shrink-0">
           {bottomNav.map(renderNavItem)}
         </div>

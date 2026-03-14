@@ -36,8 +36,34 @@ export const transactionsService = {
         return response.data;
     },
 
-    async createTransaction(data: { courseIds: string[], amount: number, paymentMethod: string }): Promise<any> {
+    async createTransaction(data: { 
+        courseIds: string[], 
+        amount: number, 
+        paymentMethod: string,
+        billingDetails?: {
+            billing_name: string;
+            billing_email: string;
+            billing_address: string;
+            billing_city: string;
+            billing_state: string;
+            billing_zip: string;
+            billing_country: string;
+        }
+    }): Promise<any> {
         const response = await api.post('/transactions', data);
         return response.data;
+    },
+
+    async downloadInvoice(transactionId: number | string): Promise<void> {
+        const response = await api.get(`/transactions/${transactionId}/invoice`, {
+            responseType: 'blob', 
+        });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Invoice-${transactionId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentElement?.removeChild(link);
     }
 };

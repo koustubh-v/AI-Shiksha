@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { enrollmentService, EnrolledCourse } from "@/lib/api/enrollmentService";
@@ -15,9 +15,9 @@ export function InProgressCourses() {
     const loadCourses = async () => {
         try {
             const allEnrollments = await enrollmentService.getMyEnrollments();
-            // Show all courses that are not completed (active or in_progress)
-            const activeCourses = allEnrollments.filter(c => c.status !== 'completed');
-            setCourses(activeCourses.slice(0, 3)); // Show top 3
+            // Show all courses that are not completed (active or in_progress, and progress < 100)
+            const activeCourses = allEnrollments.filter(c => c.status !== 'completed' && c.progress < 100);
+            setCourses(activeCourses.slice(0, 4)); // Show up to 4 inline
         } catch (error) {
             console.error('Error loading in-progress courses:', error);
         } finally {
@@ -39,14 +39,22 @@ export function InProgressCourses() {
 
     if (courses.length === 0) {
         return (
-            <section>
+            <section className="mb-10">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-semibold">In progress</h2>
+                    <h2 className="text-xl font-bold text-[#1F1F1F]">In Progress</h2>
                 </div>
-                <div className="bg-white border border-[#E1E1E1] shadow-sm rounded-md p-8 text-center">
-                    <p className="text-gray-500 mb-4">You haven't enrolled in any courses yet.</p>
-                    <Link to="/courses" className="text-lms-blue hover:underline font-medium">
-                        Browse Courses
+                <div className="bg-white border rounded-xl p-10 text-center shadow-sm flex flex-col items-center justify-center min-h-[250px]">
+                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+                        <CheckCircle2 className="h-8 w-8 text-green-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-[#1F1F1F] mb-2">All Caught Up!</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                        You don't have any courses in progress right now. Ready to learn something new?
+                    </p>
+                    <Link to="/dashboard/courses/explore">
+                        <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-blue-600 text-white hover:bg-blue-700 h-10 py-2 px-6">
+                            Browse Courses
+                        </span>
                     </Link>
                 </div>
             </section>
@@ -54,14 +62,14 @@ export function InProgressCourses() {
     }
 
     return (
-        <section>
+        <section className="mb-10">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold">Continue Learning</h2>
+                <h2 className="text-xl font-bold text-[#1F1F1F]">Continue Learning</h2>
                 <Link to="/dashboard/my-courses" className="text-lms-blue text-sm font-semibold hover:underline">
                     See all your courses
                 </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {courses.map((enrollment) => (
                     <div
                         key={enrollment.id}

@@ -141,6 +141,7 @@ export class CoursesService {
             reviews: true,
           },
         },
+        category: true,
         modules: {
           include: {
             _count: {
@@ -176,6 +177,7 @@ export class CoursesService {
       lastUpdated: course.updated_at,
       instructor: course.instructor.user.name,
       level: course.level,
+      category: course.category,
       revenue: course.payments
         ? course.payments.reduce((sum, p) => sum + p.amount, 0)
         : 0,
@@ -204,6 +206,7 @@ export class CoursesService {
             reviews: true,
           },
         },
+        category: true,
         modules: {
           include: {
             _count: {
@@ -228,9 +231,10 @@ export class CoursesService {
       rating:
         course.reviews.reduce((acc, r) => acc + r.rating, 0) /
         (course.reviews.length || 1),
-      lessons: course.modules.reduce((acc, m) => acc + m._count.lessons, 0),
+      lessons: course.modules.reduce((acc: any, m: any) => acc + m._count.lessons, 0),
       price: course.price,
       revenue: 0, // Calculate revenue if needed
+      category: course.category,
       lastUpdated: course.updated_at,
     }));
   }

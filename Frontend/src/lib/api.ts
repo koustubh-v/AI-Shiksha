@@ -620,4 +620,65 @@ export const AdminSettings = {
     }
 };
 
+export const Reviews = {
+    submit: async (courseId: string, rating: number, comment?: string) => {
+        const { data } = await api.post('/reviews', { course_id: courseId, rating, comment });
+        return data;
+    },
+    getStats: async (courseId: string) => {
+        const { data } = await api.get(`/reviews/course/${courseId}/stats`);
+        return data;
+    },
+    getForCourse: async (courseId: string) => {
+        const { data } = await api.get(`/reviews/course/${courseId}`);
+        return data;
+    },
+    getMyReview: async (courseId: string) => {
+        const { data } = await api.get(`/reviews/me/${courseId}`);
+        return data;
+    }
+};
+
+export const QA = {
+    askQuestion: async (lessonId: string, question: string) => {
+        const { data } = await api.post(`/qa/lesson`, { lesson_id: lessonId, question });
+        return data;
+    },
+    getLessonQuestions: async (lessonId: string) => {
+        const { data } = await api.get(`/qa/lesson/${lessonId}`);
+        return data;
+    },
+    getAdminCourses: async () => {
+        const { data } = await api.get(`/qa/admin/courses`);
+        return data;
+    },
+    getCourseQuestions: async (courseId: string) => {
+        const { data } = await api.get(`/qa/admin/course/${courseId}`);
+        return data;
+    },
+    replyQuestion: async (qaId: string, reply: string) => {
+        const { data } = await api.post(`/qa/admin/${qaId}/reply`, { reply });
+        return data;
+    }
+};
+
+export const Instructors = {
+    getDashboardStats: async () => {
+        const { data } = await api.get('/instructors/dashboard/stats');
+        return data;
+    },
+    getStudents: async () => {
+        const { data } = await api.get('/instructors/dashboard/students');
+        return data;
+    },
+    getReviews: async () => {
+        const { data } = await api.get('/instructors/dashboard/reviews');
+        return data;
+    },
+    getQA: async () => {
+        const { data } = await api.get('/instructors/dashboard/qa');
+        return data;
+    }
+};
+
 export default api;

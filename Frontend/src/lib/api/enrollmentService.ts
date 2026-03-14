@@ -22,6 +22,7 @@ export interface EnrolledCourse {
     enrollmentDate: string;
     completionDate: string | null;
     status: 'not_started' | 'in_progress' | 'completed';
+    has_reviewed?: boolean;
 }
 
 export const enrollmentService = {
@@ -50,6 +51,7 @@ export const enrollmentService = {
             enrollmentDate: enrollment.enrolled_at,
             completionDate: enrollment.completed_at,
             status: enrollment.status,
+            has_reviewed: enrollment.course.reviews && enrollment.course.reviews.length > 0,
         }));
     },
 };

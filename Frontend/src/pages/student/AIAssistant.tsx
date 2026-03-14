@@ -4,21 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Sparkles, Image as ImageIcon, Mic, MessageSquare, Plus, PanelLeftClose, PanelLeft, MoreHorizontal, Trash2 } from "lucide-react";
+import { Send, Sparkles, Image as ImageIcon, Mic, MessageSquare, Plus, PanelLeftClose, PanelLeft } from "lucide-react";
 import { UnifiedDashboard } from "@/components/layout/UnifiedDashboard";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import ReactMarkdown from 'react-markdown';
+import api from "@/lib/api";
 
-// Mock data
+// Initial greeting from Sentile AI
 const INITIAL_MESSAGES = [
-    { id: 1, role: "ai", content: "Hi! I'm your AI learning assistant. How can I help you with your courses today?" },
-];
-
-const RECENT_CHATS = [
-    { id: 1, title: "React Hooks Explanation", date: "Today" },
-    { id: 2, title: "Python List Comprehension", date: "Yesterday" },
-    { id: 3, title: "Essay Review: History", date: "3 Days Ago" },
-    { id: 4, title: "Calculus Problem Breakdown", date: "Last Week" },
+    { id: 1, role: "ai", content: "Hi! I'm **Sentile AI**, your personal learning assistant powered by Gemini. Ask me anything about your courses, topics you're studying, or anything you'd like to learn!" },
 ];
 
 export default function AIAssistant() {
@@ -38,31 +33,53 @@ export default function AIAssistant() {
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!inputValue.trim()) return;
+        if (!inputValue.trim() || isTyping) return;
 
-        // Add user message
-        const newMessage = { id: messages.length + 1, role: "user", content: inputValue };
-        setMessages([...messages, newMessage]);
+        const userMsg = { id: messages.length + 1, role: "user", content: inputValue };
+        setMessages([...messages, userMsg]);
         setInputValue("");
         setIsTyping(true);
 
-        // Simulate AI response
-        setTimeout(() => {
+        try {
+            const response = await api.post('/ai/assistant/chat', { message: userMsg.content });
+            const data = response.data;
+            
             setMessages((prev) => [
                 ...prev,
                 {
                     id: prev.length + 1,
                     role: "ai",
-                    content: "I can assist you with that! Here is a detailed breakdown...",
+                    content: data?.data?.response || data?.response || "I can assist you with that! Here is a detailed breakdown...",
                 },
             ]);
+        } catch (error: any) {
+            console.error("AI Error:", error);
+            const status = error.response?.status;
+            const errorMessage = error.response?.data?.message || "";
+            
+            let finalErrorMsg = "Sorry, I am having trouble connecting right now.";
+            if (status === 501 || errorMessage.includes("Configure Gemini Key")) {
+                finalErrorMsg = "Ask the Admin to Configure Gemini Key";
+            } else if (status === 403 && errorMessage.includes("disabled globally")) {
+                finalErrorMsg = "AI Features are currently disabled by the Admin.";
+            }
+
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: prev.length + 1,
+                    role: "ai",
+                    content: finalErrorMsg,
+                },
+            ]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
+        }
     };
 
     const ChatSidebar = () => (
         <div className="flex flex-col h-full bg-[#fcfcfc] border-r border-gray-200">
-            <div className="p-4">
+            <div className="p-4 border-b border-gray-100">
                 <Button
                     onClick={() => setMessages(INITIAL_MESSAGES)}
                     className="w-full justify-start gap-3 bg-[#e8f0fe] text-lms-blue hover:bg-[#d2e3fc] border-none rounded-full h-11 shadow-none"
@@ -72,26 +89,20 @@ export default function AIAssistant() {
                 </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-3">
-                <div className="text-xs font-medium text-gray-500 mb-3 px-3 mt-2">Recent</div>
-                <div className="space-y-1">
-                    {RECENT_CHATS.map((chat) => (
-                        <button key={chat.id} className="w-full text-left px-3 py-2 rounded-full hover:bg-gray-100 flex items-center justify-between group transition-colors">
-                            <span className="text-sm text-gray-700 truncate max-w-[160px]">{chat.title}</span>
-                            <MoreHorizontal className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100" />
-                        </button>
-                    ))}
-                </div>
+            <div className="flex-1 flex flex-col items-center justify-center px-4 text-center py-8 opacity-60">
+                <Sparkles className="h-8 w-8 text-blue-400 mb-3" />
+                <p className="text-sm text-gray-500 font-medium">Sentile AI</p>
+                <p className="text-xs text-gray-400 mt-1">Your chats appear here</p>
             </div>
 
             <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="h-4 w-4 text-white" />
                     </div>
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-700">Upgrade Plan</p>
-                        <p className="text-xs text-gray-500">Get Gemini Advanced</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">Sentile AI</p>
+                        <p className="text-xs text-gray-500 truncate">Powered by Gemini</p>
                     </div>
                 </div>
             </div>
@@ -187,9 +198,9 @@ export default function AIAssistant() {
                                             <div className={`max-w-[85%] md:max-w-[75%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                                                 <div className={`text-[15px] md:text-base leading-relaxed ${msg.role === "user"
                                                     ? "bg-[#f0f4f9] px-5 py-3.5 rounded-3xl rounded-tr-sm text-[#1F1F1F]"
-                                                    : "text-[#1F1F1F] py-2"
+                                                    : "text-[#1F1F1F] py-2 prose prose-zinc max-w-none"
                                                     }`}>
-                                                    {msg.content}
+                                                    {msg.role === "ai" ? <ReactMarkdown>{msg.content}</ReactMarkdown> : msg.content}
                                                 </div>
                                             </div>
 

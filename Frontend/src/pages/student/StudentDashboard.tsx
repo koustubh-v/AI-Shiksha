@@ -1,6 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { StudentMetrics } from "@/components/dashboard/student/StudentMetrics";
-import { ResumeCourse } from "@/components/dashboard/student/ResumeCourse";
 import { InProgressCourses } from "@/components/dashboard/student/InProgressCourses";
 import { CompletedCourses } from "@/components/dashboard/student/CompletedCourses";
 import { MilestoneWidget } from "@/components/dashboard/student/MilestoneWidget";
@@ -23,7 +22,6 @@ export default function StudentDashboard() {
             <StudentMetrics />
           </header>
 
-          <ResumeCourse />
           <InProgressCourses />
           <CompletedCourses />
         </main>

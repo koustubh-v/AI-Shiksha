@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,19 +10,23 @@ import {
   Play,
   ArrowRight,
   Calendar,
+  Star
 } from "lucide-react";
 
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import * as LucideIcons from "lucide-react";
+import { RateCourseModal } from "@/components/learn/RateCourseModal";
 
 export function StudentDashboardContent() {
   const { data, isLoading } = useStudentDashboard();
+  const [ratingCourseId, setRatingCourseId] = useState<string | null>(null);
+  const [ratingCourseTitle, setRatingCourseTitle] = useState("");
 
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
   }
 
-  const { stats, inProgressCourses, upcomingDeadlines } = data || { stats: [], inProgressCourses: [], upcomingDeadlines: [] };
+  const { stats, inProgressCourses, completedCourses, upcomingDeadlines } = data || { stats: [], inProgressCourses: [], completedCourses: [], upcomingDeadlines: [] };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -96,6 +101,58 @@ export function StudentDashboardContent() {
         </div>
       </div>
 
+      {/* Completed Courses */}
+      {(completedCourses && completedCourses.length > 0) && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="font-semibold text-sm md:text-base text-foreground">Completed Courses</h3>
+          </div>
+          <div className="space-y-2 md:space-y-3">
+            {completedCourses.map((course) => (
+              <Card key={course.id} className="border hover:border-primary/50 transition-all duration-200 hover:shadow-sm">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 justify-between">
+                    <div className="flex gap-3 md:gap-4 items-center">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-16 h-12 md:w-20 md:h-14 object-cover flex-shrink-0 rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wide">{course.instructor}</p>
+                        <h4 className="font-medium text-foreground text-xs md:text-sm truncate">{course.title}</h4>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end mt-2 sm:mt-0">
+                      {course.has_reviewed ? (
+                        <div className="flex items-center gap-1 text-xs text-green-600 font-medium px-3 py-1.5 bg-green-50 rounded-md border border-green-200">
+                          <Star className="h-3.5 w-3.5 fill-current" />
+                          <span>Rated</span>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5 border-coursera-blue text-coursera-blue hover:bg-coursera-blue hover:text-white transition-colors"
+                          onClick={() => {
+                            setRatingCourseId(course.id);
+                            setRatingCourseTitle(course.title);
+                          }}
+                        >
+                          <Star className="h-3.5 w-3.5" />
+                          <span>Rate Course</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Upcoming Deadlines */}
       <Card className="border bg-gradient-to-br from-destructive/5 to-background">
         <CardContent className="p-3 md:p-4">
@@ -122,6 +179,20 @@ export function StudentDashboardContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Rate Course Modal */}
+      {ratingCourseId && (
+        <RateCourseModal
+          isOpen={!!ratingCourseId}
+          onClose={() => {
+            setRatingCourseId(null);
+            // Optionally refetch data to update the "has_reviewed" state, or we could just reload.
+            window.location.reload();
+          }}
+          courseId={ratingCourseId}
+          courseTitle={ratingCourseTitle}
+        />
+      )}
     </div>
   );
 }

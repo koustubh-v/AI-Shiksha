@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Loader2, Trophy, Download } from "lucide-react";
+import { ChevronRight, Loader2, Trophy, Download, Star } from "lucide-react";
 import { enrollmentService, EnrolledCourse } from "@/lib/api/enrollmentService";
 import { Button } from "@/components/ui/button";
+import { RateCourseModal } from "@/components/learn/RateCourseModal";
 import api from "@/lib/api";
 
 export function CompletedCourses() {
     const [courses, setCourses] = useState<EnrolledCourse[]>([]);
     const [loading, setLoading] = useState(true);
+    const [ratingCourseId, setRatingCourseId] = useState<string | null>(null);
+    const [ratingCourseTitle, setRatingCourseTitle] = useState("");
 
     useEffect(() => {
         loadCourses();
@@ -112,15 +115,35 @@ export function CompletedCourses() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 rounded-full border-green-500 text-green-700 hover:bg-green-50 hover:text-green-800"
+                                    className="flex-1 rounded-full border-green-500 text-green-700 hover:bg-green-50 hover:text-green-800 px-2"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleDownloadCertificate(enrollment.course.id, enrollment.course.title);
                                     }}
+                                    title="Get Certificate"
                                 >
-                                    <Download className="h-3.5 w-3.5 mr-2" />
-                                    Get Certificate
+                                    <Download className="h-3.5 w-3.5" />
                                 </Button>
+
+                                {enrollment.has_reviewed ? (
+                                    <div className="flex items-center justify-center gap-1 text-xs text-green-600 font-medium px-3 py-1.5 bg-green-50 rounded-full border border-green-200">
+                                        <Star className="h-3.5 w-3.5 fill-current" />
+                                        <span>Rated</span>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 rounded-full border-lms-blue text-lms-blue hover:bg-blue-50"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setRatingCourseId(enrollment.course.id);
+                                            setRatingCourseTitle(enrollment.course.title);
+                                        }}
+                                    >
+                                        <Star className="h-3.5 w-3.5 mr-1" />Rate
+                                    </Button>
+                                )}
                                 <Link to={`/course/${enrollment.course.slug}/view`}>
                                     <Button
                                         variant="ghost"
@@ -135,6 +158,17 @@ export function CompletedCourses() {
                     </div>
                 ))}
             </div>
+
+            {/* Rate Course Modal */}
+            {ratingCourseId && <RateCourseModal
+                isOpen={!!ratingCourseId}
+                onClose={() => {
+                    setRatingCourseId(null);
+                    window.location.reload();
+                }}
+                courseId={ratingCourseId}
+                courseTitle={ratingCourseTitle}
+            />}
         </section>
     );
 }

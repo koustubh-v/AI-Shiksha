@@ -1,0 +1,34 @@
+{
+	# Global configuration
+	on_demand_tls {
+		# Endpoint in the NestJS Backend to verify if the custom domain is registered/allowed
+		ask http://localhost:3000/api/franchises/verify-domain
+	}
+}
+
+# Catch-all block for the main LMS domain and all franchise custom domains
+https:// {
+	tls {
+		on_demand
+	}
+
+	# Reverse proxy API requests to the NestJS Backend running on port 3000
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+	
+	# Handles uploaded files if served via the backend 
+	handle /uploads/* {
+		reverse_proxy localhost:3000
+	}
+
+	# Serve Frontend Static files from the Vite build output
+	handle {
+		# ** IMPORTANT **: Change this absolute path to point to your actual Frontend/dist folder on the VPS
+		root * /root/custom-lms/Frontend/dist
+		
+		# Fallback for React Router (SPA)
+		try_files {path} /index.html
+		file_server
+	}
+}

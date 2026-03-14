@@ -45,6 +45,7 @@ import { Check, ChevronsUpDown, X, Loader2, Link as LinkIcon, UploadCloud, Plus,
 import { cn } from '@/lib/utils';
 import { Categories, Tags, Upload } from '@/lib/api';
 import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
 import { RichTextEditor } from '@/components/editors/RichTextEditor';
 import { ImageUpload, VideoUpload } from '@/components/editors/FileUpload';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -106,6 +107,9 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
         u.role === 'franchise_admin'
     );
 
+    const { user: currentUser } = useAuth();
+    const isTeacher = currentUser?.role === 'teacher';
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         mode: 'onChange', // Enable real-time validation
@@ -121,7 +125,7 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
             thumbnail_url: initialData?.thumbnail_url || '',
             intro_video_url: initialData?.intro_video_url || '',
             learning_outcomes: initialData?.learning_outcomes || [],
-            author_id: initialData?.instructor?.user?.id || '',
+            author_id: initialData?.instructor?.user?.id || (isTeacher ? currentUser?.id : ''),
         },
     });
 
@@ -273,7 +277,7 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-gray-700 font-medium">Author (Instructor)</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={!authors.length}>
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={isTeacher || !authors.length}>
                                                 <FormControl>
                                                     <SelectTrigger className="bg-gray-50 border-gray-200 focus:bg-white focus:border-purple-500 rounded-xl h-12 shadow-sm focus:ring-0 focus:ring-offset-0">
                                                         <SelectValue placeholder="Select Course Author" />

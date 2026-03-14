@@ -76,6 +76,8 @@ import { CertificateViewModal } from "@/components/certificates/CertificateViewM
 
 import PDFFlipbook from "@/components/learn/PDFFlipbook";
 import { Chatbot } from "@/components/ai/Chatbot";
+import { RateCourseModal } from "@/components/learn/RateCourseModal";
+import QASection from "@/components/learn/QASection";
 
 // PDF worker setup moved to PDFFlipbook component
 
@@ -134,6 +136,8 @@ export default function LessonPlayer() {
   const [sessionTime, setSessionTime] = useState(0); // In seconds
   const [showExitModal, setShowExitModal] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
 
   // New Design State
   const [sidebarTab, setSidebarTab] = useState("content"); // content | ai
@@ -145,6 +149,7 @@ export default function LessonPlayer() {
 
       try {
         if (lessonSlug === 'intro') {
+          // Note: Handled by useEffect properly
           navigate(`/course/${courseSlug}/view`);
           return;
         }
@@ -225,6 +230,19 @@ export default function LessonPlayer() {
       clearInterval(syncInterval);
     };
   }, [course?.id]); // Only re-run when course ID changes, NOT lessonSlug
+
+  // Fetch if user has already rated this course
+  useEffect(() => {
+    if (course?.id) {
+      import('@/lib/api').then(({ Reviews }) => {
+        Reviews.getMyReview(course.id)
+          .then((review) => {
+            if (review) setHasRated(true);
+          })
+          .catch(() => { });
+      });
+    }
+  }, [course?.id]);
 
   const calculateProgress = () => {
     if (course?.enrollments && course.enrollments.length > 0) {
@@ -317,13 +335,28 @@ export default function LessonPlayer() {
           )
         }));
         setCourse({ ...course, sections: updatedSections });
+
+        // Check if all items are completed locally after this update
+        let totalItems = 0;
+        let completedItems = 0;
+        updatedSections.forEach(s => {
+          s.items?.forEach(i => {
+            totalItems++;
+            if (i.sectionItemProgresses?.[0]?.completed) completedItems++;
+          });
+        });
+
+        if (totalItems > 0 && completedItems === totalItems && !hasRated) {
+          setShowRateModal(true);
+        } else {
+          handleNext();
+        }
       }
 
       toast({
         title: "Lesson Completed",
         description: "Progress saved successfully",
       });
-      handleNext();
     } catch (error) {
       toast({
         title: "Error",
@@ -421,21 +454,26 @@ export default function LessonPlayer() {
             <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-medium">{formatDuration(currentItem.duration_minutes)}</span>
           </div>
-          <Button
-            className="hidden sm:flex bg-primary hover:bg-primary/90 text-white rounded-full px-6"
-            onClick={handleMarkComplete}
-          >
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Mark as Complete
-          </Button>
+          
+          {(!currentItem.sectionItemProgresses?.[0]?.completed) && (
+            <>
+              <Button
+                className="hidden sm:flex bg-primary hover:bg-primary/90 text-white rounded-full px-6 transition-all"
+                onClick={handleMarkComplete}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Mark as Complete
+              </Button>
 
-          {/* Mobile Mark Complete (Icon Only) */}
-          <Button
-            className="flex sm:hidden bg-primary hover:bg-primary/90 text-white rounded-full p-2 h-8 w-8"
-            onClick={handleMarkComplete}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-          </Button>
+              {/* Mobile Mark Complete (Icon Only) */}
+              <Button
+                className="flex sm:hidden bg-primary hover:bg-primary/90 text-white rounded-full p-2 h-8 w-8 transition-all"
+                onClick={handleMarkComplete}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -629,9 +667,7 @@ export default function LessonPlayer() {
 
                 {/* Q&A Content */}
                 <TabsContent value="q&a" className="mt-8">
-                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                    <p>Q&A section is coming soon.</p>
-                  </div>
+                  <QASection lessonId={currentItem.id} />
                 </TabsContent>
               </Tabs>
             )}
@@ -673,6 +709,13 @@ export default function LessonPlayer() {
               </DialogContent>
             </Dialog>
 
+            {/* Rate Course Modal */}
+            <RateCourseModal
+              isOpen={showRateModal}
+              onClose={() => setShowRateModal(false)}
+              courseId={course.id}
+              courseTitle={course.title}
+            />
 
           </div>
         </div>

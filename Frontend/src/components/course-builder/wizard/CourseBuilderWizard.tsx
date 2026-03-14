@@ -8,7 +8,7 @@ import { BasicInfoStep } from './BasicInfoStep';
 import { SettingsStep } from './SettingsStep';
 import { CertificateStep } from './CertificateStep';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Courses } from '@/lib/api';
+import { Courses, CourseApproval } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -125,9 +125,15 @@ export function CourseBuilderWizard() {
 
         setPublishing(true);
         try {
-            await Courses.publish(courseId!);
-            toast.success("Course published successfully!");
-            navigate('/dashboard/courses');
+            const isTeacher = user?.role === 'teacher';
+            if (isTeacher && course?.status !== 'PUBLISHED') {
+                await CourseApproval.submitForApproval(courseId!);
+                toast.success("Course sent for approval successfully!");
+            } else {
+                await Courses.publish(courseId!);
+                toast.success("Course published successfully!");
+            }
+            navigate(isTeacher ? '/dashboard/my-courses' : '/dashboard/courses');
         } catch (error: any) {
             console.error(error);
             toast.error(error.response?.data?.message || "Failed to publish course");
@@ -155,8 +161,8 @@ export function CourseBuilderWizard() {
                 onSave={handlePublish}
                 saving={publishing}
                 disabled={!canPublish()}
-                buttonText={course?.status === 'PUBLISHED' ? 'Update Course' : 'Publish Course'}
-                onBack={() => navigate('/instructor/courses')}
+                buttonText={course?.status === 'PUBLISHED' ? 'Update Course' : (user?.role === 'teacher' ? 'Send for Approval' : 'Publish Course')}
+                onBack={() => navigate(user?.role === 'teacher' ? '/dashboard/my-courses' : '/dashboard/courses')}
                 onPreview={() => window.open(`/dashboard/courses/${courseId}/preview`, '_blank')}
             >
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

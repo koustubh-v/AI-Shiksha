@@ -38,7 +38,16 @@ export default function Checkout() {
       await transactionsService.createTransaction({
         courseIds: items.map(item => item.course.id),
         amount: total,
-        paymentMethod: paymentMethod // 'card' or 'upi'
+        paymentMethod: paymentMethod, // 'card' or 'upi'
+        billingDetails: {
+          billing_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          billing_email: formData.email,
+          billing_address: formData.address,
+          billing_city: formData.city,
+          billing_state: formData.city, // We didn't collect State in the minimalist form, reusing city or empty string as fallback
+          billing_zip: formData.zip || "000000",
+          billing_country: formData.country,
+        }
       });
 
       clearCart();

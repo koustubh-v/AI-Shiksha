@@ -21,6 +21,13 @@ export interface StudentStats {
         course: string;
         dueIn: string;
     }[];
+    completedCourses: {
+        id: string;
+        title: string;
+        instructor: string;
+        image: string;
+        has_reviewed: boolean;
+    }[];
 }
 
 export function useStudentDashboard() {

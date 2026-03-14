@@ -39,6 +39,8 @@ import { RazorpayModule } from './modules/razorpay/razorpay.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { InvoicesService } from './modules/invoices/invoices.service';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { PagesModule } from './modules/pages/pages.module';
+import { FooterSettingsModule } from './modules/footer-settings/footer-settings.module';
 
 @Module({
   imports: [
@@ -81,6 +83,8 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
     RazorpayModule,
     CouponsModule,
     InvoicesModule,
+    PagesModule,
+    FooterSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService, InvoicesService],

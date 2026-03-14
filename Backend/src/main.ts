@@ -15,10 +15,12 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow any origin for custom domains
+      // Allow any origin for custom domains and local dev
       callback(null, true);
     },
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
   });
 
   // Serve uploaded files

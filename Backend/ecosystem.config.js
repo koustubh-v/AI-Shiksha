@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'lms-backend',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       cwd: './',          // Root of the Backend directory
       instances: 'max',   // Use all available CPU cores (cluster mode)
       exec_mode: 'cluster',

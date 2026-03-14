@@ -6,7 +6,30 @@
 	}
 }
 
-# Catch-all block for the main LMS domain and all franchise custom domains
+# 1. Main Application Block (SuperAdmin Domain)
+iconsafetyinstitute.com, www.iconsafetyinstitute.com {
+	# Reverse proxy API requests to the NestJS Backend running on port 3000
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+	
+	# Handles uploaded files if served via the backend 
+	handle /uploads/* {
+		reverse_proxy localhost:3000
+	}
+
+	# Serve Frontend Static files from the Vite build output
+	handle {
+		# ** IMPORTANT **: Change this absolute path to point to your actual Frontend/dist folder on the VPS
+		root * /var/www/lms/Frontend/dist
+		
+		# Fallback for React Router (SPA)
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# 2. Franchise Domains Block (On-Demand TLS via Wildcard)
 https:// {
 	tls {
 		on_demand
@@ -25,7 +48,7 @@ https:// {
 	# Serve Frontend Static files from the Vite build output
 	handle {
 		# ** IMPORTANT **: Change this absolute path to point to your actual Frontend/dist folder on the VPS
-		root * /root/custom-lms/Frontend/dist
+		root * /var/www/lms/Frontend/dist
 		
 		# Fallback for React Router (SPA)
 		try_files {path} /index.html

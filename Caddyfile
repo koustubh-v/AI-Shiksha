@@ -2,7 +2,7 @@
 	# Global configuration
 	on_demand_tls {
 		# Endpoint in the NestJS Backend to verify if the custom domain is registered/allowed
-		ask http://127.0.0.1:3000/api/franchises/verify-domain
+		ask http://127.0.0.1:3000/franchises/verify-domain
 	}
 }
 

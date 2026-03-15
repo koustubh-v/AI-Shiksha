@@ -5,9 +5,25 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class FooterSettingsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Resolves the actual franchise ID for Super Admins.
+   * Super Admins have null franchise_id; their settings are stored
+   * under the 'localhost' domain franchise record (master settings).
+   */
+  private async resolveSystemFranchiseId(): Promise<string | null> {
+    const systemFranchise = await this.prisma.franchise.findFirst({
+      where: { domain: 'localhost' },
+      select: { id: true },
+    });
+    return systemFranchise?.id || null;
+  }
+
   async getSettings(franchiseId: string | null) {
-    if (!franchiseId) {
-      // Return defaults if no franchise context (e.g. main system domain)
+    // For Super Admins (null franchise_id), resolve to the master 'localhost' franchise
+    const resolvedId = franchiseId || (await this.resolveSystemFranchiseId());
+
+    if (!resolvedId) {
+      // No franchise exists at all yet - return defaults
       return {
         franchise_id: null,
         site_title: null,
@@ -20,13 +36,12 @@ export class FooterSettingsService {
     }
 
     const settings = await this.prisma.footerSetting.findUnique({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
     });
 
     if (!settings) {
-      // Return defaults if none exist
       return {
-        franchise_id: franchiseId,
+        franchise_id: resolvedId,
         site_title: null,
         copyright_text: `© ${new Date().getFullYear()} All rights reserved.`,
         show_support_section: true,
@@ -39,12 +54,17 @@ export class FooterSettingsService {
   }
 
   async updateSettings(franchiseId: string | null, data: any) {
-    if (!franchiseId) {
-      // Cannot update settings for the master portal if it doesn't support them or requires a specific ID
-      throw new Error("Footer settings can only be updated for specific franchises.");
+    // For Super Admins (null franchise_id), upsert against the 'localhost' master franchise
+    const resolvedId = franchiseId || (await this.resolveSystemFranchiseId());
+
+    if (!resolvedId) {
+      throw new Error(
+        'System franchise not set up yet. Please save your Platform Settings first to initialize it.',
+      );
     }
+
     return this.prisma.footerSetting.upsert({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
       update: {
         site_title: data.site_title,
         copyright_text: data.copyright_text,
@@ -54,7 +74,7 @@ export class FooterSettingsService {
         social_links: data.social_links || [],
       },
       create: {
-        franchise_id: franchiseId,
+        franchise_id: resolvedId,
         site_title: data.site_title,
         copyright_text: data.copyright_text,
         show_support_section: data.show_support_section ?? true,

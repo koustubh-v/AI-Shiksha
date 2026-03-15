@@ -10,7 +10,6 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     // Inject Custom Domain Header
-    config.headers['x-franchise-domain'] = window.location.hostname;
     config.headers['custom-franchise-domain'] = window.location.hostname;
     return config;
 });

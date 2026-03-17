@@ -165,7 +165,7 @@ export default function CourseApprovalPage() {
     <AdminDashboardLayout title="Course Approval" subtitle="Review and approve pending courses">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

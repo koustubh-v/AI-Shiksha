@@ -104,7 +104,7 @@ export default function Coupons() {
     <AdminDashboardLayout title="Coupons" subtitle="Create and manage discount codes for your franchise.">
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <Card className="border-none shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-900/50 px-6 py-4 flex flex-row items-center justify-between">
+          <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-900/50 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle>Active Coupons</CardTitle>
               <CardDescription>All your franchise's discount codes.</CardDescription>
@@ -201,6 +201,7 @@ export default function Coupons() {
           </CardHeader>
 
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
              <Table>
               <TableHeader className="bg-zinc-50 dark:bg-zinc-900">
                 <TableRow>
@@ -255,6 +256,7 @@ export default function Coupons() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

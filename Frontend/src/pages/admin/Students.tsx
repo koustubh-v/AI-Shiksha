@@ -67,7 +67,7 @@ function AdminStudents() {
   const content = (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -133,29 +133,30 @@ function AdminStudents() {
       {/* Filters & Search */}
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>All Students</CardTitle>
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search students..." className="pl-9 w-64" />
+                <Input placeholder="Search students..." className="pl-9 sm:w-64 w-full" />
               </div>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="shrink-0">
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
-                <TableHead>Enrolled</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Progress</TableHead>
+                <TableHead className="hidden sm:table-cell">Enrolled</TableHead>
+                <TableHead className="hidden md:table-cell">Completed</TableHead>
+                <TableHead className="hidden sm:table-cell">Progress</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead className="hidden md:table-cell">Joined</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
@@ -168,49 +169,40 @@ function AdminStudents() {
                 <TableRow key={student.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-8 w-8 shrink-0">
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
                           {student.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{student.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{student.email}</p>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>0 courses</TableCell>
-                  <TableCell>0 courses</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">0 courses</TableCell>
+                  <TableCell className="hidden md:table-cell">0 courses</TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `0%` }}
-                        />
+                        <div className="h-full bg-primary rounded-full" style={{ width: `0%` }} />
                       </div>
                       <span className="text-sm">0%</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="default">
-                      Active
-                    </Badge>
+                    <Badge variant="default">Active</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{new Date(student.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{new Date(student.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>View Profile</DropdownMenuItem>
                         <DropdownMenuItem>View Enrollments</DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Mail className="h-4 w-4 mr-2" /> Send Email
-                        </DropdownMenuItem>
+                        <DropdownMenuItem><Mail className="h-4 w-4 mr-2" /> Send Email</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Suspend</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -219,6 +211,7 @@ function AdminStudents() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

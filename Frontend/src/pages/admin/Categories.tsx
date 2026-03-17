@@ -263,7 +263,7 @@ export default function CategoriesPage() {
     <AdminDashboardLayout title="Categories & Tags" subtitle="Manage course organization variables">
       <div className="space-y-6">
         <Tabs defaultValue="categories" className="w-full">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
             <TabsList>
               <TabsTrigger value="categories">Categories</TabsTrigger>
               <TabsTrigger value="tags">Skill Tags</TabsTrigger>

@@ -174,30 +174,44 @@ export default function PublicCourseCatalog() {
         <div className="min-h-screen bg-white text-[#2d2f31]">
             {/* Header */}
             <div className="bg-white sticky top-0 z-40 border-b border-[#d1d7dc] shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-[#2d2f31]">All Courses</h1>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:flex relative w-64 lg:w-96">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6a6f73] w-4 h-4" />
-                            <input
-                                type="text"
-                                placeholder="Search for courses..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-full border border-[#2d2f31] focus:ring-1 focus:ring-[#2d2f31] outline-none text-sm"
-                            />
-                        </div>
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`p-2 rounded-full border transition-colors ${showFilters ? 'bg-[#2d2f31] text-white border-[#2d2f31]' : 'bg-white border-[#2d2f31] text-[#2d2f31] hover:bg-gray-50'}`}
-                        >
-                            <Filter className="w-5 h-5" />
-                        </button>
-                    </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#2d2f31]">All Courses</h1>
                 </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:flex relative w-64 lg:w-96">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6a6f73] w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search for courses..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 rounded-full border border-[#2d2f31] focus:ring-1 focus:ring-[#2d2f31] outline-none text-sm"
+                        />
+                    </div>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`p-2 rounded-full border transition-colors ${showFilters ? 'bg-[#2d2f31] text-white border-[#2d2f31]' : 'bg-white border-[#2d2f31] text-[#2d2f31] hover:bg-gray-50'}`}
+                    >
+                        <Filter className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile Search Row */}
+            <div className="md:hidden border-b border-gray-100 px-4 pb-3">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6a6f73] w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search for courses..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-full border border-[#2d2f31] focus:ring-1 focus:ring-[#2d2f31] outline-none text-sm"
+                    />
+                </div>
+            </div>
 
                 {/* Filters */}
                 <div className={`border-b border-gray-100 transition-all duration-300 overflow-hidden bg-[#f7f9fa] ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>

@@ -280,8 +280,8 @@ export default function Courses() {
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto">
+            <table className="w-full min-w-[640px]">
               <thead className="border-b border-border bg-muted/50">
                 <tr>
                   <th className="table-header py-3 px-4 text-left">Course</th>

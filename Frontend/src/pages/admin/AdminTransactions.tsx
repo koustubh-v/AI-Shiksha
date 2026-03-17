@@ -61,7 +61,7 @@ export default function AdminTransactions() {
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         
         {/* Analytics Overview (GDL style) */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-3">
           <Card className="border-none shadow-sm bg-white dark:bg-zinc-950 ring-1 ring-zinc-200 dark:ring-zinc-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
@@ -130,17 +130,17 @@ export default function AdminTransactions() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Payment ID</TableHead>
-                  <TableHead>Order ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">Payment ID</TableHead>
+                  <TableHead className="hidden md:table-cell">Order ID</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Method</TableHead>
+                  <TableHead className="hidden md:table-cell">Course</TableHead>
+                  <TableHead className="hidden lg:table-cell">Method</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -162,14 +162,14 @@ export default function AdminTransactions() {
                   filteredData.map((txn) => (
                     <TableRow key={txn.id}>
                       <TableCell>{new Date(txn.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="font-mono text-xs">{txn.transaction_id || '-'}</TableCell>
-                      <TableCell className="font-mono text-xs">{txn.order_id || '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell font-mono text-xs">{txn.transaction_id || '-'}</TableCell>
+                      <TableCell className="hidden md:table-cell font-mono text-xs">{txn.order_id || '-'}</TableCell>
                       <TableCell>
                         <div className="font-medium text-sm">{txn.billing_name || txn.user?.name || 'Unknown'}</div>
-                        <div className="text-xs text-muted-foreground">{txn.billing_email || txn.user?.email || ''}</div>
+                        <div className="text-xs text-muted-foreground hidden sm:block">{txn.billing_email || txn.user?.email || ''}</div>
                       </TableCell>
-                      <TableCell>{txn.course?.title || 'Unknown'}</TableCell>
-                      <TableCell className="capitalize">{txn.payment_provider || 'Stripe'}</TableCell>
+                      <TableCell className="hidden md:table-cell">{txn.course?.title || 'Unknown'}</TableCell>
+                      <TableCell className="hidden lg:table-cell capitalize">{txn.payment_provider || 'Stripe'}</TableCell>
                       <TableCell className="text-right font-medium">
                         {txn.currency} {(txn.amount).toFixed(2)}
                       </TableCell>

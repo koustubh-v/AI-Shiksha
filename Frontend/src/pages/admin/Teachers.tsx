@@ -55,7 +55,7 @@ export default function TeachersPage() {
     <AdminDashboardLayout title="Teachers" subtitle="Manage instructors and verification requests">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -125,28 +125,29 @@ export default function TeachersPage() {
         {/* All Teachers */}
         <Card>
           <CardHeader className="pb-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>All Teachers</CardTitle>
               <div className="flex items-center gap-2">
-                <div className="relative">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search teachers..." className="pl-9 w-64" />
+                  <Input placeholder="Search teachers..." className="pl-9 sm:w-64 w-full" />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="shrink-0">
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Teacher</TableHead>
-                  <TableHead>Courses</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Rating</TableHead>
+                  <TableHead className="hidden sm:table-cell">Courses</TableHead>
+                  <TableHead className="hidden sm:table-cell">Students</TableHead>
+                  <TableHead className="hidden md:table-cell">Revenue</TableHead>
+                  <TableHead className="hidden md:table-cell">Rating</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
@@ -160,21 +161,21 @@ export default function TeachersPage() {
                   <TableRow key={teacher.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-8 w-8 shrink-0">
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {teacher.name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium">{teacher.name}</p>
-                          <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{teacher.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{teacher.email}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{teacher.courses}</TableCell>
-                    <TableCell>{teacher.students.toLocaleString()}</TableCell>
-                    <TableCell>${teacher.revenue.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">{teacher.courses}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{teacher.students.toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell">${teacher.revenue.toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {teacher.rating > 0 && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-chart-3 text-chart-3" />
@@ -190,9 +191,7 @@ export default function TeachersPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>View Profile</DropdownMenuItem>
@@ -206,6 +205,7 @@ export default function TeachersPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

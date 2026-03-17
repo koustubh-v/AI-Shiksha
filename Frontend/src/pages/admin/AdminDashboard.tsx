@@ -165,12 +165,12 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Platform overview and management</p>
           </div>
-          <Button className="gap-2 bg-lms-blue hover:bg-lms-blue/90">
+          <Button className="gap-2 bg-lms-blue hover:bg-lms-blue/90 self-start sm:self-auto">
             <Sparkles className="h-4 w-4" />
             AI Health Report
           </Button>
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {pendingActions.map((action, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${action.priority === "high" ? "bg-lms-rose/10" : "bg-lms-amber/10"
                         }`}>

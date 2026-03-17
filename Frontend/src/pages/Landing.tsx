@@ -145,7 +145,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-text-main text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight"
+            className="text-text-main text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.1] tracking-tight"
           >
             Learn Smarter.<br />
             Build Faster.<br />
@@ -260,7 +260,7 @@ const Categories = () => {
     : defaultCategories.map((c, i) => ({ ...c, ...styles[i % styles.length] }));
 
   return (
-    <section className="bg-background-light py-20 px-6">
+    <section className="bg-background-light py-20 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center lg:items-end justify-between mb-12 text-center lg:text-left gap-4">
           <div className="flex flex-col gap-2">
@@ -336,7 +336,7 @@ const FeaturedCourses = () => {
   }));
 
   return (
-    <section className="py-24 px-6 bg-white">
+    <section className="py-24 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight text-text-main">Featured Courses</h2>
@@ -400,7 +400,7 @@ const FeaturedCourses = () => {
 
 const WhyChooseUs = () => {
   return (
-    <section className="bg-background-light py-24 px-6">
+    <section className="bg-background-light py-24 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight text-text-main">Why Learners Choose Us</h2>
@@ -511,7 +511,7 @@ const TestimonialsMarquee = () => {
 
 const FinalCTA = () => {
   return (
-    <section className="max-w-7xl mx-auto px-6 pb-24">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
       <motion.div
         whileHover={{ scale: 1.01 }}
         className="bg-primary rounded-[2.5rem] p-12 lg:p-20 text-center relative overflow-hidden"

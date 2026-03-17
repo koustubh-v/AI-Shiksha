@@ -255,6 +255,7 @@ export function CurriculumBuilder({ courseId, onNext, onSave, onBack }: Curricul
 
             {/* Add Section Dialog */}
             <Dialog open={isAddSectionOpen} onOpenChange={setIsAddSectionOpen}>
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Create New Section</DialogTitle>
                         <DialogDescription>

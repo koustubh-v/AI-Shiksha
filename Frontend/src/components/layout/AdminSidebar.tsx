@@ -136,6 +136,11 @@ const adminNavItems: NavItem[] = [
     href: "/dashboard/franchises",
   },
   {
+    icon: Building2,
+    label: "Franchise Settings",
+    href: "/dashboard/franchises",
+  },
+  {
     icon: MessageSquare,
     label: "Communication",
     children: [
@@ -391,8 +396,12 @@ export function AdminSidebar() {
         <nav className="space-y-0.5">
           {adminNavItems
             .filter((item) => {
-              // Hide Franchise menu for non-super_admins
+              // "Franchise" (full management) is only for super_admin
               if (item.label === "Franchise" && user.role !== "super_admin") {
+                return false;
+              }
+              // "Franchise Settings" is only for franchise_admin
+              if (item.label === "Franchise Settings" && user.role !== "franchise_admin") {
                 return false;
               }
               return true;

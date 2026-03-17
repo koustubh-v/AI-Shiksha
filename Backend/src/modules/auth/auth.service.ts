@@ -114,7 +114,7 @@ export class AuthService {
   private normalizeRole(role: string): string {
     if (role === 'INSTRUCTOR') return 'teacher';
     if (role === 'SUPER_ADMIN') return 'super_admin';
-    if (role === 'FRANCHISE_ADMIN') return 'FRANCHISE_ADMIN'; // Keep uppercase for frontend checks or consistency
+    if (role === 'FRANCHISE_ADMIN') return 'franchise_admin';
     return role.toLowerCase();
   }
 

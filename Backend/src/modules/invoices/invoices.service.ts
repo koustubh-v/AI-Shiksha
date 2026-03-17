@@ -149,7 +149,12 @@ export class InvoicesService {
             await this.mailerService.sendMail({
                 to: userEmail,
                 subject: `Your Invoice for ${courseTitle} from ${lmsName}`,
-                text: `Dear ${customerName},\n\nThank you for your purchase! The invoice for your recent enrollment in "${courseTitle}" is attached to this email.\n\nBest regards,\nThe ${lmsName} Team`,
+                template: './invoice-email',
+                context: {
+                    customerName,
+                    courseTitle,
+                    lmsName
+                },
                 attachments: [
                     {
                         filename: `Invoice-${payment.transaction_id || payment.id}.pdf`,

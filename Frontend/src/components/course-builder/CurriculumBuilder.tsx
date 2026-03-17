@@ -188,7 +188,7 @@ export function CurriculumBuilder({ courseId, onNext, onSave, onBack }: Curricul
     return (
         <div className="space-y-8 max-w-5xl mx-auto pb-24">
             {/* Header / Add Section */}
-            <div className="flex items-center justify-between bg-white/50 backdrop-blur-sm p-6 rounded-3xl border border-white/20 shadow-sm top-20 z-20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/50 backdrop-blur-sm p-4 sm:p-6 rounded-3xl border border-white/20 shadow-sm top-20 z-20 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Curriculum</h2>
                     <p className="text-gray-500 font-medium">Design your course structure and content</p>
@@ -255,7 +255,6 @@ export function CurriculumBuilder({ courseId, onNext, onSave, onBack }: Curricul
 
             {/* Add Section Dialog */}
             <Dialog open={isAddSectionOpen} onOpenChange={setIsAddSectionOpen}>
-                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Create New Section</DialogTitle>
                         <DialogDescription>

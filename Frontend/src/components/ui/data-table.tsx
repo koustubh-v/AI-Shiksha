@@ -98,7 +98,7 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4 gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-4 gap-4">
                 {filterColumn && (
                     <Input
                         placeholder={filterPlaceholder}
@@ -123,7 +123,7 @@ export function DataTable<TData, TValue>({
                     </Button>
                 )}
 
-                <div className="ml-auto">
+                <div className="sm:ml-auto flex justify-end">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="ml-auto rounded-xl">

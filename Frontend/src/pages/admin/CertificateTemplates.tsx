@@ -396,9 +396,9 @@ export default function CertificateTemplatesPage() {
                         <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
 
                             {/* Toolbar Header */}
-                            <div className="flex items-center justify-between px-6 py-3 border-b bg-gray-50/50">
-                                <div className="flex items-center gap-4 flex-1">
-                                    <h2 className="text-lg font-semibold">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 border-b bg-gray-50/50 gap-4">
+                                <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
+                                    <h2 className="text-sm md:text-lg font-semibold shrink-0">
                                         {editingTemplate ? "Edit Template" : "New Template"}
                                     </h2>
                                     <div className="h-6 w-px bg-gray-200" />
@@ -406,10 +406,10 @@ export default function CertificateTemplatesPage() {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder="Template Name"
-                                        className="h-8 w-64 bg-transparent border-transparent hover:border-input focus:border-input transition-colors"
+                                        className="h-8 w-full md:w-64 bg-transparent border-transparent hover:border-input focus:border-input transition-colors"
                                     />
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                                     {/* Undo/Redo */}
                                     <div className="flex items-center gap-1 mr-2">
                                         <Button
@@ -444,7 +444,7 @@ export default function CertificateTemplatesPage() {
                             </div>
 
                             {/* Builder Area */}
-                            <div className="flex-1 flex overflow-hidden bg-gray-100">
+                            <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-100">
                                 {/* Left Sidebar Controls */}
                                 <CertificateToolbar
                                     selectedElement={selectedElementId ? config.elements.find(e => e.id === selectedElementId) || null : null}

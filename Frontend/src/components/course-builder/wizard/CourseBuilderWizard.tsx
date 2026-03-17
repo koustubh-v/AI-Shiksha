@@ -166,8 +166,8 @@ export function CourseBuilderWizard() {
                 onPreview={() => window.open(`/dashboard/courses/${courseId}/preview`, '_blank')}
             >
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="border-b bg-white px-4">
-                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
+                    <div className="border-b bg-white px-4 overflow-x-auto no-scrollbar">
+                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0 flex-nowrap min-w-max">
                             <TabsTrigger
                                 value="basic"
                                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2 pt-3"

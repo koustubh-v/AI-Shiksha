@@ -11,6 +11,15 @@ export class ChatDto {
   courseId?: string;
 
   @ApiProperty({
+    description: 'The UUID of the lesson/item context',
+    example: '8910e4567-e89b-12d3-a456-426614174001',
+    required: false,
+  })
+  @IsUUID('4', { message: 'Invalid lesson ID format' })
+  @IsOptional()
+  lessonId?: string;
+
+  @ApiProperty({
     description: 'The user message to send to the AI assistant',
     minLength: 5,
     maxLength: 1000,

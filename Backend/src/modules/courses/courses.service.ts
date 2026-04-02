@@ -550,8 +550,20 @@ export class CoursesService {
       throw new BadRequestException('You do not own this course');
     }
 
-    return this.prisma.course.delete({
-      where: { id },
+    return this.prisma.$transaction(async (tx: any) => {
+      // Clean up relations that do not have onDelete: Cascade
+      await tx.payment.deleteMany({
+        where: { course_id: id }
+      });
+
+      await tx.aIConversation.updateMany({
+        where: { course_id: id },
+        data: { course_id: null }
+      });
+
+      return tx.course.delete({
+        where: { id },
+      });
     });
   }
 

@@ -80,9 +80,22 @@ export default function CourseManagement() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the course
-                "{courseToDelete?.title}" and all its content.
+              <AlertDialogDescription className="space-y-3">
+                <p>
+                  This action cannot be undone. This will permanently delete the course
+                  <span className="font-semibold text-foreground bg-muted px-1 rounded mx-1">
+                    "{courseToDelete?.title}"
+                  </span> 
+                  and all its content.
+                </p>
+                {(courseToDelete?.students ?? 0) > 0 && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-md flex items-start gap-2 border border-red-200 mt-2 font-medium">
+                    <span className="text-xl leading-none">⚠️</span>
+                    <span>
+                      Warning: There are <strong>{courseToDelete?.students} student{courseToDelete?.students === 1 ? '' : 's'}</strong> actively enrolled in this course! Deleting it will permanently revoke their access and delete their data.
+                    </span>
+                  </div>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

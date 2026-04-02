@@ -136,4 +136,14 @@ export class QuizzesController {
   getMySubmissions(@Request() req, @Param('quizId') quizId: string) {
     return this.quizzesService.getSubmissions(quizId, req.user.userId);
   }
+
+  @Patch('submissions/:submissionId/date')
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
+  updateSubmissionDate(
+    @Request() req,
+    @Param('submissionId') submissionId: string,
+    @Body('submitted_at') submittedAt: string,
+  ) {
+    return this.quizzesService.updateSubmissionDate(submissionId, new Date(submittedAt));
+  }
 }

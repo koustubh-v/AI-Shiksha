@@ -91,10 +91,21 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
 
             // Filter questions for the current set
             // Ensure we handle potential string/number mismatches
-            const activeQuestions = quizData.questions.filter((q: Question) => {
+            let activeQuestions = quizData.questions.filter((q: Question) => {
                 const qSet = q.set_number ? Number(q.set_number) : 1;
                 return qSet === currentSet;
             });
+
+            // Fallback: If no questions found for the current set, try set 1, then all questions
+            if (activeQuestions.length === 0) {
+                activeQuestions = quizData.questions.filter((q: Question) => {
+                    const qSet = q.set_number ? Number(q.set_number) : 1;
+                    return qSet === 1;
+                });
+                if (activeQuestions.length === 0) {
+                    activeQuestions = quizData.questions;
+                }
+            }
 
             setQuiz({
                 ...quizData,

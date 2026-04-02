@@ -110,6 +110,8 @@ import { useFranchise } from "./contexts/FranchiseContext";
 import { useAuth, UserRole } from "./contexts/AuthContext";
 import { Outlet } from "react-router-dom";
 import RoleProtectedRoute from "./components/common/RoleProtectedRoute";
+import AdminFeedback from "./pages/admin/AdminFeedback";
+import { StudentFeedbackWidget } from "./components/common/StudentFeedbackWidget";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +144,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <StudentFeedbackWidget />
                 <Routes>
                   {/* Auth Routes (Never Blocked by Maintenance Mode) */}
                   <Route path="/login" element={<Login />} />
@@ -215,6 +218,7 @@ const App = () => (
                       <Route path="/dashboard/franchises" element={<FranchisesPage />} />
                       <Route path="/dashboard/institutions" element={<FranchisesPage />} />
                       <Route path="/dashboard/announcements" element={<AnnouncementsPage />} />
+                      <Route path="/dashboard/feedback" element={<AdminFeedback />} />
                       <Route path="/dashboard/tickets" element={<TicketsPage />} />
                       <Route path="/dashboard/community" element={<TicketsPage />} />
                       <Route path="/dashboard/security" element={<SecurityPage />} />

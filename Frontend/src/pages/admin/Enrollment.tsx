@@ -147,6 +147,16 @@ export default function EnrollmentPage() {
     }
   };
 
+  const handleUpdateDates = async (enrollment: Enrollment, enrolledAt: string, completedAt?: string) => {
+    try {
+      await Enrollments.bulkUpdateDates([enrollment.id], enrolledAt, completedAt || undefined);
+      toast({ title: "Success", description: "Dates updated successfully" });
+      loadEnrollments();
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update dates", variant: "destructive" });
+    }
+  };
+
   const handleBulkDelete = async (ids: string[]) => {
     try {
       await Promise.all(ids.map(id => Enrollments.delete(id)));
@@ -244,7 +254,8 @@ export default function EnrollmentPage() {
 
   const columns = createEnrollmentColumns({
     onDelete: handleDeleteEnrollment,
-    onUpdateStatus: handleUpdateStatus
+    onUpdateStatus: handleUpdateStatus,
+    onUpdateDates: handleUpdateDates,
   });
 
   return (

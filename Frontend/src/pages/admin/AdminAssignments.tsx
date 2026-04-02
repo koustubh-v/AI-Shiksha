@@ -48,6 +48,11 @@ export default function AdminAssignments() {
     const [feedback, setFeedback] = useState<string>("");
     const [submittingGrade, setSubmittingGrade] = useState(false);
 
+    // Date Editing State
+    const [editingDateSubmission, setEditingDateSubmission] = useState<any>(null);
+    const [newSubmissionDate, setNewSubmissionDate] = useState<string>("");
+    const [submittingDate, setSubmittingDate] = useState(false);
+
     // Initial Load
     useEffect(() => {
         fetchCourses();
@@ -148,6 +153,26 @@ export default function AdminAssignments() {
             toast({ title: "Error", description: "Failed to save grade", variant: "destructive" });
         } finally {
             setSubmittingGrade(false);
+        }
+    };
+
+    const handleEditDateClick = (submission: any) => {
+        setEditingDateSubmission(submission);
+        setNewSubmissionDate(new Date(submission.submitted_at).toISOString().split('T')[0]);
+    };
+
+    const submitDate = async () => {
+        if (!editingDateSubmission) return;
+        setSubmittingDate(true);
+        try {
+            await Assignments.updateSubmissionDate(editingDateSubmission.id, newSubmissionDate);
+            toast({ title: "Success", description: "Submission date updated" });
+            setEditingDateSubmission(null);
+            fetchSubmissions(selectedAssignmentId!);
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update date", variant: "destructive" });
+        } finally {
+            setSubmittingDate(false);
         }
     };
 
@@ -263,9 +288,14 @@ export default function AdminAssignments() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button size="sm" onClick={() => handleGradeClick(sub)}>
-                                                        {sub.grade !== null ? "Regrade" : "Grade"}
-                                                    </Button>
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => handleEditDateClick(sub)}>
+                                                            Edit Date
+                                                        </Button>
+                                                        <Button size="sm" onClick={() => handleGradeClick(sub)}>
+                                                            {sub.grade !== null ? "Regrade" : "Grade"}
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -322,6 +352,31 @@ export default function AdminAssignments() {
                             <Button variant="outline" onClick={() => setGradingSubmission(null)}>Cancel</Button>
                             <Button onClick={submitGrade} disabled={submittingGrade}>
                                 {submittingGrade ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Grade"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Date Dialog */}
+                <Dialog open={!!editingDateSubmission} onOpenChange={(open) => !open && setEditingDateSubmission(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Submission Date</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Submission Date</Label>
+                                <Input
+                                    type="date"
+                                    value={newSubmissionDate}
+                                    onChange={(e) => setNewSubmissionDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditingDateSubmission(null)}>Cancel</Button>
+                            <Button onClick={submitDate} disabled={submittingDate}>
+                                {submittingDate ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Date"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

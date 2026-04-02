@@ -430,4 +430,17 @@ export class QuizzesService {
       answers: sub.answers ? JSON.parse(sub.answers) : {},
     }));
   }
+
+  async updateSubmissionDate(submissionId: string, submittedAt: Date) {
+    const submission = await this.prisma.quizSubmission.findUnique({
+      where: { id: submissionId },
+    });
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+    return this.prisma.quizSubmission.update({
+      where: { id: submissionId },
+      data: { submitted_at: submittedAt },
+    });
+  }
 }

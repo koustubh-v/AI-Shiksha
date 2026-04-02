@@ -264,6 +264,10 @@ export const Users = {
         const { data: response } = await api.post('/users/change-password', data);
         return response;
     },
+    updateJoiningDate: async (id: string, createdAt: string) => {
+        const { data } = await api.patch(`/users/${id}/joining-date`, { created_at: createdAt });
+        return data;
+    },
 };
 
 // ============================================
@@ -402,6 +406,10 @@ export const Quizzes = {
         const { data } = await api.get(`/quizzes/${quizId}/my-submissions`);
         return data;
     },
+    updateSubmissionDate: async (submissionId: string, submittedAt: string) => {
+        const { data } = await api.patch(`/quizzes/submissions/${submissionId}/date`, { submitted_at: submittedAt });
+        return data;
+    },
 };
 
 // Assignments
@@ -437,6 +445,10 @@ export const Assignments = {
     },
     getSubmission: async (submissionId: string) => {
         const { data } = await api.get(`/submissions/${submissionId}`);
+        return data;
+    },
+    updateSubmissionDate: async (submissionId: string, submittedAt: string) => {
+        const { data } = await api.patch(`/submissions/${submissionId}/date`, { submitted_at: submittedAt });
         return data;
     },
 };
@@ -682,6 +694,21 @@ export const Instructors = {
     },
     getQA: async () => {
         const { data } = await api.get('/instructors/dashboard/qa');
+        return data;
+    }
+};
+
+export const Feedback = {
+    submit: async (content: string) => {
+        const { data } = await api.post('/feedback', { content });
+        return data;
+    },
+    getAdminFeedback: async () => {
+        const { data } = await api.get('/feedback/admin');
+        return data;
+    },
+    updateStatus: async (id: string, status: string) => {
+        const { data } = await api.patch(`/feedback/${id}/status`, { status });
         return data;
     }
 };

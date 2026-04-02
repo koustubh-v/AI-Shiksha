@@ -160,5 +160,19 @@ export class UsersController {
     const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
     return this.usersService.updateRole(id, newRole, franchiseId);
   }
+
+  @Patch(':id/joining-date')
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a user joining date (Admin only)' })
+  async updateJoiningDate(
+    @Param('id') id: string,
+    @Body('created_at') createdAt: string,
+    @Request() req,
+  ) {
+    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
+    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    return this.usersService.updateJoiningDate(id, new Date(createdAt), franchiseId);
+  }
 }
 

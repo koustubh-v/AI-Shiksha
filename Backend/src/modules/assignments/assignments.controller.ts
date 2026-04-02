@@ -80,6 +80,16 @@ export class AssignmentsController {
     );
   }
 
+  @Patch('submissions/:submissionId/date')
+  @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
+  updateSubmissionDate(
+    @Request() req,
+    @Param('submissionId') submissionId: string,
+    @Body('submitted_at') submittedAt: string,
+  ) {
+    return this.assignmentsService.updateSubmissionDate(submissionId, new Date(submittedAt));
+  }
+
   @Get('assignments/:assignmentId/submissions')
   @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   getSubmissions(@Param('assignmentId') assignmentId: string) {

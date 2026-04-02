@@ -1,5 +1,6 @@
 
 "use client"
+import { useState } from "react"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -15,6 +16,10 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Calendar } from "lucide-react"
 
 export type Enrollment = {
     id: string;
@@ -31,15 +36,17 @@ export type Enrollment = {
     };
     status: string;
     enrolled_at: string;
+    completed_at?: string;
     progress?: number;
 }
 
 interface EnrollmentColumnsProps {
     onDelete: (enrollment: Enrollment) => void;
     onUpdateStatus: (enrollment: Enrollment, status: string) => void;
+    onUpdateDates: (enrollment: Enrollment, enrolledAt: string, completedAt?: string) => void;
 }
 
-export const createEnrollmentColumns = ({ onDelete, onUpdateStatus }: EnrollmentColumnsProps): ColumnDef<Enrollment>[] => [
+export const createEnrollmentColumns = ({ onDelete, onUpdateStatus, onUpdateDates }: EnrollmentColumnsProps): ColumnDef<Enrollment>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -138,6 +145,41 @@ export const createEnrollmentColumns = ({ onDelete, onUpdateStatus }: Enrollment
                         <DropdownMenuItem onClick={() => onUpdateStatus(enrollment, 'completed')}>
                             <CheckCircle className="mr-2 h-4 w-4 text-emerald-600" /> Mark as Completed
                         </DropdownMenuItem>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Calendar className="mr-2 h-4 w-4" /> Edit Dates
+                                </DropdownMenuItem>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Edit Enrollment Dates</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    onUpdateDates(
+                                        enrollment, 
+                                        formData.get('enrolled_at') as string, 
+                                        formData.get('completed_at') as string
+                                    );
+                                }}>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="enrolled_at">Enrollment Date</Label>
+                                            <Input id="enrolled_at" name="enrolled_at" type="date" defaultValue={enrollment.enrolled_at ? new Date(enrollment.enrolled_at).toISOString().split('T')[0] : ''} required />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="completed_at">Completion Date</Label>
+                                            <Input id="completed_at" name="completed_at" type="date" defaultValue={enrollment.completed_at ? new Date(enrollment.completed_at).toISOString().split('T')[0] : ''} />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button type="submit">Save Dates</Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             onClick={() => onDelete(enrollment)}

@@ -17,9 +17,19 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, FileText, Calendar, Clock, User } from "lucide-react";
+import { Loader2, Download, FileText, Calendar, Clock, User, Edit2 } from "lucide-react";
 import { format } from "date-fns";
-import api from "@/lib/api";
+import api, { Quizzes } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface Quiz {
     id: string;
@@ -46,6 +56,12 @@ export function QuizResultsView({ quizzes }: QuizResultsViewProps) {
     const [selectedQuizId, setSelectedQuizId] = useState<string>("");
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+
+    // Date editing
+    const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+    const [newDate, setNewDate] = useState<string>("");
+    const [submittingDate, setSubmittingDate] = useState(false);
 
     useEffect(() => {
         if (quizzes.length > 0 && !selectedQuizId) {
@@ -81,6 +97,26 @@ export function QuizResultsView({ quizzes }: QuizResultsViewProps) {
     const handleExport = () => {
         // Placeholder for export functionality
         alert("Exporting functionality coming soon!");
+    };
+
+    const handleEditDate = (sub: Submission) => {
+        setEditingSubmission(sub);
+        setNewDate(sub.submitted_at ? new Date(sub.submitted_at).toISOString().split('T')[0] : "");
+    };
+
+    const submitNewDate = async () => {
+        if (!editingSubmission || !newDate) return;
+        setSubmittingDate(true);
+        try {
+            await Quizzes.updateSubmissionDate(editingSubmission.id, newDate);
+            toast({ title: "Success", description: "Submission date updated successfully" });
+            setEditingSubmission(null);
+            fetchSubmissions(selectedQuizId);
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update date", variant: "destructive" });
+        } finally {
+            setSubmittingDate(false);
+        }
     };
 
     return (
@@ -131,20 +167,20 @@ export function QuizResultsView({ quizzes }: QuizResultsViewProps) {
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                                         <div className="flex flex-col items-center gap-2">
-                                            <FileText className="h-8 w-8 opacity-20" />
+                                                <FileText className="h-8 w-8 opacity-20" />
                                             <span>Please select a quiz to check results</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12">
+                                    <TableCell colSpan={6} className="text-center py-12">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
                             ) : submissions.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                                         No submissions found for this quiz.
                                     </TableCell>
                                 </TableRow>
@@ -172,7 +208,12 @@ export function QuizResultsView({ quizzes }: QuizResultsViewProps) {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground">
-                                            {sub.submitted_at ? format(new Date(sub.submitted_at), "MMM d, yyyy • h:mm a") : "-"}
+                                            <div className="flex items-center justify-end gap-2">
+                                                {sub.submitted_at ? format(new Date(sub.submitted_at), "MMM d, yyyy • h:mm a") : "-"}
+                                                <Button variant="ghost" size="icon" onClick={() => handleEditDate(sub)}>
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -181,6 +222,30 @@ export function QuizResultsView({ quizzes }: QuizResultsViewProps) {
                     </Table>
                 </CardContent>
             </Card>
+
+            <Dialog open={!!editingSubmission} onOpenChange={(open) => !open && setEditingSubmission(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Exam Attendance Date</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Attendance Date</Label>
+                            <Input
+                                type="date"
+                                value={newDate}
+                                onChange={(e) => setNewDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingSubmission(null)}>Cancel</Button>
+                        <Button onClick={submitNewDate} disabled={submittingDate}>
+                            {submittingDate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Date"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

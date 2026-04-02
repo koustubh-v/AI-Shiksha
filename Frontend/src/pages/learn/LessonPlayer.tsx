@@ -143,6 +143,27 @@ export default function LessonPlayer() {
   const [sidebarTab, setSidebarTab] = useState("content"); // content | ai
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
 
+  const isItemLocked = (itemId: string): boolean => {
+    if (!course) return false;
+    let locked = false;
+    let previousItemsCompleted = true;
+
+    for (const section of course.sections.sort((a, b) => a.order_index - b.order_index)) {
+      for (const it of section.items?.sort((a, b) => a.order_index - b.order_index) || []) {
+        if (it.id === itemId) {
+          if (it.type === 'QUIZ' && !previousItemsCompleted) {
+            return true;
+          }
+          return false;
+        }
+        if (!it.sectionItemProgresses?.[0]?.completed) {
+          previousItemsCompleted = false;
+        }
+      }
+    }
+    return false;
+  };
+
   useEffect(() => {
     const loadLesson = async () => {
       if (!courseSlug || !lessonSlug) return;
@@ -161,6 +182,47 @@ export default function LessonPlayer() {
         setCurrentItem(lessonData);
         setCurrentSection(lessonData.section);
         setCourse(lessonData.section.course);
+
+        // Check if locked
+        let previousItemsCompleted = true;
+        let isLocked = false;
+        if (lessonData.type === 'QUIZ') {
+          for (const section of lessonData.section.course.sections.sort((a: any, b: any) => a.order_index - b.order_index)) {
+            for (const it of section.items?.sort((a: any, b: any) => a.order_index - b.order_index) || []) {
+              if (it.id === lessonData.id) {
+                if (!previousItemsCompleted) {
+                  isLocked = true;
+                }
+                break;
+              }
+              if (!it.sectionItemProgresses?.[0]?.completed) {
+                previousItemsCompleted = false;
+              }
+            }
+            if (isLocked || lessonData.section.course.sections.some((s:any) => s.items?.some((i:any) => i.id === lessonData.id))) break;
+          }
+        }
+
+        if (isLocked) {
+           toast({
+             title: "Quiz Locked",
+             description: "You must complete all earlier lessons and modules before attempting this quiz.",
+             variant: "destructive"
+           });
+           
+           // Navigate back to the last incomplete lesson or just dashboard
+           const firstIncomplete = lessonData.section.course.sections
+             .sort((a: any, b: any) => a.order_index - b.order_index)
+             .flatMap((s: any) => s.items?.sort((a: any, b: any) => a.order_index - b.order_index) || [])
+             .find((it: any) => !it.sectionItemProgresses?.[0]?.completed);
+
+           if (firstIncomplete && firstIncomplete.slug) {
+              navigate(`/learn/${courseSlug}/lesson/${firstIncomplete.slug}`);
+           } else {
+              navigate(`/dashboard`);
+           }
+           return;
+        }
 
         // Ensure current module is expanded when loading a new lesson, 
         // but don't collapse others if they are already open
@@ -399,7 +461,8 @@ export default function LessonPlayer() {
     expandedModules,
     setExpandedModules,
     showCertificateModal,
-    setShowCertificateModal
+    setShowCertificateModal,
+    isItemLocked
   };
 
   if (loading) {
@@ -743,6 +806,7 @@ interface SidebarContentProps {
   setExpandedModules: (value: string[]) => void;
   showCertificateModal: boolean;
   setShowCertificateModal: (value: boolean) => void;
+  isItemLocked: (itemId: string) => boolean;
 }
 
 const SidebarContent = ({
@@ -757,8 +821,11 @@ const SidebarContent = ({
   expandedModules,
   setExpandedModules,
   showCertificateModal,
-  setShowCertificateModal
+  setShowCertificateModal,
+  isItemLocked
 }: SidebarContentProps) => {
+
+  const { toast } = useToast();
 
   const handleDownloadCertificate = async () => {
     if (!course) return;
@@ -828,10 +895,21 @@ const SidebarContent = ({
                     <div className="flex flex-col">
                       {section.items?.sort((a, b) => a.order_index - b.order_index).map((item) => {
                         const isActive = item.slug === lessonSlug;
+                        const locked = isItemLocked(item.id);
+
                         return (
                           <button
                             key={item.id}
-                            onClick={() => {
+                            onClick={(e) => {
+                              if (locked) {
+                                e.preventDefault();
+                                toast({
+                                  title: "Locked",
+                                  description: "You must complete all earlier lessons to unlock this quiz.",
+                                  variant: "default"
+                                });
+                                return;
+                              }
                               if (course?.slug && item.slug) {
                                 navigate(`/learn/${course.slug}/lesson/${item.slug}`);
                               }
@@ -840,13 +918,17 @@ const SidebarContent = ({
                               "flex items-start gap-4 px-6 py-4 transition-all border-l-[3px]",
                               isActive
                                 ? "bg-primary/5 border-l-primary"
-                                : "border-l-transparent hover:bg-muted/30"
+                                : locked ? "opacity-70 cursor-not-allowed hover:bg-transparent" : "border-l-transparent hover:bg-muted/30"
                             )}
                           >
                             <div className="mt-0.5 shrink-0">
                               {isActive ? (
                                 <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
                                   <Play className="h-2.5 w-2.5 text-white fill-white ml-0.5" />
+                                </div>
+                              ) : locked ? (
+                                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center bg-muted/20">
+                                  <Lock className="h-2.5 w-2.5 text-muted-foreground/60" />
                                 </div>
                               ) : item.sectionItemProgresses?.[0]?.completed ? (
                                 <div className="h-5 w-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center">

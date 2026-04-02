@@ -41,6 +41,7 @@ import { InvoicesService } from './modules/invoices/invoices.service';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PagesModule } from './modules/pages/pages.module';
 import { FooterSettingsModule } from './modules/footer-settings/footer-settings.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { FooterSettingsModule } from './modules/footer-settings/footer-settings.
     InvoicesModule,
     PagesModule,
     FooterSettingsModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService, InvoicesService],

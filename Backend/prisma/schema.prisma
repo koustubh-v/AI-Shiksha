@@ -40,22 +40,23 @@ model Franchise {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  users           User[]
-  courses         Course[]
-  enrollments     Enrollment[]
-  payments        Payment[]
-  certificates    Certificate[]
-  categories      Category[]
-  tags            Tag[]
-  support_tickets     SupportTicket[]
-  announcements       Announcement[]
-  email_templates     EmailTemplate[]
+  users                 User[]
+  courses               Course[]
+  enrollments           Enrollment[]
+  payments              Payment[]
+  certificates          Certificate[]
+  categories            Category[]
+  tags                  Tag[]
+  support_tickets       SupportTicket[]
+  announcements         Announcement[]
+  email_templates       EmailTemplate[]
   certificate_templates CertificateTemplate[] @relation("FranchiseCertificateTemplates")
-  qa_questions        CourseQA[]
-  razorpay_setting    RazorpaySetting?
-  coupons             Coupon[]
-  pages               Page[]
-  footer_setting      FooterSetting?
+  qa_questions          CourseQA[]
+  razorpay_setting      RazorpaySetting?
+  coupons               Coupon[]
+  pages                 Page[]
+  footer_setting        FooterSetting?
+  StudentFeedback       StudentFeedback[]
 
   @@map("franchises")
 }
@@ -110,6 +111,7 @@ model User {
   announcements         Announcement[]         @relation("AnnouncementAuthor")
   qa_questions          CourseQA[]             @relation("StudentQA")
   qa_replies            CourseQAReply[]        @relation("AdminQAReplies")
+  StudentFeedback       StudentFeedback[]
 
   @@map("users")
 }
@@ -352,39 +354,38 @@ model Payment {
   // Multi-tenant franchise
   franchise_id String?
   franchise    Franchise? @relation(fields: [franchise_id], references: [id])
-  
-  coupon_id        String?
-  coupon           Coupon?  @relation(fields: [coupon_id], references: [id], onDelete: SetNull)
+
+  coupon_id String?
+  coupon    Coupon? @relation(fields: [coupon_id], references: [id], onDelete: SetNull)
 
   // Billing Details
-  billing_name     String?
-  billing_email    String?
-  billing_address  String?
-  billing_city     String?
-  billing_state    String?
-  billing_zip      String?
-  billing_country  String?
+  billing_name    String?
+  billing_email   String?
+  billing_address String?
+  billing_city    String?
+  billing_state   String?
+  billing_zip     String?
+  billing_country String?
 
-
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @default(now()) @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   @@map("payments")
 }
 
 model RazorpaySetting {
-  id              String   @id @default(uuid())
-  key_id          String
-  key_secret      String   @db.Text
-  webhook_secret  String?  @db.Text
-  currency        String   @default("INR") // INR, USD
-  is_enabled      Boolean  @default(false)
-  
-  franchise_id    String   @unique
-  franchise       Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
-  
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id             String  @id @default(uuid())
+  key_id         String
+  key_secret     String  @db.Text
+  webhook_secret String? @db.Text
+  currency       String  @default("INR") // INR, USD
+  is_enabled     Boolean @default(false)
+
+  franchise_id String    @unique
+  franchise    Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("razorpay_settings")
 }
@@ -480,20 +481,20 @@ model CartItem {
 }
 
 model CertificateTemplate {
-  id                String   @id @default(uuid())
+  id                String  @id @default(uuid())
   name              String
   description       String?
-  is_default        Boolean  @default(false)
+  is_default        Boolean @default(false)
   template_config   Json // Stores template design configuration
   preview_image_url String?
   created_by        String?
-  creator           User?    @relation("CreatedCertificateTemplates", fields: [created_by], references: [id], onDelete: SetNull)
-  
-  franchise_id      String?
-  franchise         Franchise? @relation("FranchiseCertificateTemplates", fields: [franchise_id], references: [id], onDelete: Cascade)
+  creator           User?   @relation("CreatedCertificateTemplates", fields: [created_by], references: [id], onDelete: SetNull)
 
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  franchise_id String?
+  franchise    Franchise? @relation("FranchiseCertificateTemplates", fields: [franchise_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   courses Course[] @relation("CourseCertificateTemplate")
 
@@ -815,6 +816,22 @@ model SupportTicketMessage {
   @@map("support_ticket_messages")
 }
 
+model StudentFeedback {
+  id         String @id @default(uuid())
+  student_id String
+  student    User   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  content    String @db.Text
+  status     String @default("NEW") // NEW, REVIEWED, RESOLVED
+
+  franchise_id String?
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("student_feedbacks")
+}
+
 model Announcement {
   id         String  @id @default(uuid())
   title      String
@@ -838,18 +855,18 @@ model Announcement {
 // ============================================
 
 model EmailTemplate {
-  id           String     @id @default(uuid())
-  name         String     // e.g., "Welcome Email", "Password Reset"
-  type         String     // e.g., "WELCOME", "PASSWORD_RESET", "ENROLLMENT", "PURCHASE"
-  subject      String
-  body         String     @db.Text
-  
+  id      String @id @default(uuid())
+  name    String // e.g., "Welcome Email", "Password Reset"
+  type    String // e.g., "WELCOME", "PASSWORD_RESET", "ENROLLMENT", "PURCHASE"
+  subject String
+  body    String @db.Text
+
   // Multi-tenant franchise constraints
   franchise_id String?
   franchise    Franchise? @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
-  
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@unique([type, franchise_id])
   @@map("email_templates")
@@ -860,71 +877,71 @@ model EmailTemplate {
 // ============================================
 
 model CourseQA {
-  id           String      @id @default(uuid())
-  course_id    String
-  course       Course      @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  lesson_id    String
-  lesson       SectionItem @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
-  student_id   String
-  student      User        @relation("StudentQA", fields: [student_id], references: [id], onDelete: Cascade)
-  
-  question     String      @db.Text
-  status       String      @default("OPEN") // OPEN, ANSWERED, RESOLVED
+  id         String      @id @default(uuid())
+  course_id  String
+  course     Course      @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  lesson_id  String
+  lesson     SectionItem @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  student_id String
+  student    User        @relation("StudentQA", fields: [student_id], references: [id], onDelete: Cascade)
+
+  question String @db.Text
+  status   String @default("OPEN") // OPEN, ANSWERED, RESOLVED
 
   franchise_id String?
-  franchise    Franchise?  @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
-  
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
+  franchise    Franchise? @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
 
-  replies      CourseQAReply[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  replies CourseQAReply[]
 
   @@map("course_qa")
 }
 
 model CourseQAReply {
-  id           String    @id @default(uuid())
-  qa_id        String
-  qa           CourseQA  @relation(fields: [qa_id], references: [id], onDelete: Cascade)
-  user_id      String
-  user         User      @relation("AdminQAReplies", fields: [user_id], references: [id], onDelete: Cascade)
-  
-  reply        String    @db.Text
-  is_admin     Boolean   @default(true) // Whether the reply is from an admin/instructor
-  
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  id      String   @id @default(uuid())
+  qa_id   String
+  qa      CourseQA @relation(fields: [qa_id], references: [id], onDelete: Cascade)
+  user_id String
+  user    User     @relation("AdminQAReplies", fields: [user_id], references: [id], onDelete: Cascade)
+
+  reply    String  @db.Text
+  is_admin Boolean @default(true) // Whether the reply is from an admin/instructor
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("course_qa_replies")
 }
 
 model Coupon {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
   code            String
-  description     String?  @db.Text
-  discount_type   String   @default("PERCENTAGE") // PERCENTAGE or FIXED_AMOUNT
+  description     String? @db.Text
+  discount_type   String  @default("PERCENTAGE") // PERCENTAGE or FIXED_AMOUNT
   discount_value  Float
   min_order_value Float?
-  max_discount    Float?   // Useful for percentage discounts
-  
-  start_date      DateTime?
-  end_date        DateTime?
-  is_active       Boolean  @default(true)
-  usage_limit     Int?     @default(100)
-  times_used      Int      @default(0)
+  max_discount    Float? // Useful for percentage discounts
+
+  start_date  DateTime?
+  end_date    DateTime?
+  is_active   Boolean   @default(true)
+  usage_limit Int?      @default(100)
+  times_used  Int       @default(0)
 
   // Multi-tenant franchise (strict isolation)
-  franchise_id    String
-  franchise       Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+  franchise_id String
+  franchise    Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
 
   // Optional: Restrict to specific course
-  course_id       String?
-  course          Course?  @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  course_id String?
+  course    Course? @relation(fields: [course_id], references: [id], onDelete: Cascade)
 
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  payments        Payment[]
+  payments Payment[]
 
   @@unique([code, franchise_id])
   @@map("coupons")
@@ -935,38 +952,38 @@ model Coupon {
 // ============================================
 
 model Page {
-  id           String    @id @default(uuid())
-  slug         String    // e.g., "privacy-policy", "terms-and-conditions", "about-us"
+  id           String  @id @default(uuid())
+  slug         String // e.g., "privacy-policy", "terms-and-conditions", "about-us"
   title        String
-  content      String    @db.Text // HTML content
-  is_published Boolean   @default(false)
-  
+  content      String  @db.Text // HTML content
+  is_published Boolean @default(false)
+
   franchise_id String
   franchise    Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
 
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@unique([slug, franchise_id])
   @@map("pages")
 }
 
 model FooterSetting {
-  id                   String    @id @default(uuid())
+  id                   String  @id @default(uuid())
   site_title           String?
   copyright_text       String?
-  show_support_section Boolean   @default(true)
+  show_support_section Boolean @default(true)
   logo_url             String?
-  
+
   // Stored as JSON arrays
-  menus                Json?     // e.g. [{"label": "Home", "url": "/"}, ...]
-  social_links         Json?     // e.g. [{"platform": "twitter", "url": "..."}, ...]
+  menus        Json? // e.g. [{"label": "Home", "url": "/"}, ...]
+  social_links Json? // e.g. [{"platform": "twitter", "url": "..."}, ...]
 
-  franchise_id         String    @unique
-  franchise            Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+  franchise_id String    @unique
+  franchise    Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
 
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("footer_settings")
 }

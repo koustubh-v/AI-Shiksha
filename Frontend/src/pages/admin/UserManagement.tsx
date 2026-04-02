@@ -348,6 +348,55 @@ function AddUserModalContent({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+function EditJoiningDateDialog({ user, isOpen, setIsOpen, onSuccess }: any) {
+  const [date, setDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+        setDate(user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : "");
+    }
+  }, [user]);
+
+  const handleSubmit = async () => {
+    if (!date) return;
+    setIsSubmitting(true);
+    try {
+      await UsersAPI.updateJoiningDate(user.id, date);
+      toast({ title: "Success", description: "Joining date updated" });
+      setIsOpen(false);
+      onSuccess();
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to update date", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Joining Date</DialogTitle>
+          <DialogDescription>Update the date when this user joined the platform.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label>Joining Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Save Date
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
@@ -356,6 +405,9 @@ export default function UserManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [editDateUser, setEditDateUser] = useState<any>(null);
+  
   const { toast } = useToast();
 
   const loadUsers = async () => {
@@ -625,8 +677,11 @@ export default function UserManagement() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>View Profile</DropdownMenuItem>
-                              <DropdownMenuItem>Edit</DropdownMenuItem>
-                              <DropdownMenuItem>Send Message</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setEditDateUser(student)}
+                              >
+                                Edit Joining Date
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
                                 onClick={() => {
@@ -689,8 +744,11 @@ export default function UserManagement() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>View Profile</DropdownMenuItem>
-                              <DropdownMenuItem>View Courses</DropdownMenuItem>
-                              <DropdownMenuItem>Approve/Reject</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setEditDateUser(teacher)}
+                              >
+                                Edit Joining Date
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
                                 onClick={() => {
@@ -797,6 +855,13 @@ export default function UserManagement() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <EditJoiningDateDialog 
+          user={editDateUser} 
+          isOpen={!!editDateUser} 
+          setIsOpen={(open: boolean) => !open && setEditDateUser(null)} 
+          onSuccess={loadUsers} 
+        />
       </div>
     </AdminDashboardLayout>
   );

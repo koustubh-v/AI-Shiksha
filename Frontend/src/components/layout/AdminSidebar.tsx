@@ -145,6 +145,7 @@ const adminNavItems: NavItem[] = [
     label: "Communication",
     children: [
       { icon: Megaphone, label: "Announcements", href: "/dashboard/announcements" },
+      { icon: MessageSquare, label: "Student Feedback", href: "/dashboard/feedback" },
       { icon: Ticket, label: "Support Tickets", href: "/dashboard/tickets" },
     ],
   },

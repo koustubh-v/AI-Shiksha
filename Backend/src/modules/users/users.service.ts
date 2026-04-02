@@ -580,6 +580,32 @@ export class UsersService {
       },
     });
   }
+
+  async updateJoiningDate(id: string, createdAt: Date, franchiseId?: string | null) {
+    const whereClause: any = { id };
+    if (franchiseId) {
+      whereClause.franchise_id = franchiseId;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: whereClause,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { created_at: createdAt },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        created_at: true,
+      },
+    });
+  }
 }
 
 

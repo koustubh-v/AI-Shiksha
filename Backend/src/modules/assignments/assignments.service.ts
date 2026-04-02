@@ -279,7 +279,11 @@ export class AssignmentsService {
             email: true,
           },
         },
-        assignment: true,
+        assignment: {
+          include: {
+            item: true,
+          },
+        },
       },
     });
 
@@ -288,5 +292,18 @@ export class AssignmentsService {
     }
 
     return submission;
+  }
+
+  async updateSubmissionDate(submissionId: string, submittedAt: Date) {
+    const submission = await this.prisma.assignmentSubmission.findUnique({
+      where: { id: submissionId },
+    });
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+    return this.prisma.assignmentSubmission.update({
+      where: { id: submissionId },
+      data: { submitted_at: submittedAt },
+    });
   }
 }

@@ -21,13 +21,13 @@ export class ChatDto {
 
   @ApiProperty({
     description: 'The user message to send to the AI assistant',
-    minLength: 5,
+    minLength: 1,
     maxLength: 1000,
     example: 'Explain the concept of strict grounding in AI.',
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(5, { message: 'Message must be at least 5 characters long' })
+  @MinLength(1, { message: 'Message must be at least 1 characters long' })
   @MaxLength(1000, { message: 'Message cannot exceed 1000 characters' })
   message: string;
 }

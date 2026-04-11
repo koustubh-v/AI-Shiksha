@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Facebook, Twitter, Instagram, Linkedin, Youtube, Github, Link as LinkIcon } from "lucide-react";
+
+const getSocialIcon = (platform: string) => {
+  const p = platform.toLowerCase();
+  if (p.includes('facebook')) return <Facebook className="w-4 h-4" />;
+  if (p.includes('twitter') || p.includes('x')) return <Twitter className="w-4 h-4" />;
+  if (p.includes('instagram')) return <Instagram className="w-4 h-4" />;
+  if (p.includes('linkedin')) return <Linkedin className="w-4 h-4" />;
+  if (p.includes('youtube')) return <Youtube className="w-4 h-4" />;
+  if (p.includes('github')) return <Github className="w-4 h-4" />;
+  return <LinkIcon className="w-4 h-4" />;
+};
 import { useFranchise } from "@/contexts/FranchiseContext";
 import { footerSettingsService, FooterSetting } from "@/lib/api/footerSettingsService";
 import { pagesService, Page } from "@/lib/api/pagesService";
@@ -100,7 +111,7 @@ export default function Footer() {
               className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] uppercase font-bold text-text-muted shadow-sm hover:text-primary hover:-translate-y-1 hover:shadow-md transition-all"
               title={social.platform}
             >
-              {social.platform.substring(0, 1)}
+              {getSocialIcon(social.platform)}
             </a>
           ))}
         </div>

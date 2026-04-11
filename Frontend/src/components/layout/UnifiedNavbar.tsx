@@ -83,12 +83,12 @@ export default function UnifiedNavbar() {
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="md:hidden">
-                                <Menu className="h-6 w-6 text-[#2d2f31]" />
+                                <Menu className="h-6 w-6 text-text-main" />
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="w-[300px] p-0">
                             <div className="p-4 border-b">
-                                <div className="flex items-center gap-2 font-bold text-xl text-[#a435f0]">
+                                <div className="flex items-center gap-2 font-bold text-xl text-primary headline-serif">
                                     {branding.favicon_url || branding.logo_url ? (
                                         <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-6 w-6 object-cover rounded-md" />
                                     ) : (
@@ -97,14 +97,14 @@ export default function UnifiedNavbar() {
                                     <span>{branding.lms_name}</span>
                                 </div>
                             </div>
-                            <div className="p-4 space-y-4">
-                                <Link to="/" className="block py-2 font-medium">Home</Link>
-                                <Link to="/courses" className="block py-2 font-medium">All Courses</Link>
+                            <div className="p-4 space-y-4 font-sans">
+                                <Link to="/" className="block py-2 font-light text-text-main hover:text-primary">Home</Link>
+                                <Link to="/courses" className="block py-2 font-light text-text-main hover:text-primary">All Courses</Link>
                                 <div className="py-2">
-                                    <h3 className="font-bold mb-2 text-sm text-gray-500">Categories</h3>
+                                    <h3 className="font-bold mb-2 text-[10px] uppercase tracking-widest text-text-muted">Categories</h3>
                                     <div className="pl-4 space-y-2">
                                         {categories.map((cat) => (
-                                            <Link key={cat.id} to={`/courses?category=${cat.name}`} className="block py-1 text-sm text-gray-600 hover:text-[#a435f0]">
+                                            <Link key={cat.id} to={`/courses?category=${cat.name}`} className="block py-1 text-sm font-light text-text-muted hover:text-primary">
                                                 {cat.name}
                                             </Link>
                                         ))}
@@ -115,36 +115,36 @@ export default function UnifiedNavbar() {
                     </Sheet>
 
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="hidden sm:block overflow-hidden">
+                    <Link to="/" className="flex items-center gap-2 group hover:opacity-90 transition-opacity">
+                        <div className="overflow-hidden flex items-center justify-center">
                             {branding.favicon_url || branding.logo_url ? (
-                                <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-cover rounded-md" />
+                                <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-contain drop-shadow-sm" />
                             ) : (
-                                <GraduationCap className="h-8 w-8 text-[#a435f0]" />
+                                <GraduationCap className="h-8 w-8 text-primary drop-shadow-sm" />
                             )}
                         </div>
-                        <span className="text-xl font-bold text-[#2d2f31] tracking-tight">{branding.lms_name}</span>
+                        <span className="hidden sm:block headline-serif text-xl font-light text-text-main tracking-tight">{branding.lms_name}</span>
                     </Link>
 
                     {/* Explore Button (Desktop) */}
                     <div className="hidden md:block relative group">
-                        <button className="text-sm font-medium text-[#2d2f31] hover:text-[#a435f0] py-5 px-2 flex items-center gap-1">
-                            Explore <ChevronDown className="w-4 h-4" />
+                        <button className="headline-serif text-sm font-light text-text-main hover:text-primary py-5 px-2 flex items-center gap-1 transition-colors">
+                            Explore <ChevronDown className="w-4 h-4 opacity-50" />
                         </button>
                         {/* Dropdown */}
-                        <div className="absolute top-16 left-0 w-64 bg-white border border-[#d1d7dc] shadow-xl rounded-b-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                        <div className="absolute top-16 left-0 w-64 bg-white border border-gray-100 shadow-xl rounded-b-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 overflow-hidden font-sans">
                             <div className="py-2">
                                 {categories.map((cat) => (
                                     <Link
                                         key={cat.id}
                                         to={`/courses?category=${cat.name}`}
-                                        className="block px-4 py-2 text-sm text-[#2d2f31] hover:bg-[#f7f9fa] hover:text-[#a435f0]"
+                                        className="block px-4 py-2 text-sm font-light text-text-main hover:bg-primary/5 hover:text-primary transition-colors"
                                     >
                                         {cat.name}
                                     </Link>
                                 ))}
-                                <div className="border-t border-gray-100 my-1"></div>
-                                <Link to="/courses" className="block px-4 py-2 text-sm font-bold text-[#a435f0] hover:bg-[#f7f9fa]">
+                                {categories.length > 0 && <div className="border-t border-gray-50 my-1"></div>}
+                                <Link to="/courses" className="block px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-primary hover:bg-primary/5 transition-colors">
                                     View All Courses
                                 </Link>
                             </div>
@@ -156,12 +156,12 @@ export default function UnifiedNavbar() {
                 {/* Hide search on specific pages */}
                 {!['/courses', '/cart', '/checkout'].some(path => location.pathname.startsWith(path)) && (
                     <div className="flex-1 max-w-2xl hidden md:block">
-                        <form onSubmit={handleSearch} className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6a6f73] w-4 h-4" />
+                        <form onSubmit={handleSearch} className="relative group/search">
+                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 transition-colors group-focus-within/search:text-primary" />
                             <input
                                 type="text"
                                 placeholder="Search for anything..."
-                                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-[#2d2f31] focus:outline-none focus:ring-1 focus:ring-[#2d2f31] text-sm bg-[#f7f9fa] focus:bg-white transition-colors"
+                                className="w-full pl-12 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm font-light text-text-main bg-white/50 focus:bg-white transition-all shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -174,14 +174,14 @@ export default function UnifiedNavbar() {
 
                     {/* Mobile Search Toggle */}
                     <Button variant="ghost" size="icon" className="md:hidden">
-                        <Search className="h-5 w-5 text-[#2d2f31]" />
+                        <Search className="h-5 w-5 text-text-main" />
                     </Button>
 
                     {/* Cart */}
-                    <Link to="/cart" className="relative p-2 hover:bg-[#f7f9fa] rounded-full transition-colors">
-                        <ShoppingCart className="h-5 w-5 text-[#2d2f31]" />
+                    <Link to="/cart" className="relative p-2 hover:bg-primary/5 hover:text-primary rounded-full transition-colors group">
+                        <ShoppingCart className="h-5 w-5 text-text-main group-hover:text-primary transition-colors" />
                         {items.length > 0 && (
-                            <span className="absolute top-0 right-0 h-4 w-4 bg-[#a435f0] text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                            <span className="absolute top-0 right-0 h-4 w-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">
                                 {items.length}
                             </span>
                         )}
@@ -189,14 +189,14 @@ export default function UnifiedNavbar() {
 
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
-                            <Link to={getDashboardLink()} className="hidden md:flex items-center gap-2 text-sm font-medium text-[#2d2f31] hover:text-[#a435f0] px-3 py-2 hover:bg-[#f7f9fa] rounded-full">
-                                <LayoutDashboard className="w-4 h-4" />
+                            <Link to={getDashboardLink()} className="hidden md:flex items-center gap-2 headline-serif text-sm font-light text-text-main hover:text-primary px-3 py-2 hover:bg-primary/5 rounded-full transition-colors">
+                                <LayoutDashboard className="w-4 h-4 opacity-50" />
                                 Dashboard
                             </Link>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="relative w-9 h-9 rounded-full overflow-hidden hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#a435f0] focus:ring-offset-2">
+                                    <button className="relative w-9 h-9 rounded-full overflow-hidden hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 border border-gray-100 shadow-sm">
                                         {user?.avatar_url ? (
                                             <img
                                                 src={user.avatar_url}
@@ -204,25 +204,25 @@ export default function UnifiedNavbar() {
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <div className="w-full h-full bg-[#2d2f31] text-white flex items-center justify-center font-bold text-sm">
+                                            <div className="w-full h-full bg-primary text-white flex items-center justify-center font-bold text-sm">
                                                 {user?.name?.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 mt-2">
+                                <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl p-2 font-sans border border-gray-100 shadow-xl">
                                     <DropdownMenuLabel>
                                         <div className="flex flex-col space-y-1">
-                                            <p className="font-medium">{user?.name}</p>
-                                            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                                            <p className="font-bold text-sm tracking-tight text-text-main">{user?.name}</p>
+                                            <p className="text-xs text-text-muted truncate font-light tracking-wide">{user?.email}</p>
                                         </div>
                                     </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
+                                    <DropdownMenuSeparator className="bg-gray-100" />
+                                    <DropdownMenuItem onClick={() => navigate("/dashboard/settings")} className="text-sm font-light rounded-lg cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors">
                                         <Settings className="mr-2 h-4 w-4" /> Settings
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600">
+                                    <DropdownMenuSeparator className="bg-gray-100" />
+                                    <DropdownMenuItem onClick={logout} className="text-red-500 font-bold tracking-wide text-xs uppercase cursor-pointer rounded-lg hover:bg-red-50 transition-colors">
                                         <LogOut className="mr-2 h-4 w-4" /> Log out
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -231,12 +231,12 @@ export default function UnifiedNavbar() {
                     ) : (
                         <div className="flex items-center gap-2">
                             <Link to="/login">
-                                <Button variant="ghost" className="font-bold text-[#2d2f31] hover:text-[#a435f0] hover:bg-[#f7f9fa] rounded-full">
+                                <Button variant="ghost" className="font-bold text-[10px] tracking-widest uppercase text-text-main hover:text-primary hover:bg-primary/5 rounded-full transition-colors">
                                     Log in
                                 </Button>
                             </Link>
                             <Link to="/signup">
-                                <InteractiveHoverButton className="h-9 px-6 hidden sm:flex">
+                                <InteractiveHoverButton className="h-9 px-6 hidden sm:flex text-[10px] tracking-widest uppercase">
                                     Sign up
                                 </InteractiveHoverButton>
                             </Link>

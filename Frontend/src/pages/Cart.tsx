@@ -5,8 +5,10 @@ import {
   ArrowRight,
   ShoppingBag,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Star
 } from "lucide-react";
+import Footer from "@/components/marketing/Footer";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -22,116 +24,134 @@ export default function Cart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 text-[#a435f0] animate-spin mx-auto mb-4" />
-          <p className="text-[#6a6f73]">Loading cart...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white/50 backdrop-blur-sm">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#2d2f31]">
-      {/* Header */}
-      <div className="border-b border-[#d1d7dc] sticky top-0 bg-white z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-[#2d2f31]">Shopping Cart</h1>
-            <span className="text-[#6a6f73] font-bold text-sm bg-[#f7f9fa] px-2 py-1 rounded-sm">
-              {items.length} {items.length === 1 ? "Course" : "Courses"}
-            </span>
+    <div className="min-h-screen bg-[#fbfcfd] text-text-main relative overflow-x-hidden flex flex-col">
+      {/* Ambient Background Depth */}
+      <div className="absolute top-[0%] left-[20%] w-[600px] h-[600px] bg-primary opacity-[0.03] rounded-full blur-[120px] mix-blend-multiply pointer-events-none -z-10"></div>
+      <div className="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] bg-[#a12e70] opacity-[0.02] rounded-full blur-[100px] mix-blend-multiply pointer-events-none -z-10"></div>
+
+      {/* Hero Header */}
+      <div className="relative pt-24 pb-8 px-4 sm:px-6 z-20">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="text-center sm:text-left">
+                  <h1 className="headline-serif text-3xl sm:text-4xl lg:text-5xl font-light text-text-main tracking-tight mb-2 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                      Your Cart
+                  </h1>
+                  <span className="text-text-muted font-light text-sm tracking-widest uppercase">
+                    {items.length} {items.length === 1 ? "Program Pending" : "Programs Pending"}
+                  </span>
+              </div>
+              <button
+                onClick={() => navigate("/courses")}
+                className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold text-primary hover:opacity-80 transition-opacity bg-white/50 backdrop-blur-md px-4 py-2.5 rounded-full border border-gray-200/50 shadow-sm"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Return to Ecosystem
+              </button>
           </div>
-          <button
-            onClick={() => navigate("/courses")}
-            className="text-[#a435f0] font-bold text-sm hover:text-[#8710d8]"
-          >
-            Keep Shopping
-          </button>
-        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full z-10">
         {items.length === 0 ? (
           /* Empty Cart State */
-          <div className="border border-[#d1d7dc] rounded-sm p-12 text-center bg-white shadow-sm max-w-2xl mx-auto mt-8">
-            <div className="w-24 h-24 bg-[#f7f9fa] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#d1d7dc]">
-              <ShoppingBag className="w-10 h-10 text-[#2d2f31]" />
+          <div className="glass-card bg-white/40 backdrop-blur-xl border border-gray-100/50 rounded-3xl p-16 text-center shadow-lg max-w-2xl mx-auto mt-12 animate-in fade-in zoom-in-95 duration-700">
+            <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-8 border border-primary/10 shadow-inner">
+              <ShoppingBag className="w-10 h-10 text-primary opacity-50" />
             </div>
-            <p className="text-[#2d2f31] mb-6 text-lg font-bold">
-              Your cart is empty. Keep shopping to find a course!
+            <h2 className="headline-serif text-2xl text-text-main mb-3 font-light">Void Space Detected</h2>
+            <p className="text-text-muted font-light max-w-md mx-auto mb-10 leading-relaxed">
+              Your cart is currently empty. Explore our curriculum to discover premium learning pathways crafted for your architecture.
             </p>
             <button
               onClick={() => navigate("/courses")}
-              className="bg-[#2d2f31] text-white font-bold py-3 px-8 hover:bg-black transition-colors"
+              className="bg-primary hover:bg-primary/90 text-white tracking-widest uppercase text-xs font-bold py-3.5 px-8 rounded-full transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5"
             >
-              Browse Courses
+              Browse Curriculum
             </button>
           </div>
         ) : (
           /* Cart with Items */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-0">
-              <p className="text-sm font-bold text-[#6a6f73] mb-2">{items.length} Course in Cart</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
+            {/* Cart Items List */}
+            <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col sm:flex-row gap-4 py-4 border-t border-[#d1d7dc]"
+                  className="glass-card bg-white/60 backdrop-blur-xl border border-gray-100/50 rounded-2xl p-4 flex flex-col sm:flex-row gap-6 shadow-sm hover:shadow-md transition-all group"
                 >
                   {/* Thumbnail */}
-                  <div className="flex-shrink-0 w-32 h-20 bg-gray-100 overflow-hidden border border-[#d1d7dc]">
+                  <div className="flex-shrink-0 w-full sm:w-40 h-28 bg-primary/5 rounded-xl overflow-hidden relative border border-gray-100">
                     {item.course.thumbnail_url ? (
                       <img
                         src={item.course.thumbnail_url}
                         alt={item.course.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="w-6 h-6 text-gray-300" />
+                        <ShoppingBag className="w-6 h-6 text-primary opacity-20" />
                       </div>
                     )}
                   </div>
 
                   {/* Course Info */}
-                  <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
                       <div className="flex justify-between items-start gap-4">
-                        <h3 className="font-bold text-[#2d2f31] line-clamp-2 leading-tight text-base">
+                        <h3 className="headline-serif text-lg text-text-main line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                           {item.course.title}
                         </h3>
                         <button
                           onClick={() => handleRemoveItem(item.course.id)}
-                          className="text-[#a435f0] text-sm font-bold hover:text-[#8710d8] hover:underline"
+                          className="bg-white/80 p-2 rounded-full shadow-sm text-text-muted hover:text-red-500 hover:bg-red-50 transition-all border border-gray-100"
                         >
-                          Remove
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                      
                       {item.course.instructor && (
-                        <p className="text-xs text-[#6a6f73] mt-1">
-                          By {item.course.instructor.user.name}
-                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                           <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-primary text-[10px] font-bold border border-gray-100 shadow-sm">
+                              {item.course.instructor.user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <p className="text-xs text-text-muted font-light tracking-wide">
+                            {item.course.instructor.user.name}
+                          </p>
+                        </div>
                       )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="bg-[#eceb98] px-1.5 py-0.5 text-xs font-bold text-[#3d3c0a]">Bestseller</div>
-                        <div className="text-xs text-[#6a6f73]">4.5 ⭐</div>
+                      
+                      <div className="flex items-center gap-2 mt-3 text-xs font-light tracking-wide text-text-muted">
+                        <span className="font-bold text-yellow-500">4.5</span>
+                         <div className="flex">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        </div>
+                        <span className="bg-primary/10 tracking-widest uppercase text-[8px] text-primary font-bold px-2 py-0.5 rounded-full ml-2">Bestseller</span>
                       </div>
                     </div>
 
-                    <div className="mt-2 text-right sm:text-left sm:absolute sm:right-0 sm:mt-0">
-                      {/* Note: Absolute positioning logic above is just a placeholder, simplifying for flex layout */}
+                    <div className="mt-4 flex items-center justify-between border-t border-gray-100/50 pt-3">
+                        <button className="text-[10px] tracking-widest uppercase font-bold text-text-muted hover:text-text-main transition-colors">Move to wishlist</button>
+                        <div className="text-right flex items-center gap-3">
+                            <span className="text-xs text-text-muted line-through font-light">₹{(item.course.price * 2).toLocaleString()}</span>
+                            {item.course.price > 0 ? (
+                            <span className="font-bold text-text-main text-lg tracking-tight">
+                                ₹{item.course.price.toLocaleString()}
+                            </span>
+                            ) : (
+                            <span className="font-bold text-emerald-600 text-sm tracking-widest uppercase">Free</span>
+                            )}
+                        </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {item.course.price > 0 ? (
-                      <span className="font-bold text-[#a435f0] text-lg">
-                        ₹{item.course.price.toLocaleString()}
-                      </span>
-                    ) : (
-                      <span className="font-bold text-green-700 text-lg">Free</span>
-                    )}
-                    <p className="text-xs text-[#6a6f73] line-through">₹{(item.course.price * 2).toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -139,28 +159,33 @@ export default function Cart() {
 
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
-              <div className="space-y-4">
-                <p className="text-[#6a6f73] font-bold text-lg">Total:</p>
-                <h2 className="text-4xl font-bold text-[#2d2f31]">₹{total.toLocaleString()}</h2>
-                <p className="text-sm text-[#6a6f73] line-through">₹{(total * 2).toLocaleString()}</p>
-                <p className="text-sm text-[#2d2f31]">83% off</p>
+              <div className="glass-card bg-white/70 backdrop-blur-2xl border border-primary/10 shadow-xl rounded-3xl p-8 sticky top-[100px]">
+                <h3 className="text-[10px] tracking-widest uppercase font-bold text-text-muted mb-4">Total Manifest</h3>
+                <div className="flex items-end gap-3 mb-1">
+                    <h2 className="headline-serif text-5xl font-light text-text-main tracking-tight">₹{total.toLocaleString()}</h2>
+                </div>
+                <div className="flex items-center gap-2 mb-8">
+                    <p className="text-sm text-text-muted line-through font-light">₹{(total * 2).toLocaleString()}</p>
+                    <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-sm">50% off</span>
+                </div>
 
                 <button
                   onClick={handleCheckout}
-                  className="w-full bg-[#a435f0] text-white font-bold py-3.5 hover:bg-[#8710d8] transition-colors"
+                  className="w-full bg-primary text-white font-bold tracking-widest uppercase text-xs py-4 rounded-xl hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2 mb-6 group hover:-translate-y-0.5 hover:shadow-xl"
                 >
-                  Checkout
+                  Checkout Protocol
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
-                <div className="pt-4 border-t border-[#d1d7dc] space-y-2">
-                  <p className="text-sm font-bold text-[#2d2f31]">Promotions</p>
+                <div className="pt-6 border-t border-gray-100/50">
+                  <p className="text-[10px] tracking-widest uppercase font-bold text-text-muted mb-3 ml-1">Promotional Override</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Enter Coupon"
-                      className="flex-1 border border-[#2d2f31] px-3 py-2 text-sm outline-none placeholder-gray-500"
+                      placeholder="Access Code"
+                      className="flex-1 w-full pl-4 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-none text-sm font-light transition-all shadow-sm"
                     />
-                    <button className="bg-[#a435f0] text-white font-bold px-4 py-2 hover:bg-[#8710d8] transition-colors text-sm">
+                    <button className="bg-text-main text-white font-bold tracking-widest text-[10px] uppercase px-4 py-2.5 rounded-xl hover:opacity-90 transition-all shadow-sm">
                       Apply
                     </button>
                   </div>
@@ -170,6 +195,8 @@ export default function Cart() {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 }

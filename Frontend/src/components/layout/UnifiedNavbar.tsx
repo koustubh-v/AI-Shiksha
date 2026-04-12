@@ -76,7 +76,7 @@ export default function UnifiedNavbar() {
     const isLanding = location.pathname === "/";
 
     const navContent = (
-        <div className={isLanding ? `w-full flex items-center justify-between gap-2 md:gap-4 transition-all duration-500 ease-in-out ${isScrolled ? 'max-w-7xl mx-auto' : ''}` : "max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 w-full"}>
+        <div className={`w-full flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] h-16 ${!isLanding && "px-4 sm:px-6"}`}>
             {/* Left Section: Logo & Explore */}
                 <div className="flex items-center gap-4 md:gap-8">
                     {/* Mobile Menu Trigger */}
@@ -248,10 +248,12 @@ export default function UnifiedNavbar() {
 
     if (isLanding) {
         return (
-            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled ? 'top-0 px-0' : 'top-4 md:top-6 px-4'}`}>
-                <nav className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${isScrolled ? 'w-full h-16 bg-white/60 backdrop-blur-xl shadow-md rounded-none px-4 md:px-8 border-b border-white/20' : 'glass-nav-pill h-16 w-full max-w-4xl rounded-full px-4 md:px-6 shadow-xl'}`}>
-                    {navContent}
-                </nav>
+            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none ${isScrolled ? 'top-0' : 'top-4 md:top-6'}`}>
+                <div className={`w-full px-4 md:px-6 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled ? 'px-0 md:px-0' : ''}`}>
+                    <nav className={`pointer-events-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${isScrolled ? 'w-full h-16 bg-white/70 backdrop-blur-2xl shadow-sm rounded-none px-6 md:px-8 border-b border-white/20' : 'glass-nav-pill h-16 w-full max-w-5xl rounded-full px-6 shadow-xl border border-white/40'}`}>
+                        {navContent}
+                    </nav>
+                </div>
             </div>
         );
     }

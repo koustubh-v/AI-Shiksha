@@ -48,7 +48,11 @@ export class RetrievalService {
 
       return results.map((r) => r.content_chunk);
     } catch (error) {
-      this.logger.error(`Vector Retrieval Failed: ${error.message}`);
+      if (error?.message?.includes('vector') || error?.code === '42704') {
+        this.logger.warn('pgvector extension not available — skipping semantic retrieval, chatbot will respond without course context.');
+      } else {
+        this.logger.warn(`Vector retrieval skipped: ${error.message}`);
+      }
       return [];
     }
   }

@@ -41,33 +41,23 @@ export class AssistantService {
       let conversation;
       let chunks: string[] = [];
 
-      // 0.5 Fetch Franchise AI Settings First!
       let customApiKey: string | undefined = undefined;
       let userFranchiseId: string | null | undefined = null;
 
-      let u = await this.prisma.user.findUnique({ where: { id: userId }, select: { franchise_id: true } });
+      // Step 1: user's own franchise_id from DB
+      const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { franchise_id: true } });
       userFranchiseId = u?.franchise_id;
 
+      // Step 2: fall back to the tenant resolved by the middleware from the request domain
       if (!userFranchiseId && tenantId) {
         userFranchiseId = tenantId;
       }
 
-      // Final fallback: if still no franchise context, look up by the raw request domain.
-      // This handles legacy accounts whose franchise_id was never set in the DB.
+      // Step 3: domain-based lookup — handles accounts created before franchise_id was enforced
       if (!userFranchiseId && requestDomain) {
-        const domainOnly = requestDomain.split(':')[0].toLowerCase().trim(); // strip port
-
-        // Extract root domain (e.g. "app.iconsafetyinstitute.com" → "iconsafetyinstitute.com")
+        const domainOnly = requestDomain.split(':')[0].toLowerCase().trim();
         const parts = domainOnly.split('.');
         const rootDomain = parts.length > 2 ? parts.slice(-2).join('.') : domainOnly;
-
-        this.logger.log(`[AI] Domain fallback — received: "${domainOnly}", root: "${rootDomain}", tenantId: ${tenantId}, userDbFranchise: ${u?.franchise_id}`);
-
-        // DEBUG: dump all franchises so we know what domains are stored
-        const allFranchises = await (this.prisma.franchise as any).findMany({
-          select: { id: true, domain: true, name: true, is_active: true },
-        });
-        this.logger.log(`[AI] All franchises in DB: ${JSON.stringify(allFranchises)}`);
 
         const franchiseByDomain = await this.prisma.franchise.findFirst({
           where: {
@@ -77,24 +67,20 @@ export class AssistantService {
               { domain: { contains: rootDomain } } as any,
             ],
           } as any,
-          select: { id: true, domain: true } as any,
+          select: { id: true } as any,
         }) as any;
-
-        this.logger.log(`[AI] Domain fallback result: ${JSON.stringify(franchiseByDomain)}`);
 
         if (franchiseByDomain?.id) {
           userFranchiseId = franchiseByDomain.id;
-          this.logger.warn(`franchise_id resolved via domain fallback for user ${userId} → franchise ${franchiseByDomain.id} (domain: ${franchiseByDomain.domain})`);
         } else {
-          // Last resort for single-franchise setups: use the only franchise that has a Gemini key
+          // Step 4: last resort — find the franchise that has a Gemini key configured.
+          // Applies to single-franchise deployments where the request domain isn't stored in the DB.
           const franchiseWithKey = await (this.prisma.franchise as any).findFirst({
             where: { gemini_api_key: { not: null } },
-            select: { id: true, domain: true, name: true },
+            select: { id: true },
           });
-          this.logger.log(`[AI] Last-resort franchise with key: ${JSON.stringify(franchiseWithKey)}`);
           if (franchiseWithKey?.id) {
             userFranchiseId = franchiseWithKey.id;
-            this.logger.warn(`franchise_id resolved via gemini-key fallback for user ${userId} → franchise ${franchiseWithKey.id} (${franchiseWithKey.name})`);
           }
         }
       }

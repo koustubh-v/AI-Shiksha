@@ -1,105 +1,95 @@
-# AI Shiksha - Frontend (LMS Client)
+# AI Shiksha - Frontend Application
 
-This is the modern, responsive frontend application for the AI Shiksha Learning Management System. Built with **React** and **Vite**, it offers a premium user experience with a focus on performance, aesthetics, and usability.
+## Overview
 
-## 🛠 Tech Stack
+This repository contains the client-side application for the AI Shiksha Learning Management System (LMS). Built with a focus on delivering a high-performance, responsive, and visually sophisticated user experience, this frontend leverages modern web technologies to handle complex state management, data fetching, and rich media presentation.
 
-*   **Builder:** [Vite](https://vitejs.dev/) - Super fast build tool.
-*   **Framework:** [React](https://react.dev/) (v18)
-*   **Language:** TypeScript
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-*   **UI Components:**
-    *   [Shadcn UI](https://ui.shadcn.com/) (based on Radix UI)
-    *   [Lucide React](https://lucide.dev/) (Icons)
-*   **State Management:** React Hooks & Context API
-*   **Forms:** React Hook Form + Zod Validation
-*   **Data Fetching:** Axios / TanStack Query (React Query)
-*   **Routing:** React Router DOM
+## Technology Stack
 
-## 🚀 Key Features
+### Core Frameworks
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Language:** TypeScript
 
-*   **Modern Dashboard:**
-    *   Role-specific dashboards (Admin, Instructor, Student).
-    *   Analytics with interactive charts (Recharts).
-*   **Course Builder:**
-    *   Drag-and-drop curriculum builder.
-    *   Rich text editing for lesson content.
-    *   Multi-modal creation flow (Wizard, Modals).
-*   **Learning Experience:**
-    *   Distraction-free video player.
-    *   real-time progress tracking.
-    *   Quiz and Assignment interfaces.
-*   **Authentication Flow:**
-    *   Login, Registration, and Password Recovery.
-    *   Protected routes based on user roles.
-*   **Design System:**
-    *   Fully responsive layout (Mobile, Tablet, Desktop).
-    *   Dark/Light mode support.
-    *   Glassmorphism and modern UI trends.
+### Styling & UI
+- **CSS Framework:** Tailwind CSS
+- **UI Component Library:** Shadcn UI (Built on Radix UI primitives)
+- **Icons:** Lucide React
+- **Animations:** Framer Motion
 
-## ⚙️ Prerequisites
+### Architecture & Utilities
+- **State Management & Data Fetching:** TanStack React Query v5, Axios
+- **Form Management & Validation:** React Hook Form, Zod
+- **Routing:** React Router DOM (v6 object-based routing)
+- **Rich Text Editor:** TipTap Editor
+- **PDF Generation:** react-pdf, html2pdf.js
 
-*   Node.js (v18 or higher)
-*   npm or yarn
+## Core Features
 
-## 📦 Installation
+- **Role-Based Interfaces:** Distinct dashboard experiences optimized for Administrators, Instructors, and Students.
+- **Dynamic Course Builder:** A sophisticated drag-and-drop interface prioritizing ease of curriculum creation, incorporating rich text formatting, media uploads, and AI prompt integrations.
+- **Immersive Learning Environment:** A custom video player layout, dynamic progress tracking, and distraction-free learning interfaces for maximum student retention.
+- **Authentication & Security:** Secure JWT handling, robust password recovery flows, and protected route wrappers.
+- **Premium Design System:** Strict adherence to modern glassmorphic design principles, fluid typography, dark and light theme toggling, and comprehensive mobile responsiveness.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/koustubh-v/AI-Shiksha.git
-    cd Frontend
-    ```
+## Directory Structure
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Configuration:**
-    Create a `.env` file in the `Frontend` root directory:
-    ```env
-    VITE_API_URL="http://localhost:3000"
-    VITE_STRIPE_PUBLIC_KEY="pk_test_..."
-    ```
-
-## 🏃‍♂️ Running the Application
-
-*   **Development Mode:**
-    ```bash
-    npm run dev
-    ```
-    The application will be available at `http://localhost:8081` (or the port shown in your terminal).
-
-*   **Production Build:**
-    ```bash
-    npm run build
-    npm run preview
-    ```
-
-## 📂 Project Structure
-
-```
+```text
 src/
-├── assets/          # Static assets (images, fonts)
-├── components/      # Reusable UI components
-│   ├── ui/          # Shadcn UI primitives
-│   ├── layout/      # Layout wrappers (Sidebar, Navbar)
-│   └── ...
-├── hooks/           # Custom React hooks
-├── lib/             # Utilities (API client, helpers)
-├── pages/           # Page views (Routed components)
-│   ├── admin/       # Admin-specific pages
-│   ├── dashboard/   # Instructor/Student dashboard
-│   └── ...
-├── types/           # TypeScript interfaces/types
-└── App.tsx          # Main application entry
+├── assets/          # Static assets (images, vectors, fonts)
+├── components/      # Modular, reusable UI components
+│   ├── ui/          # Low-level Shadcn UI physical components
+│   ├── layout/      # Structural layout wrappers (Sidebars, Navigations)
+│   ├── forms/       # Standardized form elements
+│   └── shared/      # Components shared across multiple domain areas
+├── hooks/           # Custom React hooks for business logic and UI state
+├── lib/             # Utility functions, constants, and API configuration
+├── pages/           # Top-level route components mapped to the application URL
+│   ├── admin/       # Administrator views
+│   ├── dashboard/   # Instructor and Student portal views
+│   └── public/      # Unauthenticated landing pages and flows
+├── types/           # Global TypeScript type definitions and interfaces
+└── App.tsx          # Application entry point and router configuration
 ```
 
-## Contributing
+## Setup and Installation
 
-We welcome contributions! Please ensure you lint your code before submitting a Pull Request.
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn package manager
 
-```bash
-# Lint code
-npm run lint
-```
+### Installation Steps
+
+1. Navigate to the Frontend directory:
+   ```bash
+   cd Frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Environment Configuration:
+   Create a `.env` file in the root of the Frontend directory. Use the following as a template:
+   ```env
+   VITE_API_URL="http://localhost:3000"
+   VITE_STRIPE_PUBLIC_KEY="pk_test_your_key_here"
+   # Add any custom third-party integrations here
+   ```
+
+## Development and Build Scripts
+
+The `package.json` file contains several commands for development lifecycle management:
+
+- `npm run dev`: Starts the Vite development server with Hot Module Replacement (HMR).
+- `npm run build`: Compiles the TypeScript code and produces an optimized production bundle.
+- `npm run build:dev`: Compiles the application in development mode for debugging build issues.
+- `npm run preview`: Bootstraps a local web server to preview the production build.
+- `npm run lint`: Executes ESLint to check for code quality and style violations.
+- `npm run test`: Runs the Vitest test suite.
+- `npm run test:watch`: Runs tests in watch mode for active development.
+
+## Contributing Standards
+
+Before committing code, ensure all local linters and TypeScript builds pass without errors. Do not commit unused code, console logs, or mock data to production branches. Refer to the global `AI_GUIDELINES.md` for specific architectural patterns and AI assistance rules.

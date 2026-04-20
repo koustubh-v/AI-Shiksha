@@ -1,121 +1,111 @@
-# AI Shiksha - Backend (LMS API)
+# AI Shiksha - Backend API Services
 
-This is the robust backend API for the AI Shiksha Learning Management System (LMS), built with **NestJS**. It provides a scalable, secure, and feature-rich foundation for course management, user authentication, enrollment handling, and AI-powered features.
+## Overview
 
-## 🛠 Tech Stack
+This repository contains the backend architecture for the AI Shiksha Learning Management System. Developed using the NestJS framework, this project establishes a scalable, typed, and modular API capable of handling high-volume operational tasks such as media processing, secure transactions, user authentication, and third-party AI integrations.
 
-*   **Framework:** [NestJS](https://nestjs.com/) (v11)
-*   **Language:** TypeScript
-*   **Database:** PostgreSQL
-*   **ORM:** [Prisma](https://www.prisma.io/)
-*   **Authentication:** Passport.js (JWT Strategy)
-*   **Payments:** Stripe Integration
-*   **AI Integration:** OpenAI API (for course generation/assistance)
-*   **Documentation:** Swagger / OpenAPI
-*   **Testing:** Jest
+## Technology Stack
 
-## 🚀 Key Features
+### Core Frameworks
+- **Framework:** NestJS (v11)
+- **Language:** TypeScript
+- **Runtime Environment:** Node.js
 
-*   **Authentication & Authorization:**
-    *   Secure JWT-based authentication.
-    *   Role-Based Access Control (RBAC): Admin, Instructor, Student.
-*   **Course Management:**
-    *   CRUD operations for courses, modules, and lessons.
-    *   Advanced Course Builder support (Drafts, Publishing, Analytics).
-    *   Media management (Video, Thumbnails).
-*   **Enrollment System:**
-    *   Student enrollment tracking.
-    *   Progress monitoring (Course & Lesson completion).
-*   **eCommerce:**
-    *   Stripe payment gateway integration.
-    *   Order processing and webhooks.
-*   **AI Features:**
-    *   AI-assisted content generation for lessons and quizzes.
-*   **Admin Dashboard:**
-    *   Analytics and reporting endpoints.
-    *   User and content moderation.
+### Data Layer
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Caching & Queuing:** Redis
+- **Data Validation:** Class Validator, Class Transformer
 
-## ⚙️ Prerequisites
+### Infrastructure & Integrations
+- **Authentication:** Passport.js (Local and JWT strategies), bcrypt
+- **Payments:** Stripe, Razorpay
+- **Artificial Intelligence:** OpenAI API
+- **Document Generation:** Puppeteer, pdf-lib, EJS
+- **Email Services:** Nodemailer
 
-*   Node.js (v18 or higher)
-*   npm or yarn
-*   PostgreSQL Database
-*   Redis (Optional, for caching/queues)
+## Core Features
 
-## 📦 Installation
+- **Robust Authentication:** Secure JWT-based authentication system supporting role-based access control (RBAC) to enforce permissions across Admin, Instructor, and Student roles.
+- **Enterprise Course Management:** Advanced relational data structures to manage categories, courses, curriculum modules, and individual lessons. Supports complex querying for course analytics.
+- **Financial Processing:** Secure server-side processing for enrollments, integrated with Stripe and Razorpay webhook events to guarantee transactional integrity.
+- **AI Service Bus:** A modularized implementation of OpenAI's APIs designed to assist instructors in scaffolding course structures and generating learning materials dynamically.
+- **Automated Communication:** Scheduled and event-driven email dispatches using Nodemailer.
+- **Certificate Generation:** Automated asynchronous generation of completion certificates utilizing Puppeteer and HTML/EJS templates.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/koustubh-v/AI-Shiksha.git
-    cd Backend
-    ```
+## Directory Structure
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Configuration:**
-    Create a `.env` file in the `Backend` root directory. Use `.env.example` as a reference:
-    ```env
-    DATABASE_URL="postgresql://user:password@localhost:5432/lms_db?schema=public"
-    JWT_SECRET="your_super_secret_key"
-    STRIPE_SECRET_KEY="sk_test_..."
-    OPENAI_API_KEY="sk-..."
-    FRONTEND_URL="http://localhost:5173"
-    ```
-
-4.  **Database Setup:**
-    ```bash
-    # Generate Prisma Client
-    npm run prisma:generate
-
-    # Run Migrations
-    npm run prisma:migrate
-
-    # (Optional) Seed the database with initial data
-    npm run prisma:seed
-    ```
-
-## Running the Application
-
-*   **Development Mode:**
-    ```bash
-    npm run start:dev
-    ```
-    The server will start on `http://localhost:3000` (default).
-
-*   **Production Build:**
-    ```bash
-    npm run build
-    npm run start:prod
-    ```
-
-## 📚 API Documentation
-
-Once the server is running, you can access the interactive Swagger API documentation at:
-
-```
-http://localhost:3000/api
+```text
+Backend/
+├── prisma/                  # Prisma schema, migrations, and seeding scripts
+├── src/                     # Core NestJS application
+│   ├── modules/             # Segregated feature modules (Auth, Courses, Users, Payments)
+│   ├── common/              # Shared guards, decorators, filters, and interceptors
+│   ├── config/              # Centralized configuration management
+│   └── main.ts              # Application bootstrap logic
+├── test/                    # Integration and End-to-End configuration
+├── uploads/                 # Local storage directory for media development testing
+└── docker-compose.yml       # Container architecture for local database/redis setup
 ```
 
-## 🧪 Testing
+## Setup and Installation
 
-```bash
-# Unit tests
-npm run test
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL (Active local or remote connection)
+- Redis Server (Required for session caching and job queues)
 
-# e2e tests
-npm run test:e2e
+### Installation Steps
 
-# Test coverage
-npm run test:cov
-```
+1. Navigate to the Backend directory:
+   ```bash
+   cd Backend
+   ```
 
-## 🤝 Contributing
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
-3.  Commit your changes (`git commit -m 'Add some amazing feature'`).
-4.  Push to the branch (`git push origin feature/amazing-feature`).
-5.  Open a Pull Request.
+3. Environment Configuration:
+   Create a `.env` file based on `.env.example`. Ensure the following minimum variables are supplied:
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/lms_db?schema=public"
+   JWT_SECRET="secure_cryptographic_random_string"
+   STRIPE_SECRET_KEY="sk_test_your_key_here"
+   OPENAI_API_KEY="sk-your_openai_key"
+   FRONTEND_URL="http://localhost:8081"
+   REDIS_URL="redis://localhost:6379"
+   ```
+
+4. Database Migration:
+   Apply the current Prisma schema to your PostgreSQL instance:
+   ```bash
+   npm run prisma:generate
+   npm run prisma:migrate dev
+   ```
+
+5. Database Seeding (Optional):
+   Populate the database with initial administrative accounts and foundational settings:
+   ```bash
+   npx prisma db seed
+   ```
+
+## Development and Build Scripts
+
+- `npm run start:dev`: Bootstraps the application via nodemon/ts-node with hot reloading.
+- `npm run build`: Compiles the application into the `dist/` folder via the Nest CLI.
+- `npm run start:prod`: Runs the optimized production build (`node dist/main`).
+- `npm run test`: Executes the Jest unit test suite.
+- `npm run test:e2e`: Executes integration tests located in the `test/` directory.
+- `npm run format`: Executes Prettier to format source files.
+- `npm run lint`: Executes ESLint for code analysis.
+
+## API Documentation
+
+The application implements OpenAPI specification natively through NestJS Swagger.
+When operating the server in a development environment, navigate to `http://localhost:3000/api` to interface directly with available endpoints, review data transfer objects (DTOs), and authenticate via JWT tokens.
+
+## Contributing Standards
+
+Any proposed structural changes or additions to the Prisma schema must be accompanied by appropriate DTO and service-layer updates. Execute `npm run format` and `npm run lint` before opening pull requests to maintain stylistic consistency. Consult the global `AI_GUIDELINES.md` for specific architectural rules.

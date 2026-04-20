@@ -1,37 +1,53 @@
-# AI Shiksha - Advanced Learning Management System (LMS)
+# AI Shiksha - Advanced Learning Management System
 
-Welcome to **AI Shiksha**, a next-generation Learning Management System powered by AI. This platform is designed to provide seamless course creation, student engagement, and comprehensive analytics for modern education.
+## Overview
 
-## 🚀 Project Overview
+AI Shiksha is a comprehensive, enterprise-grade Learning Management System (LMS) enhanced with Artificial Intelligence. The platform is designed to facilitate seamless course creation, robust student engagement, and advanced analytics for modern educational institutions and independent instructors. The project follows a monorepo architecture, dividing the application into a scalable backend API and a highly responsive frontend client.
 
-The project is structured as a monorepo containing two main components:
+## System Architecture
 
--   **[Frontend](./Frontend/README.md):** A modern, responsive React application built with Vite and Tailwind CSS.
--   **[Backend](./Backend/README.md):** A scalable NestJS API handling authentication, payments, and AI integrations.
+The project consists of two primary applications:
 
-## 📂 Repository Structure
+1. **Frontend Client:** A Single Page Application (SPA) built with React and Vite, utilizing Tailwind CSS and Shadcn UI for a responsive, modern interface.
+2. **Backend API:** A RESTful API built on the NestJS framework, utilizing PostgreSQL as the primary data store, integrated with Prisma ORM for type-safe database access, and Redis for caching and queuing.
 
-```
+## Repository Structure
+
+```text
 AI-Shiksha/
-├── Backend/      # NestJS API Server
-├── Frontend/     # React Client Application
-└── README.md     # This file
+├── Backend/                 # NestJS API Server
+│   ├── prisma/              # Database schemas and migrations
+│   ├── src/                 # Application source code
+│   └── test/                # E2E and integration tests
+├── Frontend/                # React Client Application
+│   ├── src/
+│   │   ├── components/      # Reusable React components
+│   │   ├── pages/           # Application views and routing
+│   │   └── lib/             # Utility functions and API clients
+├── AI_GUIDELINES.md         # Instructions for AI coding assistants
+└── README.md                # Global documentation (This file)
 ```
 
-## ⚡ Quick Start
+## Quick Start
 
-### 1. Backend Setup
-Navigate to the backend directory and start the server:
+### 1. Database and Environment Setup
+Ensure you have PostgreSQL and Node.js v18+ installed on your system.
+You will need to configure environment variables for both the Backend and Frontend. Navigate to their respective directories and copy the `.env.example` configurations to `.env`.
+
+### 2. Backend Initialization
+Navigate to the backend directory, install dependencies, configure the database, and start the development server.
 
 ```bash
 cd Backend
 npm install
+npm run prisma:generate
+npm run prisma:migrate deploy
 npm run start:dev
 ```
 The API will be available at `http://localhost:3000`.
 
-### 2. Frontend Setup
-In a new terminal, navigate to the frontend directory and start the client:
+### 3. Frontend Initialization
+In a new terminal session, navigate to the frontend directory, install dependencies, and start the development server.
 
 ```bash
 cd Frontend
@@ -40,20 +56,26 @@ npm run dev
 ```
 The application will launch at `http://localhost:8081`.
 
-## Documentation
+## Documentation Reference
 
-For detailed installation instructions, tech stack information, and configuration guides, please refer to the specific README files in each directory:
+For detailed installation instructions, architecture decisions, and configuration guides, please consult the dedicated documentation files:
 
--   **[Read Backend Documentation](./Backend/README.md)**
--   **[Read Frontend Documentation](./Frontend/README.md)**
+- **[Backend Documentation](./Backend/README.md)**
+- **[Frontend Documentation](./Frontend/README.md)**
+- **[AI Guidelines](./AI_GUIDELINES.md)** (Critical reading for contributors using AI assistants)
 
 ## Key Features
 
--   **Role-Based Access:** specialized dashboards for Admins, Instructors, and Students.
--   **AI-Powered Course Builder:** Create courses with AI assistance for curriculum design.
--   **Interactive Learning:** Support for video lessons, quizzes, and assignments.
--   **Secure Payments:** Stripe integration for seamless transactions.
--   **Real-time Analytics:** Track student progress and course performance.
+- **Role-Based Access Control (RBAC):** Specialized dashboards and permissions for Administrators, Instructors, and Students.
+- **AI-Powered Course Builder:** Curriculum design assisted by OpenAI, allowing for rapid generation of course structures, lesson outlines, and quizzes.
+- **Advanced Learning Interface:** Support for various content types including distraction-free video playback, rich text articles, interactive quizzes, and file assignments.
+- **Payment Processing:** Integrated handling for subscriptions and one-time purchases via Stripe and Razorpay.
+- **Comprehensive Analytics:** Real-time tracking of student progress, course engagement, and financial metrics.
 
----
-Built with ❤️ by Koustubh V.
+## Contributing
+
+We welcome contributions to AI Shiksha. All prospective contributors must adhere to the project's coding standards. If you are utilizing AI coding assistants (such as GitHub Copilot, Cursor, etc.), ensure you strictly follow the rules outlined in `AI_GUIDELINES.md` to maintain code consistency and quality.
+
+## License
+
+This project is proprietary and unlicensed. Unauthorized copying of this project, via any medium, is strictly prohibited.

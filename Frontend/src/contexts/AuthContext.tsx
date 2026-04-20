@@ -21,30 +21,34 @@ export interface User {
 }
 
 const TOKEN_KEY = "lms_token";
-const REMEMBER_KEY = "lms_remember";
+const TOKEN_EXPIRY_KEY = "lms_token_expiry";
 
-/** Reads the token from whichever storage currently holds it. */
 function readToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+
+  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+  if (expiry && Date.now() > parseInt(expiry, 10)) {
+    clearToken();
+    return null;
+  }
+
+  return token;
 }
 
-/** Persists the token. If rememberMe=true → localStorage (survives browser close). */
 function saveToken(token: string, rememberMe: boolean) {
+  localStorage.setItem(TOKEN_KEY, token);
   if (rememberMe) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(REMEMBER_KEY, "true");
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_EXPIRY_KEY);
   } else {
-    sessionStorage.setItem(TOKEN_KEY, token);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REMEMBER_KEY);
+    const expiry = Date.now() + 24 * 60 * 60 * 1000;
+    localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiry));
   }
 }
 
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REMEMBER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
 }
 
 interface AuthContextType {
@@ -76,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.data);
           setToken(storedToken);
         } catch (error) {
-          console.error("Session expired or invalid", error);
+          void error;
           clearToken();
           setToken(null);
           setUser(null);
@@ -104,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       return true;
     } catch (error) {
-      console.error("Login failed", error);
+      void error;
       return false;
     }
   };
@@ -138,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return true;
     } catch (error) {
-      console.error("Signup failed", error);
+      void error;
       throw error;
     }
   };

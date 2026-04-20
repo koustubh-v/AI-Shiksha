@@ -6,10 +6,13 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('lms_token');
-    if (token) {
+    const expiry = localStorage.getItem('lms_token_expiry');
+    const isExpired = expiry ? Date.now() > parseInt(expiry, 10) : false;
+
+    if (token && !isExpired) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    // Inject Custom Domain Header
+
     config.headers['custom-franchise-domain'] = window.location.hostname;
     return config;
 });

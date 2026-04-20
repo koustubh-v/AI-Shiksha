@@ -261,8 +261,11 @@ export class EnrollmentsService {
 
   async adminEnroll(studentEmail: string, courseId: string, franchiseId?: string | null) {
     // Find student by email
-    const student = await this.prisma.user.findUnique({
-      where: { email: studentEmail },
+    const student = await this.prisma.user.findFirst({
+      where: {
+        email: studentEmail,
+        ...(franchiseId !== undefined ? { franchise_id: franchiseId } : {}),
+      },
     });
 
     if (!student) {

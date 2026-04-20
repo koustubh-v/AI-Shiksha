@@ -11,7 +11,7 @@ async function main() {
 
     // Create admin user
     const admin = await prisma.user.upsert({
-        where: { email: 'expertttrainers@gmail.com' },
+        where: { email_franchise_id: { email: 'expertttrainers@gmail.com', franchise_id: null } },
         update: {
             role: 'SUPER_ADMIN',
         },
@@ -32,7 +32,7 @@ async function main() {
 
     // Create instructor user
     const instructorUser = await prisma.user.upsert({
-        where: { email: 'instructor@lms.com' },
+        where: { email_franchise_id: { email: 'instructor@lms.com', franchise_id: null } },
         update: {},
         create: {
             email: 'instructor@lms.com',
@@ -64,7 +64,7 @@ async function main() {
 
     // Create student user
     const student = await prisma.user.upsert({
-        where: { email: 'student@lms.com' },
+        where: { email_franchise_id: { email: 'student@lms.com', franchise_id: null } },
         update: {},
         create: {
             email: 'student@lms.com',

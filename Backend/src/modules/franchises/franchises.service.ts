@@ -261,8 +261,8 @@ export class FranchisesService {
             throw new ConflictException(`Domain "${dto.domain}" is already registered`);
         }
 
-        // Check admin email uniqueness
-        const existingUser = await this.prisma.user.findUnique({
+        // Check admin email uniqueness within system (no franchise yet)
+        const existingUser = await this.prisma.user.findFirst({
             where: { email: dto.admin_email },
         });
         if (existingUser) {

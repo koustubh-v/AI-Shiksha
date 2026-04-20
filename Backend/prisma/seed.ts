@@ -10,19 +10,25 @@ async function main() {
     const hashedPassword = await bcrypt.hash('@#k$7878V', 10);
 
     // Create admin user
-    const admin = await prisma.user.upsert({
-        where: { email_franchise_id: { email: 'expertttrainers@gmail.com', franchise_id: null } },
-        update: {
-            role: 'SUPER_ADMIN',
-        },
-        create: {
-            email: 'expertttrainers@gmail.com',
-            name: 'Super Admin User',
-            password_hash: hashedPassword,
-            role: 'SUPER_ADMIN',
-            bio: 'System Administrator',
-        },
+    let admin = await prisma.user.findFirst({
+        where: { email: 'expertttrainers@gmail.com', franchise_id: null },
     });
+    if (!admin) {
+        admin = await prisma.user.create({
+            data: {
+                email: 'expertttrainers@gmail.com',
+                name: 'Super Admin User',
+                password_hash: hashedPassword,
+                role: 'SUPER_ADMIN',
+                bio: 'System Administrator',
+            },
+        });
+    } else {
+        admin = await prisma.user.update({
+            where: { id: admin.id },
+            data: { role: 'SUPER_ADMIN' },
+        });
+    }
 
     console.log('✅ Admin user created:', {
         email: admin.email,
@@ -31,17 +37,20 @@ async function main() {
     });
 
     // Create instructor user
-    const instructorUser = await prisma.user.upsert({
-        where: { email_franchise_id: { email: 'instructor@lms.com', franchise_id: null } },
-        update: {},
-        create: {
-            email: 'instructor@lms.com',
-            name: 'John Instructor',
-            password_hash: hashedPassword,
-            role: 'INSTRUCTOR',
-            bio: 'Experienced instructor',
-        },
+    let instructorUser = await prisma.user.findFirst({
+        where: { email: 'instructor@lms.com', franchise_id: null },
     });
+    if (!instructorUser) {
+        instructorUser = await prisma.user.create({
+            data: {
+                email: 'instructor@lms.com',
+                name: 'John Instructor',
+                password_hash: hashedPassword,
+                role: 'INSTRUCTOR',
+                bio: 'Experienced instructor',
+            },
+        });
+    }
 
     // Create instructor profile
     const instructorProfile = await prisma.instructorProfile.upsert({
@@ -63,17 +72,20 @@ async function main() {
     });
 
     // Create student user
-    const student = await prisma.user.upsert({
-        where: { email_franchise_id: { email: 'student@lms.com', franchise_id: null } },
-        update: {},
-        create: {
-            email: 'student@lms.com',
-            name: 'Jane Student',
-            password_hash: hashedPassword,
-            role: 'STUDENT',
-            bio: 'Eager learner',
-        },
+    let student = await prisma.user.findFirst({
+        where: { email: 'student@lms.com', franchise_id: null },
     });
+    if (!student) {
+        student = await prisma.user.create({
+            data: {
+                email: 'student@lms.com',
+                name: 'Jane Student',
+                password_hash: hashedPassword,
+                role: 'STUDENT',
+                bio: 'Eager learner',
+            },
+        });
+    }
 
     console.log('✅ Student created:', {
         email: student.email,

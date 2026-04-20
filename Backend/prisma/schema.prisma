@@ -64,7 +64,7 @@ model Franchise {
 model User {
   id            String   @id @default(uuid())
   name          String
-  email         String   @unique
+  email         String
   password_hash String
   role          Role     @default(STUDENT)
   avatar_url    String?
@@ -113,6 +113,8 @@ model User {
   qa_replies            CourseQAReply[]        @relation("AdminQAReplies")
   StudentFeedback       StudentFeedback[]
 
+  // Email must be unique within a franchise (or globally for system users with franchise_id = null)
+  @@unique([email, franchise_id])
   @@map("users")
 }
 

@@ -47,15 +47,16 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
   async login(@Body() loginDto: LoginDto, @Request() req) {
+    // Pass the franchise ID from the domain so validateUser finds the right user
+    const originFranchiseId = (req as any).tenantId || null;
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
+      originFranchiseId,
     );
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    // Pass the franchise ID from the domain (if any) to validation
-    const originFranchiseId = (req as any).tenantId || null;
     return this.authService.login(user, originFranchiseId, loginDto.rememberMe ?? false);
   }
 

@@ -14,8 +14,8 @@ export class AuthService {
     private mailService: MailService,
   ) { }
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(email);
+  async validateUser(email: string, pass: string, franchiseId?: string | null): Promise<any> {
+    const user = await this.usersService.findOne(email, franchiseId);
     if (user && (await bcrypt.compare(pass, user.password_hash))) {
       const { password_hash, ...result } = user;
       return result;
@@ -77,13 +77,13 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) {
-    // Check if user exists
-    const existingUser = await this.usersService.findOne(createUserDto.email);
+  async register(createUserDto: CreateUserDto, franchiseId?: string | null) {
+    // Check if user exists within this franchise context
+    const existingUser = await this.usersService.findOne(createUserDto.email, franchiseId);
     if (existingUser) {
-      throw new UnauthorizedException('User already exists'); // Or ConflictException
+      throw new UnauthorizedException('User already exists');
     }
-    const user = await this.usersService.create(createUserDto);
+    const user = await this.usersService.create(createUserDto, franchiseId);
 
     // Send emails
     this.mailService.sendWelcomeEmail({
@@ -124,8 +124,8 @@ export class AuthService {
   }
 
   async forgotPassword(email: string, originFranchiseId?: string | null) {
-    // 1. Find user by email and franchise_id (to maintain strict isolation)
-    const baseUser = await this.usersService.findOne(email);
+    // 1. Find user by email scoped to the franchise (strict isolation)
+    const baseUser = await this.usersService.findOne(email, originFranchiseId);
     if (!baseUser) {
       // Do not reveal if the user exists for security reasons
       return { message: 'If an account with that email exists, a password reset link has been sent.' };

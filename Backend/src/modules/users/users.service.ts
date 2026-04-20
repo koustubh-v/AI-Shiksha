@@ -28,7 +28,7 @@ export class UsersService {
       });
     } catch (error: any) {
       if (error?.code === 'P2002') {
-        throw new BadRequestException(`A user with email "${rest.email}" already exists`);
+        throw new BadRequestException(`A user with email "${rest.email}" already exists in this franchise`);
       }
       throw error;
     }
@@ -232,8 +232,16 @@ export class UsersService {
     };
   }
 
-  async findOne(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+  async findOne(email: string, franchiseId?: string | null): Promise<User | null> {
+    // Build the where clause based on franchiseId:
+    // - null   → system domain: only match users WHERE franchise_id IS NULL
+    // - string → franchise domain: match users in that specific franchise only
+    // - undefined → no franchise filter (admin/internal lookups that span all franchises)
+    const where: any = { email };
+    if (franchiseId !== undefined) {
+      where.franchise_id = franchiseId; // null = IS NULL filter; string = exact match
+    }
+    return this.prisma.user.findFirst({ where });
   }
 
   async findById(id: string): Promise<User | null> {

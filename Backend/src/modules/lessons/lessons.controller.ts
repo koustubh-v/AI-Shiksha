@@ -25,7 +25,7 @@ export class LessonsController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a lesson' })
   create(@Body() createLessonDto: CreateLessonDto) {
@@ -46,7 +46,7 @@ export class LessonsController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update lesson' })
   update(@Param('id') id: string, @Body() updateLessonDto: UpdateLessonDto) {
@@ -55,7 +55,7 @@ export class LessonsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete lesson' })
   remove(@Param('id') id: string) {

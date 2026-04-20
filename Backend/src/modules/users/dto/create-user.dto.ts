@@ -14,6 +14,7 @@ export enum UserRole {
   STUDENT = 'STUDENT',
   INSTRUCTOR = 'INSTRUCTOR',
   ADMIN = 'ADMIN',
+  FRANCHISE_ADMIN = 'FRANCHISE_ADMIN',
 }
 
 export class CreateUserDto {

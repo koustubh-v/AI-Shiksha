@@ -25,7 +25,7 @@ export class ModulesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a module' })
   create(@Body() createModuleDto: CreateModuleDto) {
@@ -46,7 +46,7 @@ export class ModulesController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update module' })
   update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto) {
@@ -55,7 +55,7 @@ export class ModulesController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.INSTRUCTOR)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete module' })
   remove(@Param('id') id: string) {

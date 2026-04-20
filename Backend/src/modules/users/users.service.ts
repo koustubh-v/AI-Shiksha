@@ -15,14 +15,23 @@ export class UsersService {
   async create(createUserDto: CreateUserDto, franchiseId?: string | null, isAdminAction: boolean = false, loginUrl: string = ''): Promise<User> {
     const { password, ...rest } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        ...rest,
-        password_hash: hashedPassword,
-        role: rest.role || 'STUDENT',
-        franchise_id: franchiseId || null,
-      },
-    });
+
+    let user: User;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          ...rest,
+          password_hash: hashedPassword,
+          role: rest.role || 'STUDENT',
+          franchise_id: franchiseId || null,
+        },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new BadRequestException(`A user with email "${rest.email}" already exists`);
+      }
+      throw error;
+    }
 
     if (isAdminAction) {
       this.mailService.sendAdminAddedUserEmail(

@@ -46,28 +46,28 @@ export class CertificateTemplatesController {
     }
 
     @Post()
-    @Roles(Role.ADMIN, Role.INSTRUCTOR)
+    @Roles(Role.ADMIN, Role.INSTRUCTOR, Role.FRANCHISE_ADMIN)
     @ApiOperation({ summary: 'Create certificate template' })
     create(@Body() dto: CreateCertificateTemplateDto, @Request() req: any) {
         return this.certificateTemplatesService.create(dto, req.user?.id, req.user?.franchise_id);
     }
 
     @Patch(':id')
-    @Roles(Role.ADMIN, Role.INSTRUCTOR)
+    @Roles(Role.ADMIN, Role.INSTRUCTOR, Role.FRANCHISE_ADMIN)
     @ApiOperation({ summary: 'Update certificate template' })
     update(@Param('id') id: string, @Body() dto: UpdateCertificateTemplateDto, @Request() req: any) {
         return this.certificateTemplatesService.update(id, dto, req.user?.franchise_id);
     }
 
     @Delete(':id')
-    @Roles(Role.ADMIN)
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
     @ApiOperation({ summary: 'Delete certificate template (Admin only)' })
     delete(@Param('id') id: string, @Request() req: any) {
         return this.certificateTemplatesService.delete(id, req.user?.franchise_id);
     }
 
     @Post(':id/set-default')
-    @Roles(Role.ADMIN)
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN)
     @ApiOperation({ summary: 'Set template as default (Admin only)' })
     setDefault(@Param('id') id: string, @Request() req: any) {
         return this.certificateTemplatesService.setDefault(id, req.user?.franchise_id);

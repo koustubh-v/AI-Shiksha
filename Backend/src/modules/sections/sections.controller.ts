@@ -35,7 +35,7 @@ export class SectionsController {
   // ========== SECTIONS ==========
 
   @Post('courses/:courseId/sections')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   createSection(
     @Param('courseId') courseId: string,
     @Body() dto: CreateSectionDto,
@@ -44,7 +44,7 @@ export class SectionsController {
   }
 
   @Patch('sections/:sectionId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   updateSection(
     @Param('sectionId') sectionId: string,
     @Body() dto: UpdateSectionDto,
@@ -53,13 +53,13 @@ export class SectionsController {
   }
 
   @Delete('sections/:sectionId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   deleteSection(@Param('sectionId') sectionId: string) {
     return this.sectionsService.deleteSection(sectionId);
   }
 
   @Post('courses/:courseId/sections/reorder')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   reorderSections(
     @Param('courseId') courseId: string,
     @Body() dto: ReorderSectionsDto,
@@ -75,7 +75,7 @@ export class SectionsController {
   // ========== SECTION ITEMS ==========
 
   @Post('sections/:sectionId/items')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   createItem(
     @Param('sectionId') sectionId: string,
     @Body() dto: CreateSectionItemDto,
@@ -84,7 +84,7 @@ export class SectionsController {
   }
 
   @Patch('items/:itemId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   updateItem(
     @Param('itemId') itemId: string,
     @Body() dto: UpdateSectionItemDto,
@@ -93,13 +93,13 @@ export class SectionsController {
   }
 
   @Delete('items/:itemId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   deleteItem(@Param('itemId') itemId: string) {
     return this.sectionsService.deleteItem(itemId);
   }
 
   @Post('items/reorder')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   reorderItems(@Body() dto: ReorderItemsDto) {
     return this.sectionsService.reorderItems(dto);
   }
@@ -117,7 +117,7 @@ export class SectionsController {
   // ========== LECTURE CONTENT ==========
 
   @Post('items/:itemId/content')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   createLectureContent(
     @Param('itemId') itemId: string,
     @Body() dto: CreateLectureContentDto,
@@ -126,7 +126,7 @@ export class SectionsController {
   }
 
   @Patch('items/:itemId/content')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   updateLectureContent(
     @Param('itemId') itemId: string,
     @Body() dto: UpdateLectureContentDto,

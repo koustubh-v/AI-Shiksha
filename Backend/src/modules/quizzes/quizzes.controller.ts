@@ -31,7 +31,7 @@ export class QuizzesController {
   // ========== QUIZ CRUD ==========
 
   @Post()
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   createQuiz(@Body() dto: CreateQuizDto) {
     return this.quizzesService.createQuiz(dto);
   }
@@ -50,13 +50,13 @@ export class QuizzesController {
   }
 
   @Patch(':quizId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   updateQuiz(@Param('quizId') quizId: string, @Body() dto: UpdateQuizDto) {
     return this.quizzesService.updateQuiz(quizId, dto);
   }
 
   @Delete(':quizId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   deleteQuiz(@Param('quizId') quizId: string) {
     return this.quizzesService.deleteQuiz(quizId);
   }
@@ -64,7 +64,7 @@ export class QuizzesController {
   // ========== QUESTION CRUD ==========
 
   @Post(':quizId/questions')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   addQuestion(
     @Param('quizId') quizId: string,
     @Body() dto: CreateQuizQuestionDto,
@@ -93,7 +93,7 @@ export class QuizzesController {
   // Cleaner: PUT /quizzes/:qid/questions/:qId
 
   @Patch(':quizId/questions/:questionId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   updateQuestionInQuiz(
     @Param('questionId') questionId: string,
     @Body() dto: UpdateQuizQuestionDto
@@ -102,13 +102,13 @@ export class QuizzesController {
   }
 
   @Delete(':quizId/questions/:questionId')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   deleteQuestion(@Param('questionId') questionId: string) {
     return this.quizzesService.deleteQuestion(questionId);
   }
 
   @Post(':quizId/questions/reorder')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   reorderQuestions(@Body() dto: ReorderQuestionsDto) {
     return this.quizzesService.reorderQuestions(dto);
   }
@@ -126,7 +126,7 @@ export class QuizzesController {
   }
 
   @Get(':quizId/submissions')
-  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   getSubmissions(@Param('quizId') quizId: string) {
     return this.quizzesService.getSubmissions(quizId);
   }

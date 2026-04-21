@@ -1,511 +1,433 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  ArrowRight,
-  CheckCircle2,
-  Play,
-  Star,
-  TrendingUp,
-  Users,
-  Code,
-  Brain,
-  Palette,
-  Wand2,
-  BarChart3,
-  BadgeCheck,
-  ChevronRight,
-  Quote,
-  Menu,
-  X,
-  CheckCircle,
-  Camera,
-  Music,
-  Globe,
-  Briefcase,
-  School
-} from "lucide-react";
 import UnifiedNavbar from "@/components/layout/UnifiedNavbar";
 import Footer from "@/components/marketing/Footer";
-import { Courses as CoursesAPI, Categories as CategoriesAPI } from "@/lib/api";
-import { InteractiveHoverButton } from "@/components/ui/InteractiveHoverButton";
-
-// --- Types & Data ---
-
-interface Course {
-  id: number;
-  title: string;
-  category: string;
-  categoryColor: string;
-  author: string;
-  rating: number;
-  reviews: string;
-  price: string;
-  image: string;
-  tagColor: string;
-}
-
-const courses: Course[] = [
-  {
-    id: 1,
-    title: "Advanced React & Next.js Architecture",
-    category: "DEVELOPMENT",
-    categoryColor: "text-primary bg-blue-50",
-    author: "Sarah Jenkins • Senior Architect",
-    rating: 4.9,
-    reviews: "(1.2k)",
-    price: "$89.99",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDKQVkXTRU3_d1wAQHJYW5bRnRWjeWkdo8I39hyr9vxJthanvaxvvbGcX4HKekx_lgcaS2HG9AH7VCqjTLbOnwvImrYf9dqBMrFBrvb6UE-72HnWEYePvSr7Ld6DBJ0Miz9RR_WTNVKjv1ZPxOgaRnD6PjUmYozXknoc8WZgga5ehn_gXbjHEkcx3GIr-BDOuoqjnfjhkXznTX3wnaDBio-KrNMY64AhCbZP7bAsl5rcxNRUZtTAnz4x7Px9R04KmTu-O1h-JomkFI",
-    tagColor: "bg-blue-50 text-primary"
-  },
-  {
-    id: 2,
-    title: "Python for Machine Learning Mastery",
-    category: "DATA SCIENCE",
-    categoryColor: "text-purple-600 bg-purple-50",
-    author: "Dr. Michael Chen • AI Lead",
-    rating: 4.8,
-    reviews: "(850)",
-    price: "$94.99",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuANhv3-HkSs1IBiFBtnOJvNhgPukMDDKjfdEGMbohmORlBu2iPz9evAGlP2mO7FbLFwDSceXH5KolWrt8pFmVHimF-1rqbzX78U_eDcxB_aWxOTYUOWM7JmuMdn6rqiuWp0bY4p0iTqY6dSxExUUh-Sd58CDRwUh8fq-9fn58xaAj7O0ngFntGo1E0HZWTFIWFg8WaoTeGh8Myd7yjlGb45HprK7UviEkFjbByE_mPffsPgII0v3bw3jROXl6FodH0IHN5IXLrsGJE",
-    tagColor: "bg-purple-50 text-purple-600"
-  },
-  {
-    id: 3,
-    title: "UI/UX Strategy: Designing for Conversion",
-    category: "DESIGN",
-    categoryColor: "text-pink-600 bg-pink-50",
-    author: "Leo Valdez • Product Designer",
-    rating: 4.7,
-    reviews: "(430)",
-    price: "$74.99",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBprQJeKgxsmggzIEn9J9pOvzcUJFUsUBxuOjodBqx-VgTGswNd_aAuVaJP7BuyMehFjyUUt1BiAned3QIDAPraYCGmkafO4H9z0B9CeqUHKkD1hL-dXSF1T0RmwzeX5D3uMMRlek_OGvumPJnAdmEu8gY58E-PoeQOg7RX9NMLToPbcu1thvoRVK2II_EAMJm8Lc6ZprsmN35UypqwEULY6yJCn8GRDBfrdmiFBK3F42iWrzDDoB75mSTH49PENPqTlpDp1F4Gayk",
-    tagColor: "bg-pink-50 text-pink-600"
-  },
-  {
-    id: 4,
-    title: "Scaling Startups: The Growth Framework",
-    category: "BUSINESS",
-    categoryColor: "text-orange-600 bg-orange-50",
-    author: "James Wilson • CEO @ ScaleUp",
-    rating: 4.9,
-    reviews: "(680)",
-    price: "$129.99",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5KMFhjhy6HOOLxL-SVuhhIB5m-apQ17OSjOFWt_L0AB96vVpz8GrgSxjXl0iz0LEHmCYtU4Lr5pjijgAXr1uXlcNKklQ5jbZgijai26aFUcTGzFvbeFss75CwQbXB3DmpaoNZQ4cPkJmUMMVRqUum990M1VeNoFwaM4blbfoFKZQWEYrbrnwkp7QJzKc1n5mnsf-ZFeyKQo5jnrTXODLk2WvQnjMuE1acMWmGKb4sl-kqPpPXbyt5Zqx2mcw7MjyT3VXDp7J1n84",
-    tagColor: "bg-orange-50 text-orange-600"
-  }
-];
-
-const testimonials = [
-  {
-    id: 1,
-    text: "The AI tutor is a game changer. I've learned more in 2 months here than I did in 2 years of university. Highly recommend!",
-    name: "Elena Rodriguez",
-    role: "Junior Developer at TechFlow",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD-fpdQmSUfZQIhyXCJhRrnQAMwsrCgUL89qvy3tVlPaSSG8FpJg8hS4l2SDe1SaFtMIcgV84nzWuVy_QCm83JJnWO52z1cTOG9qUvT8tFX5kVbbwTg6WWG-gBiE6rh5RFzZ5W_Xt6oTe0fwZ08C-9kPFt1DfHDAZ4q-DV2P_PjhxqTC8M3mJDVZHfk6_-IZDeloockd9wbkt58KwKdcgCWgutAkMV5zM2MsWDUXD1i2s_HUZ5u43hiEIgezFBWdgTQ2-oAsa3qrZM"
-  },
-  {
-    id: 2,
-    text: "Cleanest UI I've ever seen in an LMS. The progression system keeps me motivated to study every single day after work.",
-    name: "Marcus Thorne",
-    role: "Product Designer",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBbtDwUIB7vYVMK8T9hZ1zAe_aC4KGipvxZwLUG7j6_NyFv_OI6DAiSieGM1ZR_BXxQn0VunTXdLAn8T0R7Ej6b2cr9WWR5HvBVB8Qium9dMtCByDlo5adYpmyajHu0jkYPsm2711-BPpfmS7URMZsYUWqP_-loEpJbLs0ortwnK3hMzNjYbUxjijYHY6IfxTI1CE5vdcCBkBbaOKILMaNx-WjQ-qO_lNmd2NlqAVJT0rbFpFY8rB1xnTRQxIOIKsmI--_trt231aM"
-  },
-  {
-    id: 3,
-    text: "As a business owner, I needed to learn data analysis fast. The course was straight to the point and practical. Worth every penny.",
-    name: "Jennifer Low",
-    role: "Founder of EcoScale",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCzq9PXcUqSJzaUcz6E0-As0Kcmi5Geywb790XvyHvGAl5J8Z2vcnH1LKJ0oskwvlYTg7wE3-ZiJ34u-Hhhlplfp-0YxNGaNggBphzX867CoR28Uhi210XuzcKR3dUBqwHb9YbnvS3KZM8aC-LTkqjOTEUesqF47LWYO57JqAl2yOPQgkw_SL2DkqNU5F91vllPFx0sd-2Dd2vWR62nzjOz1nR0tDaNfupqwt1LTvv4OD6FvsFuOvstbgUY7MWHQkzbaPD7-RldS28"
-  },
-];
-
-// --- Components ---
+import { Courses as CoursesAPI } from "@/lib/api";
 
 const Hero = () => {
   return (
-    <main 
-      className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 overflow-hidden bg-transparent"
-    >
-      
-      <div className="max-w-6xl mx-auto px-8 text-center relative z-10">
-        {/* Decorative Accent */}
-        <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 0.3, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-10 flex justify-center transform -rotate-12"
-        >
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14v7" />
-          </svg>
-        </motion.div>
-        
-        {/* Breadcrumb Label */}
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-8 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-xs font-bold tracking-widest uppercase"
-        >
-          India's Premier AI Learning Platform
-        </motion.div>
-        
-        {/* Main Headline */}
-        <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="headline-serif text-5xl md:text-8xl text-text-main font-light leading-[1.05] mb-8 max-w-4xl mx-auto"
-        >
-          Mastering Safety Through <br/>
-          <span className="italic text-primary font-normal">Intelligence</span>
-        </motion.h1>
-        
-        {/* Subtext */}
-        <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="max-w-xl mx-auto text-text-muted text-lg md:text-xl leading-relaxed mb-12 font-medium opacity-80"
-        >
-          Built on sovereign compute. Powered by frontier-class models. Delivering population-scale safety impact.
-        </motion.p>
-        
-        {/* Hero CTA */}
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6"
-        >
-          <Link to="/courses">
-            <InteractiveHoverButton className="px-12 py-5 font-bold text-lg bg-gradient-to-r from-gray-900 to-black text-white hover:text-black">
-              Browse Courses <ArrowRight className="h-5 w-5" />
-            </InteractiveHoverButton>
-          </Link>
-        </motion.div>
-      </div>
-    </main>
-  );
-};
+    <section className="relative flex flex-col md:min-h-screen pt-16 md:pt-24 bg-black">
+        <div className="relative md:absolute md:inset-0 w-full h-[45vh] md:h-full overflow-hidden pointer-events-none">
+            <video autoPlay loop muted playsInline className="min-w-full min-h-full w-auto h-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 object-cover brightness-75 md:brightness-50 md:scale-110">
+            <source src="/landing_page/landing.mp4" type="video/mp4"/>
+            </video>
+        </div>
 
-const Categories = () => {
-  const [dbCategories, setDbCategories] = useState<{name: string}[]>([]);
-
-  useEffect(() => {
-    CategoriesAPI.getAll().then(data => setDbCategories(data)).catch(console.error);
-  }, []);
-
-  const styles = [
-    { icon: "leaderboard", color: "text-primary", bg: "bg-primary/5", shadow: "hover:shadow-primary/5" },
-    { icon: "engineering", color: "text-[#4648d4]", bg: "bg-[#4648d4]/5", shadow: "hover:shadow-[#4648d4]/10" },
-    { icon: "security_update_good", color: "text-[#a12e70]", bg: "bg-[#a12e70]/5", shadow: "hover:shadow-[#a12e70]/10" },
-    { icon: "eco", color: "text-[#0051d5]", bg: "bg-[#0051d5]/5", shadow: "hover:shadow-[#0051d5]/10" },
-  ];
-
-  const defaultCategories = [
-    { name: "Executive Leadership" },
-    { name: "Technical Safety" },
-    { name: "Risk Management" },
-    { name: "Environmental Compliance" },
-  ];
-
-  const displayCategories = dbCategories.length > 0
-    ? dbCategories.slice(0, 4).map((c, i) => ({ name: c.name, count: "Explore Courses", ...styles[i % styles.length] }))
-    : defaultCategories.map((c, i) => ({ ...c, count: "Explore Courses", ...styles[i % styles.length] }));
-
-  return (
-    <div id="categories-section" className="relative px-6 pt-16 pb-32 max-w-7xl mx-auto">
-      {/* Section Header */}
-      <div className="text-center mb-20 relative z-10">
-        <span className="text-xs font-bold tracking-[0.3em] uppercase text-primary mb-4 block">IOSH Accredited Excellence</span>
-        <h2 className="headline-serif text-5xl md:text-7xl font-light tracking-tight text-text-main mb-6">Course Categories</h2>
-        <p className="max-w-2xl mx-auto text-text-muted text-lg leading-relaxed">
-            Explore our specialized domains of expertise, tailored for every level of professional growth.
-        </p>
-      </div>
-      
-      {/* Course Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 relative z-10">
-        {displayCategories.map((cat, idx) => (
-          <Link to={`/courses?category=${encodeURIComponent(cat.name)}`} key={idx}>
-            <div className={`glass-card group p-6 rounded-xl border border-gray-100/50 text-center hover:-translate-y-1 transition-all duration-300 hover:shadow-xl ${cat.shadow} cursor-pointer h-full`}>
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform ${cat.bg}`}>
-                <span className={`material-symbols-outlined ${cat.color}`}>{cat.icon}</span>
-              </div>
-              <h3 className="headline-serif text-lg text-text-main group-hover:text-primary transition-colors">{cat.name}</h3>
+        <div className="relative z-10 flex-1 flex items-center px-6 md:px-12 py-10 md:py-20">
+            <div className="max-w-6xl mx-auto w-full">
+                <div className="z-10 max-w-4xl">
+                    <span className="inline-block font-body text-white uppercase tracking-[0.2em] text-[11px] mb-8 font-bold opacity-80">NEXT-GEN SAFETY LEARNING MANAGEMENT SYSTEM</span>
+                    <h1 className="font-headline text-4xl sm:text-5xl md:text-8xl font-black uppercase leading-[0.9] tracking-tighter mb-10">
+                        MASTER SAFETY <br/>
+                        EXCELLENCE WITH <span className="text-[#A3FF12] italic">AI-DRIVEN LMS.</span>
+                    </h1>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+                        <p className="font-body text-zinc-300 text-sm leading-relaxed">
+                            Empower your workforce with our Next-Gen Enterprise LMS. From automated compliance tracking to immersive high-risk training simulations, our intelligent platform ensures every team member reaches peak industrial certification standards seamlessly.
+                        </p>
+                        <p className="font-body text-zinc-300 text-sm leading-relaxed">
+                            Our architecture tailors learning paths to individual performance, closing skill gaps before they become safety hazards. Transform passive compliance into an active, globally-applicable culture of operational mastery.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                        <Link to="/courses" className="group border border-white text-white font-headline font-bold uppercase tracking-widest px-8 py-4 text-xs flex items-center gap-3 hover:bg-white/10 transition-all">
+                            <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
+                            EXPLORE THE COURSES
+                        </Link>
+                    </div>
+                </div>
             </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+        </div>
+    </section>
   );
 };
 
-interface ApiCourse {
-  id: string;
-  slug: string;
-  title: string;
-  instructor: string;
-  rating?: number | string;
-  students?: number;
-  price: number;
-  level?: string;
-  thumbnail?: string;
-}
+const LogoMarquee = () => {
+    return (
+        <section className="bg-black py-10 md:py-16 px-6 md:px-12 border-t border-white/5 overflow-hidden">
+            <div className="max-w-[1920px] mx-auto text-center mb-10">
+                <h2 className="font-headline text-sm font-bold uppercase tracking-[0.4em] text-zinc-500">OFFICIAL ACCREDITATION PARTNERS</h2>
+            </div>
+            <div className="relative flex overflow-hidden">
+                <div className="flex animate-marquee">
+                    <div className="flex whitespace-nowrap gap-24 items-center pr-24">
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">OSHA</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">IOSH</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity text-[#21e6ff]">NEBOSH</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ISO 45001</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ANSI</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ASSP</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">NSC</span>
+                    </div>
+                    <div className="flex whitespace-nowrap gap-24 items-center pr-24" aria-hidden="true">
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">OSHA</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">IOSH</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity text-[#21e6ff]">NEBOSH</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ISO 45001</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ANSI</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">ASSP</span>
+                        <span className="font-headline font-black text-4xl tracking-tighter opacity-40 grayscale hover:opacity-100 transition-opacity">NSC</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
 
+interface ApiCourse { id: string; slug: string; title: string; instructor: string; thumbnail?: string; level?: string; }
 const FeaturedCourses = () => {
-  const [dbCourses, setDbCourses] = useState<ApiCourse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+    const [dbCourses, setDbCourses] = useState<ApiCourse[]>([]);
+    useEffect(() => { CoursesAPI.getAll(false).then(setDbCourses).catch(console.error); }, []);
+    
+    if (dbCourses.length === 0) return null;
 
-  useEffect(() => {
-    CoursesAPI.getAll(false)
-      .then(data => {
-        setDbCourses(data);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setIsLoading(false);
-      });
-  }, []);
-
-  const hardcodedCourses = [
-    {
-      slug: "behavioral-safety",
-      title: "Behavioral Safety Leadership",
-      description: "Harness advanced psychological frameworks to foster a culture of proactive safety beyond compliance and regulation.",
-      tag: "Executive",
-      tagColor: "bg-primary/10 text-primary",
-      thumbnail: "https://lh3.googleusercontent.com/aida-public/AB6AXuAaKe_7gU_yWz-RiwZVoj-TlpUl7blaNFjq9uUQX33q0PoGujkfcfYpqcncFt9GomBkD1NCKW1dEi257IPdVl8sgYm3LIA2QrIb5joPjWrbOhNqomFhhr4XlHgtnzwSSlcVMHjmLJRoNFi-unWpZMJ7or2MATWFKwquOOCr-pIhe9jks2HTsjMjqNkr13aoOIJ8WpJs_TuduGmYTOv3Q86SlUhCXWlb8tnM1RuEYZX3_jbbSee28KW54JSlIE3G50VOUFBJb_WOWb4"
-    },
-    {
-      slug: "risk-assessment",
-      title: "Risk Assessment AI",
-      description: "Deploying predictive modeling and machine learning to identify workplace hazards before they materialize into incidents.",
-      tag: "Intermediate",
-      tagColor: "bg-[#4648d4]/10 text-[#4648d4]",
-      thumbnail: "https://lh3.googleusercontent.com/aida-public/AB6AXuARuUtDP1EiihisGEasi1GEXRMJNLZMpxiNy_kg5xsTTgcgP9Fo3oHlJ2FjEVxS6DhtJz85scwvykxWm947zHYIMFeBHFsJWinhEZdRyVAmhRc6pluxZlBZ09pd50zKqVjAjZm9z9J9y42SbBcRW2Zj0i0_NgDA7mfc-BW34dqU3GoJuX7rFlRCw2-ieSf1uGMkarcInE3l1VGfASU8MVCU7QMgYde7l3C17tQqWLVBuye9f_794xKi5UO-SVFVq-ZAS8bL_YiY97k"
-    },
-    {
-      slug: "global-compliance",
-      title: "Global Compliance Framework",
-      description: "A comprehensive guide to navigating international occupational health standards across diverse legal jurisdictions.",
-      tag: "Advanced",
-      tagColor: "bg-[#a12e70]/10 text-[#a12e70]",
-      thumbnail: "https://lh3.googleusercontent.com/aida-public/AB6AXuDc7J5fcCZQBcbZkpkC9m7DHVYui3wPxu0i1KDOE27hAdzW3-93r2jr_BOyLxkfiFaOhICXs3UWJQWnDYri-8cT3iGwic2HeKwrfeXwOd0suEIhKFUxZH1xTznHhDk-eF5ilW6fGVoy169apCWzd6-fBmVExTVIkJlYzMJtLg7qwppYuh0oKdW6TyL48xT4TNQHTED0frYeX1Y5TM3j9957EUcAr863-hUdHm8UccEFWmozu5_Lo5BlyRkVUTIyqeeLzF0XEdgu4y4"
-    }
-  ];
-
-  const displayCourses = dbCourses.length > 0 
-    ? dbCourses.slice(0, 6).map(c => ({
-        slug: c.slug,
-        title: c.title,
-        description: `Taught by ${c.instructor}`,
-        tag: c.level || "Popular",
-        tagColor: "bg-primary/10 text-primary",
-        thumbnail: c.thumbnail || "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80"
-      }))
-    : hardcodedCourses;
-
-  return (
-    <section className="py-24 px-6 relative z-10 max-w-7xl mx-auto">
-      {/* Subtle Background Accent */}
-      <div className="absolute bottom-[-10%] -left-64 w-[600px] h-[600px] bg-[#a12e70] opacity-[0.07] rounded-full blur-[120px] mix-blend-multiply pointer-events-none -z-10"></div>
-      
-      {/* Featured Mastery Paths Header */}
-      <div className="text-center mb-16">
-        <h2 className="headline-serif text-4xl md:text-5xl font-light tracking-tight text-text-main mb-6">Featured Mastery Paths</h2>
-        <div className="h-1 w-20 bg-primary/20 mx-auto rounded-full"></div>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-24">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-          {displayCourses.map((course, idx) => (
-            <div key={idx} className="glass-card rounded-xl p-8 flex flex-col h-full border border-gray-100/50 shadow-sm group hover:-translate-y-2 transition-transform duration-500">
-              <div className="mb-8 aspect-video rounded-lg overflow-hidden bg-gray-100">
-                <img 
-                  src={course.thumbnail} 
-                  alt={course.title} 
-                  className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" 
-                />
-              </div>
-              <div className="mb-4">
-                <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${course.tagColor}`}>
-                  {course.tag}
-                </span>
-              </div>
-              <h3 className="headline-serif text-2xl font-light mb-4 line-clamp-2">{course.title}</h3>
-              <p className="text-text-muted text-sm leading-relaxed mb-8 flex-grow line-clamp-3">
-                {course.description}
-              </p>
-              <Link to={course.slug ? `/courses/${course.slug}` : "/courses"} className="flex items-center gap-2 text-primary text-sm font-bold group/link mt-auto">
-                Discover Path 
-                <span className="material-symbols-outlined text-sm group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
-              </Link>
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black border-y border-white/5">
+            <div className="max-w-[1400px] mx-auto">
+                <span className="font-headline text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 block">EXPERTLY CRAFTED</span>
+                <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-16 leading-none">BROWSE <span className="italic text-[#A3FF12]">TOP COURSES.</span></h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {dbCourses.slice(0, 3).map((c, i) => (
+                        <div key={i} className="group bg-[#151515] border border-white/10 rounded-lg overflow-hidden relative transition-all duration-700 flex flex-col h-full hover:shadow-[0_0_40px_rgba(163,255,18,0.15)] hover:border-[#A3FF12]/40 hover:-translate-y-1">
+                            <div className="absolute inset-x-0 -bottom-2 h-1 bg-gradient-to-r from-transparent via-[#A3FF12] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[2px]"></div>
+                            <div className="relative aspect-video overflow-hidden">
+                                <img src={c.thumbnail || "/landing_page/safety-pro.jpg"} alt={c.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+                                <div className="absolute bottom-4 left-4 z-10">
+                                    <span className="bg-[#A3FF12] text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1">{c.level || "Popular"}</span>
+                                </div>
+                            </div>
+                            <div className="p-8 flex flex-col flex-1">
+                                <h3 className="font-headline text-2xl font-black uppercase tracking-tight mb-4 flex-1">{c.title}</h3>
+                                <div className="flex items-center gap-3 text-zinc-400 font-body text-sm mb-6">
+                                    <span className="material-symbols-outlined text-sm">school</span>
+                                    {c.instructor}
+                                </div>
+                                <Link to={`/courses/${c.slug}`} className="flex items-center gap-2 text-[#d2ff9a] font-headline text-xs font-bold uppercase tracking-widest hover:gap-4 transition-all mt-auto border-t border-white/10 pt-6">
+                                    START COURSE <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                </Link>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+        </section>
+    );
 };
 
-const WhyChooseUs = () => {
-  return (
-    <section className="mt-32 relative z-10 px-6 max-w-7xl mx-auto pb-24">
-      {/* Ambient Depth Graphic */}
-      <div className="absolute top-[20%] -right-32 w-[700px] h-[700px] bg-[#4648d4] opacity-[0.06] rounded-full blur-[120px] mix-blend-multiply pointer-events-none -z-10"></div>
-
-      <div className="text-center mb-16">
-        <h2 className="headline-serif text-4xl md:text-5xl font-light tracking-tight text-text-main mb-4">The Intellectual Advantage</h2>
-        <div className="h-1 w-20 bg-primary/20 mx-auto rounded-full"></div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="glass-card p-8 rounded-xl border border-gray-100/50 text-center flex flex-col items-center group hover:bg-white/60 transition-colors">
-          <div className="w-14 h-14 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-primary text-3xl">auto_awesome</span>
-          </div>
-          <h4 className="headline-serif text-xl font-light mb-4">AI-Driven Curriculum</h4>
-          <p className="text-text-muted text-sm leading-relaxed">Personalized learning paths that adapt in real-time to the shifting landscape of modern safety technologies.</p>
-        </div>
-        <div className="glass-card p-8 rounded-xl border border-gray-100/50 text-center flex flex-col items-center group hover:bg-white/60 transition-colors">
-          <div className="w-14 h-14 rounded-full bg-[#4648d4]/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-[#4648d4] text-3xl">verified_user</span>
-          </div>
-          <h4 className="headline-serif text-xl font-light mb-4">IOSH Accredited</h4>
-          <p className="text-text-muted text-sm leading-relaxed">Globally recognized certification that ensures your expertise meets the highest professional standards.</p>
-        </div>
-        <div className="glass-card p-8 rounded-xl border border-gray-100/50 text-center flex flex-col items-center group hover:bg-white/60 transition-colors">
-          <div className="w-14 h-14 rounded-full bg-[#a12e70]/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-[#a12e70] text-3xl">diversity_3</span>
-          </div>
-          <h4 className="headline-serif text-xl font-light mb-4">Expert Mentors</h4>
-          <p className="text-text-muted text-sm leading-relaxed">Direct access to industry veterans who have shaped international health and safety protocols.</p>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-
-const Testimonials = () => {
-  const testimonials = [
-    {
-      id: 1,
-      text: "The integration of AI into risk assessment training completely shifted my perspective on proactive safety. This isn't just a course; it's a career evolution.",
-      name: "Elena Moretti",
-      role: "Safety Director, Eni Global",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC4Csd6VutR-7JgWAymcasxrmTbFCtAeT6yDHK4gpT2s1tHW5aPFTKYNRVZF-qPGnuO3RYTrFreJXCOVOYS1YlUjOamZAQg91wQIcJGpAwiHRAbTTAEqm-9jMA618IVKq8H5N7upLxaa4k_XEQYIquwfQEZRBjYtgzXLRCTVmlAyvc0aOQaY3ptbY2-3keHMevq4JfUqIirxKc7R0a3OIOSP9V5BKuNk1XdtL9Q7mSHwIFiVgEiV7kUxPMiLXf-XeT4y7G0nbetj5Q",
-      quoteColor: "text-primary/20"
-    },
-    {
-      id: 2,
-      text: "Navigating international compliance used to be a nightmare of paperwork. The framework taught here simplified our global operations overnight.",
-      name: "Marcus Thorne",
-      role: "HSE Lead, TechLogistics",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCdvNtXepxSQkoATwM4y9fehrrCGdkjARg2DmHkXhgFX4JPC3Fmi1ccHsSwjoo1dI_83BDyrV1Y0Ev0EKbh7SeHkAV9FNvbZKZmC_IYHV_FbYkjNN5slLDWbfVAcwEF05QD-hLyl5Y8KiX7FmHz2uWZOQRioaPwqwXGu5ldzE_umK_N-o8szU9HLrm6jKFBz27T7DdUN8wQKpF2ZQHDacCH-aqQdBu4MG-fkWjc3kLlbDdQArb5fQ5G7-3JxT5RrHrF6x89QzlouSo",
-      quoteColor: "text-[#4648d4]/20"
-    }
-  ];
-
-  return (
-    <section className="mt-32 pb-24 relative z-10 px-6">
-      {/* Atmospheric Tie-in Graphic */}
-      <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-full max-w-4xl h-[400px] bg-primary opacity-[0.05] rounded-[100%] blur-[120px] mix-blend-multiply pointer-events-none -z-10"></div>
-
-      <div className="text-center mb-16">
-        <h2 className="headline-serif text-4xl md:text-5xl font-light tracking-tight text-text-main mb-4">Voice of the Academy</h2>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {testimonials.map((t) => (
-          <div key={t.id} className="glass-card p-10 rounded-xl border border-gray-100/50 shadow-lg relative bg-white/70">
-            <span className={`material-symbols-outlined ${t.quoteColor} text-6xl absolute top-6 right-8 select-none`}>format_quote</span>
-            <p className="headline-serif text-lg text-text-main mb-8 relative z-10 italic">"{t.text}"</p>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden">
-                <img alt="Student" className="w-full h-full object-cover grayscale" src={t.image} />
-              </div>
-              <div>
-                <div className="font-bold text-sm tracking-tight text-text-main">{t.name}</div>
-                <div className="text-[10px] uppercase tracking-widest text-text-muted">{t.role}</div>
-              </div>
+const FourPaths = () => {
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black">
+            <div className="max-w-[1400px] mx-auto">
+                <span className="font-headline text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 block">FOUR PATHS TO SMARTER EHS</span>
+                <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-16 leading-none">START WHERE YOU WANT TO <br/>MOVE <span className="italic text-[#A3FF12]">FASTER.</span></h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                    <div className="relative group overflow-hidden bg-zinc-900 aspect-square md:aspect-auto">
+                        <img alt="AI Safety Data" className="absolute inset-0 w-full h-full object-cover grayscale brightness-50 group-hover:scale-105 transition-transform duration-700" src="/landing_page/01-How-to-Become-a-Safety-Manager.jpg"/>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-0 left-0 p-12">
+                            <h3 className="font-headline text-3xl font-black uppercase mb-4 leading-tight">TURN YOUR EHS DATA INTO EARLY WARNINGS WITH AI.</h3>
+                            <p className="font-body text-zinc-300 text-sm max-w-md mb-8">See how AI analyzes your incident data, SDSs, and learning patterns to surface risks before they manifest as site hazards.</p>
+                            <Link to="/courses" className="w-12 h-12 rounded-full border border-white flex items-center justify-center group-hover:bg-[#A3FF12] group-hover:border-[#A3FF12] transition-colors">
+                                <span className="material-symbols-outlined text-white group-hover:text-black">arrow_forward</span>
+                            </Link>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <div className="bg-[#2a2825] p-10 flex flex-col justify-between">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="material-symbols-outlined text-[#A3FF12] text-3xl">check_circle</span>
+                                <h3 className="font-headline text-2xl font-black uppercase tracking-tight">ACCESS EXPERT RESOURCES, GUIDES AND EVENTS.</h3>
+                            </div>
+                            <Link to="/courses" className="text-[#A3FF12] font-headline font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:gap-4 transition-all">
+                                VIEW ALL RESOURCES <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                            </Link>
+                        </div>
+                        <div className="relative flex-1 group overflow-hidden bg-zinc-900 min-h-[400px]">
+                            <img alt="EHS Tooling" className="absolute inset-0 w-full h-full object-cover grayscale brightness-50 group-hover:scale-105 transition-transform duration-700" src="/landing_page/7-responsibility safety officer.webp"/>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            <div className="absolute bottom-0 left-0 p-10">
+                                <h3 className="font-headline text-2xl font-black uppercase mb-4 leading-tight">BRING EVERY CRITICAL EHS TOOL UNDER ONE ROOF.</h3>
+                                <p className="font-body text-zinc-300 text-xs max-w-xs mb-6">One integrated platform. No data gaps. Get back to leading safety, not managing disparate software systems.</p>
+                                <button className="w-10 h-10 rounded-full border border-white flex items-center justify-center group-hover:bg-[#A3FF12] group-hover:border-[#A3FF12] transition-colors">
+                                    <span className="material-symbols-outlined text-white group-hover:text-black text-sm">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="bg-[#2a2825] p-10 flex flex-col justify-between">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="material-symbols-outlined text-[#A3FF12] text-3xl">check_circle</span>
+                                <h3 className="font-headline text-2xl font-black uppercase tracking-tight">TARGET YOUR BIGGEST GAPS WITH THE RIGHT TOOLS.</h3>
+                            </div>
+                            <Link to="/courses" className="text-[#A3FF12] font-headline font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:gap-4 transition-all">
+                                EXPLORE SOLUTIONS <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* Professional Standards Anchor */}
-      <div className="mt-32 pt-12 border-t border-gray-200/50 text-center max-w-4xl mx-auto">
-        <h2 className="headline-serif text-3xl font-light text-text-muted mb-8">Professional Standards</h2>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-tighter text-text-main">
-            <span className="material-symbols-outlined">verified</span>
-            IOSH Certified
-          </div>
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-tighter text-text-main">
-            <span className="material-symbols-outlined">psychology</span>
-            AI Assisted
-          </div>
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-tighter text-text-main">
-            <span className="material-symbols-outlined">workspace_premium</span>
-            ISO 45001
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+        </section>
+    );
 };
 
-// --- Main App ---
+const SpeedOfNow = () => {
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black">
+            <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-12 lg:gap-20">
+                <div className="lg:w-1/2">
+                    <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 leading-none">GET SAFETY AT THE SPEED OF <span className="text-[#A3FF12]">NOW.</span></h2>
+                    <p className="font-body text-zinc-400 text-lg leading-relaxed max-w-xl">
+                        It's not just about moving fast. It's about speed with purpose. AI SHIKSHA transforms your programs from reactive to proactive, ensuring your workforce is site-ready before the shift even starts.
+                    </p>
+                </div>
+                <div className="lg:w-1/2 flex flex-col border-t border-white/10">
+                    <details className="group border-b border-white/10" open>
+                        <summary className="flex items-center justify-between py-8 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-4">
+                                <span className="material-symbols-outlined text-[#A3FF12]">verified</span>
+                                <span className="font-headline text-xl font-bold uppercase tracking-tight">One Platform. Endless Possibilities.</span>
+                            </div>
+                            <span className="material-symbols-outlined transition-transform duration-300 group-open:rotate-45 group-open:text-[#A3FF12]">add</span>
+                        </summary>
+                        <div className="pb-8 pl-12 font-body text-zinc-400 text-sm leading-relaxed">
+                            Unify your OSHA compliance, IOSH certifications, and NEBOSH standards into a single, AI-driven dashboard that tracks every trainee in real-time.
+                        </div>
+                    </details>
+                    <details className="group border-b border-white/10">
+                        <summary className="flex items-center justify-between py-8 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-4">
+                                <span className="material-symbols-outlined text-[#A3FF12]">verified</span>
+                                <span className="font-headline text-xl font-bold uppercase tracking-tight">Intuitive by Design. Made for Speed.</span>
+                            </div>
+                            <span className="material-symbols-outlined transition-transform duration-300 group-open:rotate-45 group-open:text-[#A3FF12]">add</span>
+                        </summary>
+                        <div className="pb-8 pl-12 font-body text-zinc-400 text-sm leading-relaxed">
+                            User interfaces optimized for high-stress industrial environments. No manual needed—training flows naturally from lesson to certification.
+                        </div>
+                    </details>
+                    <details className="group border-b border-white/10">
+                        <summary className="flex items-center justify-between py-8 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-4">
+                                <span className="material-symbols-outlined text-[#A3FF12]">verified</span>
+                                <span className="font-headline text-xl font-bold uppercase tracking-tight">Cut the Drag. Keep the Pace.</span>
+                            </div>
+                            <span className="material-symbols-outlined transition-transform duration-300 group-open:rotate-45 group-open:text-[#A3FF12]">add</span>
+                        </summary>
+                        <div className="pb-8 pl-12 font-body text-zinc-400 text-sm leading-relaxed">
+                            Automate the paperwork. Our AI handles the reporting and audit trails so you can focus on building a zero-harm safety culture.
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const ExpandingSmarterTraining = () => {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const tabs = [
+        { title: "Spot Risks Before They Escalate.", id: 0 },
+        { title: "Simplify Compliance Instantly.", id: 1 },
+        { title: "Focus Where It Matters Most.", id: 2 },
+    ];
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black border-y border-white/5">
+            <div className="max-w-[1400px] mx-auto">
+                <div className="mb-12 md:mb-20">
+                    <span className="font-body text-[#A3FF12] uppercase tracking-[0.4em] text-xs mb-4 font-bold block">VELOCITYAI: THE TRAINING CORE</span>
+                    <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none mb-6">
+                        SMARTER TRAINING, <br/>
+                        <span className="text-[#A3FF12] italic">FASTER COMPLIANCE.</span>
+                    </h2>
+                    <p className="font-body text-zinc-400 text-lg max-w-2xl leading-relaxed">
+                        AI SHIKSHA integrates VelocityAI at its core. It’s built into the tools you use already and trained on real-world industrial safety data.
+                    </p>
+                </div>
+                <div className="flex flex-col lg:flex-row bg-[#151515] border border-white/10 overflow-hidden">
+                    <div className="lg:w-80 flex flex-col divide-y divide-white/5 bg-black">
+                        {tabs.map((tab) => (
+                            <button key={tab.id} onClick={() => setActiveIndex(tab.id)} className={`text-left p-10 hover:bg-zinc-900 transition-colors flex flex-col gap-4 group ${activeIndex === tab.id ? 'bg-zinc-900' : ''}`}>
+                                <span className={`font-headline text-2xl font-black ${activeIndex === tab.id ? 'text-[#A3FF12]' : 'text-white/20'} group-hover:text-[#A3FF12] transition-colors`}>0{tab.id + 1}</span>
+                                <span className="font-headline text-sm font-bold uppercase tracking-widest text-left leading-tight">{tab.title}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex-1 relative min-h-[600px] overflow-hidden bg-black">
+                        <div className={`absolute inset-0 flex flex-col md:flex-row transition-opacity duration-500 ${activeIndex === 0 ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+                            <div className="flex-1 p-12 md:p-16 z-10 flex flex-col justify-center bg-black">
+                                <h3 className="font-headline text-4xl font-black uppercase tracking-tighter mb-6">VALIDATE SKILLS INSTANTLY.</h3>
+                                <p className="font-body text-zinc-300 text-base mb-10 max-w-lg">
+                                    Our Vēlo AI engine reviews incident reports and site performance in real-time. We ensure hidden risks are surfaced long before a near miss turns into a serious harm.
+                                </p>
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-3">
+                                        <span className="material-symbols-outlined text-[#A3FF12] text-lg">add</span>
+                                        <p className="text-xs uppercase tracking-tight font-bold text-zinc-300">Analyze incidents in real time to flag high-risk misses.</p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="material-symbols-outlined text-[#A3FF12] text-lg">add</span>
+                                        <p className="text-xs uppercase tracking-tight font-bold text-zinc-300">Automatically identify hazard types for JSA training.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 relative min-h-[400px] md:min-h-0">
+                                <img src="/landing_page/safety-pro.jpg" className="absolute inset-0 w-full h-full object-cover grayscale brightness-50" alt="" />
+                            </div>
+                        </div>
+                        <div className={`absolute inset-0 flex flex-col md:flex-row transition-opacity duration-500 ${activeIndex === 1 ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+                            <div className="flex-1 p-12 md:p-16 z-10 flex flex-col justify-center bg-black">
+                                <h3 className="font-headline text-4xl font-black uppercase tracking-tighter mb-6">COMPLIANCE MADE EFFORTLESS.</h3>
+                                <p className="font-body text-zinc-300 text-base mb-10 max-w-lg">
+                                    Speed up your documentation by 5x. VelocityAI automates the cross-referencing of IOSH and OSHA standards against your current training status.
+                                </p>
+                            </div>
+                            <div className="flex-1 relative min-h-[300px] md:min-h-0">
+                                <img src="/landing_page/01-How-to-Become-a-Safety-Manager.jpg" className="absolute inset-0 w-full h-full object-cover grayscale" alt="" />
+                            </div>
+                        </div>
+                        <div className={`absolute inset-0 flex flex-col md:flex-row transition-opacity duration-500 ${activeIndex === 2 ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+                            <div className="flex-1 p-12 md:p-16 z-10 flex flex-col justify-center bg-black">
+                                <h3 className="font-headline text-4xl font-black uppercase tracking-tighter mb-6">PRIORITIZE HUMAN SAFETY.</h3>
+                                <p className="font-body text-zinc-300 text-base mb-10 max-w-lg">
+                                    Stop fighting fires and start preventing them. Our LMS uses narrative analysis to identify which teams need immediate skill verification.
+                                </p>
+                            </div>
+                            <div className="flex-1 relative min-h-[300px] md:min-h-0">
+                                <img src="/landing_page/7-responsibility safety officer.webp" className="absolute inset-0 w-full h-full object-cover grayscale" alt="" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const ExpertisePartner = () => {
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black text-white border-y border-white/5">
+            <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                <div className="lg:w-1/2">
+                    <span className="font-headline text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-6 block">EXPERTISE AS A SERVICE</span>
+                    <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 leading-tight">GET A PARTNER IN YOUR <span className="italic underline decoration-[#A3FF12] decoration-8 underline-offset-8">CORNER,</span> NOT JUST A PLATFORM.</h2>
+                    <p className="font-body text-zinc-600 text-lg leading-relaxed mb-10">
+                        Behind our AI technology is a team of certified safety professionals. We don't just hand you the keys to the software; we help you drive the change in your organization. From onboarding to customized NEBOSH modules, we are with you at every step.
+                    </p>
+                    <Link to="/contact">
+                        <button className="bg-white text-black font-headline font-black uppercase tracking-widest px-10 py-5 hover:bg-zinc-200 transition-all flex items-center gap-4">
+                            SPEAK WITH AN EXPERT <span className="material-symbols-outlined">support_agent</span>
+                        </button>
+                    </Link>
+                </div>
+                <div className="lg:w-1/2 relative">
+                    <img alt="Safety Partners" className="w-full h-[300px] md:h-[600px] object-cover grayscale brightness-90 shadow-2xl" src="/landing_page/contact.png"/>
+                    <div className="absolute -bottom-10 -right-10 bg-[#A3FF12] p-12 max-w-xs hidden md:block">
+                        <p className="font-headline text-xl font-black uppercase text-black leading-tight">"THEIR TEAM DIDN'T JUST SELL US A TOOL, THEY BUILT US A CULTURE."</p>
+                        <p className="font-body text-black/60 text-sm mt-4">— HSE DIRECTOR, GLOBAL LOGISTICS</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const MobileApp = () => {
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 bg-black border-t border-white/10">
+            <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
+                <div className="lg:w-1/2">
+                    <h2 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 leading-none">PUT AWARD-WINNING <br/><span className="text-[#A3FF12] italic">MOBILE</span> TO WORK.</h2>
+                    <p className="font-body text-zinc-400 text-lg leading-relaxed mb-10">
+                        Safety doesn't happen at a desk. Our mobile LMS puts certifications, hazard reporting, and skill checks in the pockets of every frontline worker. Even in offline environments, your data stays synced and your compliance stays active.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
+                        <div className="border-l border-[#A3FF12] pl-6">
+                            <span className="font-headline text-3xl font-black text-white block mb-2">OFFLINE</span>
+                            <p className="font-body text-xs text-zinc-500 uppercase tracking-widest">Full functionality without connectivity.</p>
+                        </div>
+                        <div className="border-l border-[#A3FF12] pl-6">
+                            <span className="font-headline text-3xl font-black text-white block mb-2">INSTANT</span>
+                            <p className="font-body text-xs text-zinc-500 uppercase tracking-widest">Real-time notification on safety alerts.</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="lg:w-1/2 flex justify-center items-center">
+                    <div className="relative w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[480px] aspect-[9/16] overflow-hidden shadow-[0_0_100px_rgba(163,255,18,0.15)] bg-black">
+                        <img alt="Mobile App UI" className="absolute inset-0 w-full h-full object-cover grayscale brightness-90 hover:-translate-y-2 hover:grayscale-0 transition-all duration-700" src="/landing_page/mobile.png"/>
+                        <div className="absolute inset-0 bg-[#A3FF12]/5 pointer-events-none mix-blend-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const Metrics = () => {
+    return (
+        <section className="py-16 md:py-32 px-6 md:px-12 border-y border-white/10 bg-black">
+            <div className="max-w-[1920px] mx-auto flex flex-col md:flex-row justify-center items-center gap-16 md:gap-24">
+                <div className="text-center">
+                    <div className="font-headline text-5xl sm:text-7xl font-black text-[#d2ff9a] mb-2 tracking-tighter">850K+</div>
+                    <div className="font-body uppercase tracking-[0.2em] text-xs font-bold text-zinc-500">Courses Completed</div>
+                </div>
+                <div className="text-center">
+                    <div className="font-headline text-5xl sm:text-7xl font-black text-white mb-2 tracking-tighter">1200+</div>
+                    <div className="font-body uppercase tracking-[0.2em] text-xs font-bold text-zinc-500">Indian Enterprises</div>
+                </div>
+                <div className="text-center">
+                    <div className="font-headline text-5xl sm:text-7xl font-black text-[#21e6ff] mb-2 tracking-tighter">100%</div>
+                    <div className="font-body uppercase tracking-[0.2em] text-xs font-bold text-zinc-500">Compliance Guarantee</div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const BottomCTA = () => {
+    return (
+        <section className="my-16 md:my-24 px-6 md:px-12 max-w-[1920px] mx-auto">
+            <div className="bg-[#d2ff9a] p-12 md:p-24 flex flex-col md:flex-row justify-between items-center gap-12 rounded-lg relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <div className="w-full h-full" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #000 1px, transparent 0)", backgroundSize: "24px 24px" }}></div>
+                </div>
+                <div className="z-10 text-center md:text-left text-[#375b00]">
+                    <h2 className="font-headline text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4">START LEARNING <br/>TODAY</h2>
+                    <p className="font-body opacity-80 text-lg max-w-md font-bold">Master industrial intelligence and elevate your safety standards with AI Shiksha.</p>
+                </div>
+                <div className="z-10">
+                    <Link to="/signup">
+                        <button className="bg-black text-white px-12 py-5 font-headline font-black uppercase tracking-widest text-lg hover:bg-zinc-800 transition-colors">START FREE TRIAL</button>
+                    </Link>
+                </div>
+            </div>
+        </section>
+    );
+};
 
 export default function Landing() {
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    useEffect(() => {
+        document.body.style.backgroundColor = 'black';
+        return () => {
+            document.body.style.backgroundColor = '';
+        };
+    }, []);
 
-  return (
-    <div className="min-h-screen bg-surface font-sans text-text-main relative selection:bg-primary/20 bg-white">
-      {/* Global Interactive Mouse Glow */}
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle 800px at var(--mouse-x, 50vw) var(--mouse-y, 50vh), rgba(70, 72, 212, 0.08) 0%, rgba(161, 46, 112, 0.03) 40%, transparent 80%)"
-        }}
-      />
-      
-      {/* Fixed Navbar */}
-      <UnifiedNavbar />
-
-      <div className="relative z-10 hidden md:block">
-        {/* Bridging Atmospheric Gradient Background between Hero & Categories */}
-        <div className="absolute top-[80vh] left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] opacity-30 pointer-events-none blur-[120px] -z-10">
-          <div className="absolute top-[0%] left-[10%] w-[500px] h-[500px] bg-primary rounded-full mix-blend-multiply"></div>
-          <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] bg-[#a12e70] rounded-full mix-blend-multiply"></div>
+    return (
+        <div className="min-h-screen bg-black font-body text-white selection:bg-[#d2ff9a] selection:text-[#375b00] overflow-x-hidden">
+            <UnifiedNavbar />
+            <main>
+               <Hero />
+               <LogoMarquee />
+               <FourPaths />
+               <FeaturedCourses />
+               <SpeedOfNow />
+               <ExpandingSmarterTraining />
+               <ExpertisePartner />
+               <MobileApp />
+               <Metrics />
+               <BottomCTA />
+            </main>
+            <Footer />
         </div>
-      </div>
-
-      <div className="relative z-10 w-full overflow-x-hidden">
-        <Hero />
-        <Categories />
-        <FeaturedCourses />
-        <WhyChooseUs />
-        <Testimonials />
-        <Footer />
-      </div>
-    </div>
-  );
+    );
 }

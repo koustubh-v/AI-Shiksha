@@ -63,15 +63,18 @@ export default function Login() {
   const primaryColor = branding.primary_color || "#2d2f31";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-white via-primary/5 to-primary/10 py-12 px-4 sm:px-6 lg:px-8 font-sans relative overflow-hidden">
-      {/* Ambient Depth Background Blobs */}
-      <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-primary opacity-[0.05] rounded-full blur-[100px] mix-blend-multiply pointer-events-none -z-10"></div>
-      <div className="absolute bottom-[10%] right-[20%] w-[600px] h-[600px] bg-[#a12e70] opacity-[0.04] rounded-full blur-[120px] mix-blend-multiply pointer-events-none -z-10"></div>
+    <div className="flex min-h-screen font-sans bg-white">
+      {/* Left side Image Container */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-zinc-100">
+        <img src="/landing_page/login.jpg" alt="Welcome to the Platform" className="absolute inset-0 w-full h-full object-cover" />
+      </div>
 
-      <div className="w-full max-w-md glass-card bg-white/60 p-8 sm:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-500 border border-gray-100/50 relative z-10">
+      {/* Right side Form Container */}
+      <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-white relative">
+        <div className="w-full max-w-[420px] mx-auto animate-in fade-in zoom-in-95 duration-500">
         
         {/* Back Link */}
-        <div className="mb-8 -mt-2">
+        <div className="mb-12">
           <Link 
             to="/" 
             className="inline-flex items-center text-xs font-bold text-text-muted hover:text-primary transition-colors tracking-widest uppercase"
@@ -82,27 +85,27 @@ export default function Login() {
         </div>
 
         {/* Branding */}
-        <div className="flex flex-col items-center mb-10">
-          <Link to="/" className="flex flex-col items-center gap-4 hover:opacity-90 transition-opacity">
+        <div className="flex flex-col items-start mb-10">
+          <Link to="/" className="flex flex-col items-start gap-4 hover:opacity-90 transition-opacity mb-4">
             {branding.logo_url ? (
               <img 
                 src={getImageUrl(branding.logo_url)} 
                 alt={`${branding.name} Logo`} 
-                className="h-12 w-auto object-contain drop-shadow-sm"
+                className="h-10 w-auto object-contain"
               />
             ) : (
               <div 
-                className="flex h-12 w-12 items-center justify-center rounded-xl shadow-sm"
+                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm"
                 style={{ backgroundColor: primaryColor }}
               >
-                <GraduationCap className="h-6 w-6 text-white" />
+                <GraduationCap className="h-5 w-5 text-white" />
               </div>
             )}
-            <h1 className="headline-serif text-3xl font-light text-text-main tracking-tight text-center">
-              Welcome Back
-            </h1>
           </Link>
-          <p className="mt-3 text-sm text-text-muted text-center font-light">
+          <h1 className="headline-serif text-3xl font-bold text-zinc-900 tracking-tight">
+            Welcome Back
+          </h1>
+          <p className="mt-2 text-sm text-zinc-500 font-medium">
             Securely access your professional workspace.
           </p>
         </div>
@@ -110,7 +113,7 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-text-muted ml-1">Email Protocol</Label>
+            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-zinc-500">Email Protocol</Label>
             <Input
               id="email"
               type="email"
@@ -119,14 +122,14 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
-              className="h-12 rounded-xl border border-gray-200 bg-white/70 px-4 focus:bg-white focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all shadow-sm"
+              className="h-14 rounded-xl border border-zinc-200 bg-white px-4 focus:bg-white focus:ring-2 focus:ring-offset-0 focus:border-zinc-300 transition-all shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
               style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
             />
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between ml-1">
-              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-text-muted">Security Key</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-zinc-500">Security Key</Label>
               <Link 
                 to="/forgot-password" 
                 className="text-xs font-bold hover:underline transition-colors"
@@ -142,7 +145,7 @@ export default function Login() {
                 placeholder="Enter your security key"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pr-12 h-12 rounded-xl border border-gray-200 bg-white/70 px-4 focus:bg-white focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all shadow-sm"
+                className="pr-12 h-14 rounded-xl border border-zinc-200 bg-white px-4 focus:bg-white focus:ring-2 focus:ring-offset-0 focus:border-zinc-300 transition-all shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
                 style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
                 required
                 disabled={isLoading}
@@ -150,7 +153,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100/50"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-zinc-400 hover:text-zinc-600 transition-colors rounded-full"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -221,8 +224,8 @@ export default function Login() {
         </form>
 
         {/* Footer */}
-        <div className="mt-10 text-center pt-6 border-t border-gray-200/50">
-          <p className="text-sm font-light text-text-muted">
+        <div className="mt-8">
+          <p className="text-sm font-medium text-zinc-500">
             New to the ecosystem?{" "}
             <Link 
               to="/signup" 
@@ -233,6 +236,7 @@ export default function Login() {
             </Link>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

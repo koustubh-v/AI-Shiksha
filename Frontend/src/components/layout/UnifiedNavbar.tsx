@@ -76,19 +76,19 @@ export default function UnifiedNavbar() {
     const isLanding = location.pathname === "/";
 
     const navContent = (
-        <div className={`w-full flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] h-16 ${!isLanding && "px-4 sm:px-6"}`}>
+        <div className={`relative w-full flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] h-16 ${!isLanding && "px-4 sm:px-6"}`}>
             {/* Left Section: Logo & Explore */}
                 <div className="flex items-center gap-4 md:gap-8">
                     {/* Mobile Menu Trigger */}
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="md:hidden">
-                                <Menu className="h-6 w-6 text-text-main" />
+                            <Button variant="ghost" size="icon" className="md:hidden hover:bg-white/10">
+                                <Menu className="h-6 w-6 text-white" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-[300px] p-0">
-                            <div className="p-4 border-b">
-                                <div className="flex items-center gap-2 font-bold text-xl text-primary headline-serif">
+                        <SheetContent side="left" className="w-[300px] p-0 bg-[#0e0e0e] border-[#262626] font-body text-white">
+                            <div className="p-4 border-b border-[#262626]">
+                                <div className="flex items-center gap-2 font-black text-xl text-[#d2ff9a] font-headline">
                                     {branding.favicon_url || branding.logo_url ? (
                                         <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-6 w-6 object-cover rounded-md" />
                                     ) : (
@@ -97,14 +97,14 @@ export default function UnifiedNavbar() {
                                     <span>{branding.lms_name}</span>
                                 </div>
                             </div>
-                            <div className="p-4 space-y-4 font-sans">
-                                <Link to="/" className="block py-2 font-light text-text-main hover:text-primary">Home</Link>
-                                <Link to="/courses" className="block py-2 font-light text-text-main hover:text-primary">All Courses</Link>
+                            <div className="p-4 space-y-4 font-body">
+                                <Link to="/" className="block py-2 font-light text-white/70 hover:text-white transition-colors">Home</Link>
+                                <Link to="/courses" className="block py-2 font-light text-white/70 hover:text-white transition-colors">All Courses</Link>
                                 <div className="py-2">
-                                    <h3 className="font-bold mb-2 text-[10px] uppercase tracking-widest text-text-muted">Categories</h3>
+                                    <h3 className="font-bold mb-2 text-[10px] uppercase tracking-widest text-white/40">Categories</h3>
                                     <div className="pl-4 space-y-2">
                                         {categories.map((cat) => (
-                                            <Link key={cat.id} to={`/courses?category=${cat.name}`} className="block py-1 text-sm font-light text-text-muted hover:text-primary">
+                                            <Link key={cat.id} to={`/courses?category=${cat.name}`} className="block py-1 text-sm font-light text-white/60 hover:text-white transition-colors">
                                                 {cat.name}
                                             </Link>
                                         ))}
@@ -114,37 +114,39 @@ export default function UnifiedNavbar() {
                         </SheetContent>
                     </Sheet>
 
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 group hover:opacity-90 transition-opacity">
-                        <div className="overflow-hidden flex items-center justify-center">
+                    {/* Logo / Brand Name */}
+                    <Link to="/" className="flex items-center gap-2 group hover:opacity-90 transition-opacity absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+                        {/* Icon - Desktop Only */}
+                        <div className="hidden md:flex overflow-hidden items-center justify-center">
                             {branding.favicon_url || branding.logo_url ? (
                                 <img src={getImageUrl((branding.favicon_url || branding.logo_url) as string)} alt={branding.lms_name} className="h-8 w-8 object-contain drop-shadow-sm" />
                             ) : (
-                                <GraduationCap className="h-8 w-8 text-primary drop-shadow-sm" />
+                                <GraduationCap className="h-8 w-8 text-[#d2ff9a] drop-shadow-sm" />
                             )}
                         </div>
-                        <span className="hidden sm:block headline-serif text-xl font-light text-text-main tracking-tight">{branding.lms_name}</span>
+                        {/* LMS Name - Centered on mobile, normal flow on desktop */}
+                        <span className="font-headline text-lg md:text-xl font-black text-[#d2ff9a] tracking-tight uppercase whitespace-nowrap">{branding.lms_name}</span>
                     </Link>
 
                     {/* Explore Button (Desktop) */}
                     <div className="hidden md:block relative group">
-                        <button className="headline-serif text-sm font-light text-text-main hover:text-primary py-5 px-2 flex items-center gap-1 transition-colors">
+                        <button className="font-headline text-sm font-bold uppercase tracking-widest text-white/70 hover:text-white py-5 px-2 flex items-center gap-1 transition-colors">
                             Explore <ChevronDown className="w-4 h-4 opacity-50" />
                         </button>
                         {/* Dropdown */}
-                        <div className="absolute top-16 left-0 w-64 bg-white border border-gray-100 shadow-xl rounded-b-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 overflow-hidden font-sans">
+                        <div className="absolute top-16 left-0 w-64 bg-[#1a1919] border border-white/10 shadow-2xl rounded-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 overflow-hidden font-body">
                             <div className="py-2">
                                 {categories.map((cat) => (
                                     <Link
                                         key={cat.id}
                                         to={`/courses?category=${cat.name}`}
-                                        className="block px-4 py-2 text-sm font-light text-text-main hover:bg-primary/5 hover:text-primary transition-colors"
+                                        className="block px-6 py-3 text-sm font-light text-white/70 hover:bg-[#262626] hover:text-white transition-colors"
                                     >
                                         {cat.name}
                                     </Link>
                                 ))}
-                                {categories.length > 0 && <div className="border-t border-gray-50 my-1"></div>}
-                                <Link to="/courses" className="block px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-primary hover:bg-primary/5 transition-colors">
+                                {categories.length > 0 && <div className="border-t border-white/5 my-2"></div>}
+                                <Link to="/courses" className="block px-6 py-3 text-[10px] tracking-widest uppercase font-bold text-[#d2ff9a] hover:bg-[#262626] transition-colors">
                                     View All Courses
                                 </Link>
                             </div>
@@ -156,12 +158,12 @@ export default function UnifiedNavbar() {
                 {/* Hide search on specific pages */}
                 {!['/courses', '/cart', '/checkout'].some(path => location.pathname.startsWith(path)) && (
                     <div className="flex-1 max-w-2xl hidden md:block">
-                        <form onSubmit={handleSearch} className="relative group/search">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 transition-colors group-focus-within/search:text-primary" />
+                        <form onSubmit={handleSearch} className="relative group/search flex items-center bg-[#262626]/50 rounded-full px-4 py-1.5 border border-white/10 w-64">
+                            <Search className="text-slate-400 w-4 h-4 mr-2 transition-colors group-focus-within/search:text-white" />
                             <input
                                 type="text"
-                                placeholder="Search for anything..."
-                                className="w-full pl-12 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm font-light text-text-main bg-white/50 focus:bg-white transition-all shadow-sm"
+                                placeholder="Search..."
+                                className="bg-transparent border-none focus:ring-0 text-white placeholder:text-slate-500 text-xs w-full font-body outline-none"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -172,16 +174,11 @@ export default function UnifiedNavbar() {
                 {/* Right Section: Cart & Auth */}
                 <div className="flex items-center gap-2 sm:gap-4">
 
-                    {/* Mobile Search Toggle */}
-                    <Button variant="ghost" size="icon" className="md:hidden">
-                        <Search className="h-5 w-5 text-text-main" />
-                    </Button>
-
                     {/* Cart */}
-                    <Link to="/cart" className="relative p-2 hover:bg-primary/5 hover:text-primary rounded-full transition-colors group">
-                        <ShoppingCart className="h-5 w-5 text-text-main group-hover:text-primary transition-colors" />
+                    <Link to="/cart" className="hidden md:flex relative p-2 hover:bg-white/10 hover:text-[#d2ff9a] rounded-full transition-colors group">
+                        <ShoppingCart className="h-5 w-5 text-slate-400 group-hover:text-[#d2ff9a] transition-colors" />
                         {items.length > 0 && (
-                            <span className="absolute top-0 right-0 h-4 w-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">
+                            <span className="absolute top-0 right-0 h-4 w-4 bg-[#d2ff9a] text-black text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">
                                 {items.length}
                             </span>
                         )}
@@ -189,14 +186,14 @@ export default function UnifiedNavbar() {
 
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
-                            <Link to={getDashboardLink()} className="hidden md:flex items-center gap-2 headline-serif text-sm font-light text-text-main hover:text-primary px-3 py-2 hover:bg-primary/5 rounded-full transition-colors">
+                            <Link to={getDashboardLink()} className="hidden md:flex items-center gap-2 font-headline uppercase tracking-widest text-xs font-bold text-slate-400 hover:text-white px-3 py-2 hover:bg-white/10 rounded-full transition-colors">
                                 <LayoutDashboard className="w-4 h-4 opacity-50" />
                                 Dashboard
                             </Link>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="relative w-9 h-9 rounded-full overflow-hidden hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 border border-gray-100 shadow-sm">
+                                    <button className="relative w-9 h-9 rounded-full overflow-hidden hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#d2ff9a] focus:ring-offset-2 focus:ring-offset-[#0e0e0e] border border-white/10 shadow-sm">
                                         {user?.avatar_url ? (
                                             <img
                                                 src={user.avatar_url}
@@ -204,41 +201,44 @@ export default function UnifiedNavbar() {
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <div className="w-full h-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                                            <div className="w-full h-full bg-[#262626] text-white flex items-center justify-center font-bold text-sm">
                                                 {user?.name?.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl p-2 font-sans border border-gray-100 shadow-xl">
+                                <DropdownMenuContent align="end" className="w-56 mt-2 rounded-sm p-2 font-body border border-white/10 shadow-2xl bg-[#1a1919] text-white">
                                     <DropdownMenuLabel>
                                         <div className="flex flex-col space-y-1">
-                                            <p className="font-bold text-sm tracking-tight text-text-main">{user?.name}</p>
-                                            <p className="text-xs text-text-muted truncate font-light tracking-wide">{user?.email}</p>
+                                            <p className="font-bold text-sm tracking-tight text-white">{user?.name}</p>
+                                            <p className="text-xs text-slate-400 truncate font-light tracking-wide">{user?.email}</p>
                                         </div>
                                     </DropdownMenuLabel>
-                                    <DropdownMenuSeparator className="bg-gray-100" />
-                                    <DropdownMenuItem onClick={() => navigate("/dashboard/settings")} className="text-sm font-light rounded-lg cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors">
+                                    <DropdownMenuSeparator className="bg-white/10" />
+                                    <DropdownMenuItem onClick={() => navigate("/dashboard/settings")} className="text-sm font-light rounded-sm cursor-pointer hover:bg-[#262626] hover:text-white transition-colors">
                                         <Settings className="mr-2 h-4 w-4" /> Settings
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator className="bg-gray-100" />
-                                    <DropdownMenuItem onClick={logout} className="text-red-500 font-bold tracking-wide text-xs uppercase cursor-pointer rounded-lg hover:bg-red-50 transition-colors">
+                                    <DropdownMenuSeparator className="bg-white/10" />
+                                    <DropdownMenuItem onClick={logout} className="text-red-400 font-bold tracking-wide text-xs uppercase cursor-pointer rounded-sm hover:bg-red-500/10 transition-colors">
                                         <LogOut className="mr-2 h-4 w-4" /> Log out
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <Link to="/login">
-                                <Button variant="ghost" className="font-bold text-[10px] tracking-widest uppercase text-text-main hover:text-primary hover:bg-primary/5 rounded-full transition-colors">
-                                    Log in
-                                </Button>
+                        <div className="flex items-center gap-2 font-headline uppercase tracking-widest text-sm">
+                            <Link to="/login" className="md:hidden p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center">
+                                <User className="h-5 w-5 text-slate-400 hover:text-white transition-colors" />
                             </Link>
-                            <Link to="/signup">
-                                <InteractiveHoverButton className="h-9 px-6 hidden sm:flex text-[10px] tracking-widest uppercase">
+                            <Link to="/login" className="hidden md:block">
+                                <button className="text-slate-400 hover:text-white transition-colors px-4 py-2 font-bold text-xs uppercase">
+                                    Log in
+                                </button>
+                            </Link>
+                            <Link to="/signup" className="hidden md:block">
+                                <button className="bg-[#d2ff9a] text-black px-6 py-2 font-bold tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all duration-150 rounded-[0.125rem]">
                                     Sign up
-                                </InteractiveHoverButton>
+                                </button>
                             </Link>
                         </div>
                     )}
@@ -248,8 +248,8 @@ export default function UnifiedNavbar() {
 
     if (isLanding) {
         return (
-            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled ? 'top-0' : 'top-4 md:top-6'}`}>
-                <nav className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${isScrolled ? 'w-full h-16 bg-white/70 backdrop-blur-2xl shadow-sm rounded-none px-6 md:px-8 border-b border-white/20' : 'glass-nav-pill h-16 w-[calc(100%-2rem)] md:w-[calc(100%-3rem)] max-w-5xl rounded-full px-4 sm:px-6 shadow-xl border border-white/40'}`}>
+            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] top-0`}>
+                <nav className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center w-full h-16 bg-[#0e0e0e]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl px-6 md:px-8`}>
                     {navContent}
                 </nav>
             </div>
@@ -257,7 +257,7 @@ export default function UnifiedNavbar() {
     }
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-[#d1d7dc] ${isScrolled ? "shadow-md" : ""}`}>
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#0e0e0e] border-b border-white/10 ${isScrolled ? "shadow-2xl" : ""}`}>
             {navContent}
         </nav>
     );

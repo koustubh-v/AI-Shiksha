@@ -49,11 +49,11 @@ export default function Footer() {
 
   if (isLoading) {
     return (
-      <footer className="w-full rounded-t-[3rem] bg-white pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-8 flex items-center justify-center">
+      <footer className="w-full bg-[#0e0e0e] border-t border-[#484847]/15 py-12">
+        <div className="max-w-7xl mx-auto px-10 flex items-center justify-center">
           <div className="animate-pulse flex items-center gap-2">
-            <div className="h-8 w-8 bg-gray-200 rounded"></div>
-            <div className="h-6 w-32 bg-gray-200 rounded"></div>
+            <div className="h-8 w-8 bg-[#262626] rounded"></div>
+            <div className="h-6 w-32 bg-[#262626] rounded"></div>
           </div>
         </div>
       </footer>
@@ -61,65 +61,73 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-gradient-to-b from-transparent via-primary/5 to-primary/10 flex flex-col items-center gap-8 w-full px-8 text-center pt-32 pb-32 relative border-t border-gray-100">
-      <div className="headline-serif text-2xl md:text-3xl font-light text-text-main flex flex-col items-center gap-4">
-        {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={siteTitle} className="h-10 object-contain drop-shadow-sm" />
-        ) : branding.logo_url ? (
-          <img src={branding.logo_url} alt={siteTitle} className="h-10 object-contain drop-shadow-sm" />
-        ) : (
-          <GraduationCap className="h-10 w-10 text-primary drop-shadow-sm" />
-        )}
-        {siteTitle}
-      </div>
-      <nav className="flex flex-wrap justify-center gap-6 md:gap-8 max-w-2xl relative z-10">
-        {customMenus.map((link, idx) => (
-          <Link
-            key={idx}
-            to={link.url}
-            className="text-sm font-light text-text-muted hover:text-primary hover:underline decoration-primary/30 underline-offset-4 transition-all duration-200"
-          >
-            {link.label}
-          </Link>
-        ))}
-        
-        {showSupport && publishedPages.map((page) => (
-          <Link
-            key={page.slug}
-            to={`/p/${page.slug}`}
-            className="text-sm font-light text-text-muted hover:text-primary hover:underline decoration-primary/30 underline-offset-4 transition-all duration-200"
-          >
-            {page.title}
-          </Link>
-        ))}
-        
-        {showSupport && publishedPages.length === 0 && (
-          <Link to="/contact" className="text-sm font-light text-text-muted hover:text-primary hover:underline decoration-primary/30 underline-offset-4 transition-all duration-200">
-            Contact Us
-          </Link>
-        )}
-      </nav>
-
-      {socialLinks.length > 0 && (
-        <div className="flex gap-4 mt-4 relative z-10">
-          {socialLinks.map((social, idx) => (
-            <a
-              key={idx}
-              href={social.url}
-              target="_blank"
-              rel="noreferrer"
-              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] uppercase font-bold text-text-muted shadow-sm hover:text-primary hover:-translate-y-1 hover:shadow-md transition-all"
-              title={social.platform}
-            >
-              {getSocialIcon(social.platform)}
-            </a>
-          ))}
+    <footer className="w-full bg-[#0e0e0e] border-t border-[#484847]/15 py-12">
+      <div className="max-w-7xl mx-auto px-10 flex flex-col md:flex-row justify-between items-center gap-6 font-body text-xs tracking-tight">
+        <div className="flex flex-col items-center md:items-start gap-4">
+          <div className="flex items-center gap-3">
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={siteTitle} className="h-6 object-contain" />
+            ) : branding.logo_url ? (
+              <img src={branding.logo_url} alt={siteTitle} className="h-6 object-contain" />
+            ) : null}
+            <div className="font-headline font-bold text-[#d2ff9a] text-lg uppercase tracking-widest">{siteTitle}</div>
+          </div>
+          <p className="text-slate-500 text-center md:text-left max-w-sm">
+            Leading the digital transformation of industrial safety training through authoritative AI and comprehensive learning management solutions.
+          </p>
         </div>
-      )}
-
-      <p className="text-sm font-light text-text-muted mt-8 opacity-80">
-        {copyrightText}
-      </p>
+        
+        <div className="flex flex-col items-center md:items-end gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
+            {customMenus.map((link, idx) => (
+              <Link
+                key={idx}
+                to={link.url}
+                className="text-[#d2ff9a] font-bold hover:text-[#21e6ff] transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+            
+            {showSupport && publishedPages.map((page) => (
+              <Link
+                key={page.slug}
+                to={`/p/${page.slug}`}
+                className="text-slate-500 hover:text-[#21e6ff] transition-colors"
+              >
+                {page.title}
+              </Link>
+            ))}
+            
+            {showSupport && publishedPages.length === 0 && (
+              <Link to="/contact" className="text-slate-500 hover:text-[#21e6ff] transition-colors">
+                Contact Us
+              </Link>
+            )}
+          </div>
+  
+          {socialLinks.length > 0 && (
+            <div className="flex gap-4">
+              {socialLinks.map((social, idx) => (
+                <a
+                  key={idx}
+                  href={social.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-[#1a1919] border border-white/10 flex items-center justify-center text-[10px] text-slate-400 hover:text-[#d2ff9a] hover:border-[#d2ff9a]/30 transition-all"
+                  title={social.platform}
+                >
+                  {getSocialIcon(social.platform)}
+                </a>
+              ))}
+            </div>
+          )}
+          
+          <div className="text-slate-500 uppercase tracking-tighter opacity-80">
+            {copyrightText}
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }

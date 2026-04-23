@@ -14,9 +14,10 @@ export class SeoController {
     @Headers('x-original-uri') originalUri: string,
   ) {
     const domain = host ? host.split(':')[0] : 'localhost';
-    const url = originalUri || req.url || '/';
+    // X-Original-URI is set by Caddy with the original request path
+    const url = originalUri || '/';
     const html = await this.seoService.generateBotHtml(domain, url);
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   }
 

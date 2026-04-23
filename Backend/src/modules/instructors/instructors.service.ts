@@ -263,7 +263,7 @@ export class InstructorsService {
         students: totalStudents,
         revenue: totalRevenue,
         rating: parseFloat(averageRating),
-        status: 'verified', // Mocking status
+        status: instructor.verified ? 'verified' : 'pending',
         avatar: instructor.user.avatar_url,
       };
     });

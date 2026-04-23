@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,20 +7,39 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Globe, Share2, Code, Save, FileText, Image } from "lucide-react";
-import { Settings as PlatformSettingsAPI } from "@/lib/api";
+import { Search, Globe, Share2, Code, Save, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Settings as PlatformSettingsAPI, Upload as UploadAPI } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useFranchise } from "@/contexts/FranchiseContext";
+import { getImageUrl } from "@/lib/utils";
 
 export default function SEOSettingsPage() {
   const { toast } = useToast();
   const { refresh: refreshFranchise } = useFranchise();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
+  // General SEO
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [seoKeywords, setSeoKeywords] = useState("");
+
+  // Social / Open Graph
+  const [ogTitle, setOgTitle] = useState("");
+  const [ogDescription, setOgDescription] = useState("");
+  const [ogImage, setOgImage] = useState("");
+  const [twitterCard, setTwitterCard] = useState("summary_large_image");
+  const [twitterHandle, setTwitterHandle] = useState("");
+
+  // Technical SEO
+  const [generateSitemap, setGenerateSitemap] = useState(true);
+  const [robotsTxt, setRobotsTxt] = useState(true);
+  const [schemaMarkup, setSchemaMarkup] = useState(true);
+  const [canonicalTags, setCanonicalTags] = useState(true);
+  const [customHeadScripts, setCustomHeadScripts] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = async () => {
     try {
@@ -28,6 +47,18 @@ export default function SEOSettingsPage() {
       setSeoTitle(data.seo_title || "");
       setSeoDescription(data.seo_description || "");
       setSeoKeywords(data.seo_keywords || "");
+      
+      setOgTitle(data.seo_og_title || "");
+      setOgDescription(data.seo_og_description || "");
+      setOgImage(data.seo_og_image || "");
+      setTwitterCard(data.seo_twitter_card || "summary_large_image");
+      setTwitterHandle(data.seo_twitter_handle || "");
+      
+      setGenerateSitemap(data.seo_technical_sitemap ?? true);
+      setRobotsTxt(data.seo_technical_robots_txt ?? true);
+      setSchemaMarkup(data.seo_technical_schema_markup ?? true);
+      setCanonicalTags(data.seo_technical_canonical_tags ?? true);
+      setCustomHeadScripts(data.seo_custom_head_scripts || "");
     } catch (error) {
       toast({ title: "Error", description: "Failed to load SEO settings", variant: "destructive" });
     } finally {
@@ -46,6 +77,16 @@ export default function SEOSettingsPage() {
         seo_title: seoTitle,
         seo_description: seoDescription,
         seo_keywords: seoKeywords,
+        seo_og_title: ogTitle,
+        seo_og_description: ogDescription,
+        seo_og_image: ogImage,
+        seo_twitter_card: twitterCard,
+        seo_twitter_handle: twitterHandle,
+        seo_technical_sitemap: generateSitemap,
+        seo_technical_robots_txt: robotsTxt,
+        seo_technical_schema_markup: schemaMarkup,
+        seo_technical_canonical_tags: canonicalTags,
+        seo_custom_head_scripts: customHeadScripts,
       });
       await refreshFranchise();
       toast({ title: "Success", description: "SEO settings updated successfully." });
@@ -55,6 +96,32 @@ export default function SEOSettingsPage() {
       setSaving(false);
     }
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const result = await UploadAPI.uploadFile(file);
+      setOgImage(result.url);
+      toast({ title: "Success", description: "OG Image uploaded successfully." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to upload image.", variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminDashboardLayout title="SEO Settings" subtitle="Optimize your platform for search engines">
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
 
   return (
     <AdminDashboardLayout title="SEO Settings" subtitle="Optimize your platform for search engines">
@@ -107,7 +174,8 @@ export default function SEOSettingsPage() {
                   <p className="text-sm text-muted-foreground">Separate keywords with commas</p>
                 </div>
                 <Button onClick={handleSaveSEO} disabled={loading || saving} className="gap-2">
-                  <Save className="h-4 w-4" /> Save SEO Settings
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save General Settings
                 </Button>
               </CardContent>
             </Card>
@@ -124,39 +192,79 @@ export default function SEOSettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label>OG Title</Label>
-                  <Input defaultValue="LearnAI - AI-Powered Learning Platform" />
+                  <Input 
+                    value={ogTitle}
+                    onChange={(e) => setOgTitle(e.target.value)}
+                    placeholder="Will fallback to General Site Title if empty" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>OG Description</Label>
                   <Textarea
-                    defaultValue="Transform your learning journey with AI-powered courses and personalized learning paths."
+                    value={ogDescription}
+                    onChange={(e) => setOgDescription(e.target.value)}
+                    placeholder="Will fallback to General Meta Description if empty"
                     rows={2}
                   />
                 </div>
                 <div className="space-y-4">
                   <Label>OG Image</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground mb-2">Recommended: 1200x630 pixels</p>
-                    <Button variant="outline" size="sm">Upload Image</Button>
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center flex flex-col items-center justify-center">
+                    {ogImage ? (
+                      <div className="mb-4 relative group w-full max-w-sm rounded overflow-hidden">
+                        <img src={getImageUrl(ogImage)} alt="OG Preview" className="w-full h-auto object-cover" />
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                           <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+                             Change Image
+                           </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground mb-2">Recommended: 1200x630 pixels</p>
+                      </>
+                    )}
+                    
+                    {!ogImage && (
+                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}>
+                        {uploadingImage ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "Upload Image"}
+                      </Button>
+                    )}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      ref={fileInputRef} 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                    />
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Twitter Card Type</Label>
-                    <select className="w-full h-10 px-3 rounded-md border border-input bg-background">
-                      <option>summary_large_image</option>
-                      <option>summary</option>
-                      <option>app</option>
+                    <select 
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      value={twitterCard}
+                      onChange={(e) => setTwitterCard(e.target.value)}
+                    >
+                      <option value="summary_large_image">summary_large_image</option>
+                      <option value="summary">summary</option>
+                      <option value="app">app</option>
                     </select>
                   </div>
                   <div className="space-y-2">
                     <Label>Twitter Handle</Label>
-                    <Input defaultValue="@learnai" />
+                    <Input 
+                      value={twitterHandle}
+                      onChange={(e) => setTwitterHandle(e.target.value)}
+                      placeholder="@yourhandle" 
+                    />
                   </div>
                 </div>
-                <Button className="gap-2">
-                  <Save className="h-4 w-4" /> Save Social Settings
+                <Button onClick={handleSaveSEO} disabled={saving} className="gap-2">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Social Settings
                 </Button>
               </CardContent>
             </Card>
@@ -176,28 +284,28 @@ export default function SEOSettingsPage() {
                     <Label className="font-medium">Generate Sitemap</Label>
                     <p className="text-sm text-muted-foreground">Automatically generate and update sitemap.xml</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={generateSitemap} onCheckedChange={setGenerateSitemap} />
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <Label className="font-medium">Robots.txt</Label>
                     <p className="text-sm text-muted-foreground">Allow search engines to index your site</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={robotsTxt} onCheckedChange={setRobotsTxt} />
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <Label className="font-medium">Schema Markup</Label>
                     <p className="text-sm text-muted-foreground">Add structured data for rich snippets</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={schemaMarkup} onCheckedChange={setSchemaMarkup} />
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <Label className="font-medium">Canonical Tags</Label>
                     <p className="text-sm text-muted-foreground">Prevent duplicate content issues</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={canonicalTags} onCheckedChange={setCanonicalTags} />
                 </div>
                 <div className="space-y-2">
                   <Label>Custom Head Scripts</Label>
@@ -205,10 +313,13 @@ export default function SEOSettingsPage() {
                     placeholder="<!-- Add custom scripts like Google Analytics, etc. -->"
                     rows={4}
                     className="font-mono text-sm"
+                    value={customHeadScripts}
+                    onChange={(e) => setCustomHeadScripts(e.target.value)}
                   />
                 </div>
-                <Button className="gap-2">
-                  <Save className="h-4 w-4" /> Save Technical Settings
+                <Button onClick={handleSaveSEO} disabled={saving} className="gap-2">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Technical Settings
                 </Button>
               </CardContent>
             </Card>

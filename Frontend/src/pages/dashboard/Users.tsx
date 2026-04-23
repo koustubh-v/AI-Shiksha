@@ -662,10 +662,6 @@ export default function UsersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="gap-2" onClick={() => handleSendEmail(user)}>
-                                <Mail className="h-4 w-4" />
-                                Send Email
-                              </DropdownMenuItem>
                               <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
                                 <Shield className="h-4 w-4" />
                                 Change Role
@@ -724,10 +720,6 @@ export default function UsersPage() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem className="gap-2" onClick={() => handleSendEmail(user)}>
-                                      <Mail className="h-4 w-4" />
-                                      Send Email
-                                    </DropdownMenuItem>
                                     <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
                                       <Shield className="h-4 w-4" />
                                       Change Role

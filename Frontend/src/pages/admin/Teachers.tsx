@@ -26,9 +26,10 @@ import {
 import { useAdminInstructors } from "@/hooks/useAdminInstructors";
 import { Users as UsersAPI } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function TeachersPage() {
-  const { instructors: teachers, isLoading } = useAdminInstructors();
+  const { instructors: teachers, isLoading, refetch } = useAdminInstructors();
   const [stats, setStats] = useState({
     totalTeachers: 0,
     totalCourses: 0,
@@ -194,10 +195,25 @@ export default function TeachersPage() {
                           <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>View Courses</DropdownMenuItem>
-                          <DropdownMenuItem>Revenue Details</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Suspend</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            // Dummy View Profile
+                          }}>View Profile</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                            onClick={async () => {
+                              if (confirm("Are you sure you want to delete this teacher?")) {
+                                try {
+                                  await UsersAPI.delete(teacher.id);
+                                  toast.success("Teacher deleted successfully");
+                                  refetch();
+                                } catch (error) {
+                                  toast.error("Failed to delete teacher");
+                                }
+                              }
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

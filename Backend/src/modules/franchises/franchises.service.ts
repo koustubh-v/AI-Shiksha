@@ -74,6 +74,16 @@ export class FranchisesService {
                 seo_title: true,
                 seo_description: true,
                 seo_keywords: true,
+                seo_og_title: true,
+                seo_og_description: true,
+                seo_og_image: true,
+                seo_twitter_card: true,
+                seo_twitter_handle: true,
+                seo_technical_sitemap: true,
+                seo_technical_robots_txt: true,
+                seo_technical_schema_markup: true,
+                seo_technical_canonical_tags: true,
+                seo_custom_head_scripts: true,
             },
         });
 
@@ -99,6 +109,16 @@ export class FranchisesService {
                     seo_title: true,
                     seo_description: true,
                     seo_keywords: true,
+                    seo_og_title: true,
+                    seo_og_description: true,
+                    seo_og_image: true,
+                    seo_twitter_card: true,
+                    seo_twitter_handle: true,
+                    seo_technical_sitemap: true,
+                    seo_technical_robots_txt: true,
+                    seo_technical_schema_markup: true,
+                    seo_technical_canonical_tags: true,
+                    seo_custom_head_scripts: true,
                 },
             });
         }
@@ -119,6 +139,16 @@ export class FranchisesService {
                 seo_title: null,
                 seo_description: null,
                 seo_keywords: null,
+                seo_og_title: null,
+                seo_og_description: null,
+                seo_og_image: null,
+                seo_twitter_card: 'summary_large_image',
+                seo_twitter_handle: null,
+                seo_technical_sitemap: true,
+                seo_technical_robots_txt: true,
+                seo_technical_schema_markup: true,
+                seo_technical_canonical_tags: true,
+                seo_custom_head_scripts: null,
             };
         }
 
@@ -189,6 +219,16 @@ export class FranchisesService {
                 seo_title: null,
                 seo_description: null,
                 seo_keywords: null,
+                seo_og_title: null,
+                seo_og_description: null,
+                seo_og_image: null,
+                seo_twitter_card: 'summary_large_image',
+                seo_twitter_handle: null,
+                seo_technical_sitemap: true,
+                seo_technical_robots_txt: true,
+                seo_technical_schema_markup: true,
+                seo_technical_canonical_tags: true,
+                seo_custom_head_scripts: null,
             };
         }
 

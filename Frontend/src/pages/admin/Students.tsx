@@ -27,6 +27,8 @@ import { useUsers } from "@/hooks/useUsers";
 import { Users as UsersAPI, Instructors } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { useDeleteUser } from "@/hooks/useUsers";
 
 export default function StudentsPage() {
   const { user } = useAuth();
@@ -41,6 +43,7 @@ export default function StudentsPage() {
 function AdminStudents() {
   const { user } = useAuth();
   const { users: students, isLoading } = useUsers("student");
+  const { mutateAsync: deleteUser } = useDeleteUser();
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeStudents: 0,
@@ -200,10 +203,24 @@ function AdminStudents() {
                         <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem>View Enrollments</DropdownMenuItem>
-                        <DropdownMenuItem><Mail className="h-4 w-4 mr-2" /> Send Email</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Suspend</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          // Dummy View Profile
+                        }}>View Profile</DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                          onClick={async () => {
+                            if (confirm("Are you sure you want to delete this student?")) {
+                              try {
+                                await deleteUser(student.id);
+                                toast.success("Student deleted successfully");
+                              } catch (error) {
+                                toast.error("Failed to delete student");
+                              }
+                            }
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

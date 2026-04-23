@@ -15,6 +15,16 @@ export interface FranchiseBranding {
     seo_title: string | null;
     seo_description: string | null;
     seo_keywords: string | null;
+    seo_og_title: string | null;
+    seo_og_description: string | null;
+    seo_og_image: string | null;
+    seo_twitter_card: string | null;
+    seo_twitter_handle: string | null;
+    seo_technical_sitemap: boolean;
+    seo_technical_robots_txt: boolean;
+    seo_technical_schema_markup: boolean;
+    seo_technical_canonical_tags: boolean;
+    seo_custom_head_scripts: string | null;
 }
 
 const DEFAULT_BRANDING: FranchiseBranding = {
@@ -30,6 +40,16 @@ const DEFAULT_BRANDING: FranchiseBranding = {
     seo_title: null,
     seo_description: null,
     seo_keywords: null,
+    seo_og_title: null,
+    seo_og_description: null,
+    seo_og_image: null,
+    seo_twitter_card: "summary_large_image",
+    seo_twitter_handle: null,
+    seo_technical_sitemap: true,
+    seo_technical_robots_txt: true,
+    seo_technical_schema_markup: true,
+    seo_technical_canonical_tags: true,
+    seo_custom_head_scripts: null,
 };
 
 interface FranchiseContextType {
@@ -66,6 +86,16 @@ export function FranchiseProvider({ children }: { children: ReactNode }) {
                     seo_title: data.seo_title || null,
                     seo_description: data.seo_description || null,
                     seo_keywords: data.seo_keywords || null,
+                    seo_og_title: data.seo_og_title || null,
+                    seo_og_description: data.seo_og_description || null,
+                    seo_og_image: data.seo_og_image || null,
+                    seo_twitter_card: data.seo_twitter_card || "summary_large_image",
+                    seo_twitter_handle: data.seo_twitter_handle || null,
+                    seo_technical_sitemap: data.seo_technical_sitemap ?? true,
+                    seo_technical_robots_txt: data.seo_technical_robots_txt ?? true,
+                    seo_technical_schema_markup: data.seo_technical_schema_markup ?? true,
+                    seo_technical_canonical_tags: data.seo_technical_canonical_tags ?? true,
+                    seo_custom_head_scripts: data.seo_custom_head_scripts || null,
                 });
 
                 // Apply primary color as CSS variable
@@ -113,6 +143,61 @@ export function FranchiseProvider({ children }: { children: ReactNode }) {
                         document.head.appendChild(metaKeywords);
                     }
                     metaKeywords.setAttribute('content', data.seo_keywords);
+                }
+
+                // Update Open Graph tags
+                const setMetaTag = (property: string, content: string | null, isNameAttr = false) => {
+                    const attr = isNameAttr ? 'name' : 'property';
+                    let meta = document.querySelector(`meta[${attr}="${property}"]`);
+                    if (content) {
+                        if (!meta) {
+                            meta = document.createElement('meta');
+                            meta.setAttribute(attr, property);
+                            document.head.appendChild(meta);
+                        }
+                        meta.setAttribute('content', content);
+                    } else if (meta) {
+                        meta.remove();
+                    }
+                };
+
+                setMetaTag('og:title', data.seo_og_title || titleToUse);
+                setMetaTag('og:description', data.seo_og_description || data.seo_description);
+                if (data.seo_og_image) {
+                    setMetaTag('og:image', getImageUrl(data.seo_og_image));
+                }
+                setMetaTag('twitter:card', data.seo_twitter_card || 'summary_large_image', true);
+                if (data.seo_twitter_handle) {
+                    setMetaTag('twitter:site', data.seo_twitter_handle, true);
+                }
+
+                // Canonical tags
+                if (data.seo_technical_canonical_tags) {
+                    let canonical = document.querySelector('link[rel="canonical"]');
+                    if (!canonical) {
+                        canonical = document.createElement('link');
+                        canonical.setAttribute('rel', 'canonical');
+                        document.head.appendChild(canonical);
+                    }
+                    canonical.setAttribute('href', window.location.href.split('?')[0]);
+                }
+
+                // Custom head scripts
+                if (data.seo_custom_head_scripts) {
+                    let scriptContainer = document.getElementById('custom-head-scripts');
+                    if (!scriptContainer) {
+                        scriptContainer = document.createElement('div');
+                        scriptContainer.id = 'custom-head-scripts';
+                        document.head.appendChild(scriptContainer);
+                    }
+                    // Insert raw HTML (Note: scripts added via innerHTML do not execute,
+                    // but for meta tags and valid tracking pixels it can work.
+                    // For full <script> execution we need a slightly more robust approach)
+                    const range = document.createRange();
+                    range.selectNode(scriptContainer);
+                    const documentFragment = range.createContextualFragment(data.seo_custom_head_scripts);
+                    scriptContainer.innerHTML = '';
+                    scriptContainer.appendChild(documentFragment);
                 }
 
                 if (data.favicon_url) {

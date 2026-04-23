@@ -19,7 +19,7 @@ export interface AdminInstructor {
 export const useAdminInstructors = () => {
     const { token } = useAuth();
 
-    const { data: instructors = [], isLoading, error } = useQuery({
+    const { data: instructors = [], isLoading, error, refetch } = useQuery({
         queryKey: ["admin-instructors"],
         queryFn: async () => {
             const { data } = await axios.get<AdminInstructor[]>(`${API_URL}/instructors/admin/list`, {
@@ -30,5 +30,5 @@ export const useAdminInstructors = () => {
         enabled: !!token,
     });
 
-    return { instructors, isLoading, error };
+    return { instructors, isLoading, error, refetch };
 };

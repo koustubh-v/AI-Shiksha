@@ -71,4 +71,54 @@ export class UpdateFranchiseDto {
     @IsOptional()
     @IsString()
     seo_keywords?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_og_title?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_og_description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_og_image?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_twitter_card?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_twitter_handle?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    seo_technical_sitemap?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    seo_technical_robots_txt?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    seo_technical_schema_markup?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    seo_technical_canonical_tags?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    seo_custom_head_scripts?: string;
 }

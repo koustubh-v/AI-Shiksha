@@ -37,6 +37,16 @@ model Franchise {
   seo_title       String?
   seo_description String?  @db.Text
   seo_keywords    String?
+  seo_og_title    String?
+  seo_og_description String? @db.Text
+  seo_og_image    String?
+  seo_twitter_card String? @default("summary_large_image")
+  seo_twitter_handle String?
+  seo_technical_sitemap Boolean @default(true)
+  seo_technical_robots_txt Boolean @default(true)
+  seo_technical_schema_markup Boolean @default(true)
+  seo_technical_canonical_tags Boolean @default(true)
+  seo_custom_head_scripts String? @db.Text
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 

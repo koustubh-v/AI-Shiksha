@@ -800,6 +800,7 @@ model SupportTicket {
   student     User   @relation("StudentTickets", fields: [student_id], references: [id], onDelete: Cascade)
   subject     String
   description String @db.Text
+  image_url   String?
   status      String @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
   priority    String @default("MEDIUM") // LOW, MEDIUM, HIGH
 
@@ -823,6 +824,7 @@ model SupportTicketMessage {
   sender_id String
   sender    User          @relation(fields: [sender_id], references: [id], onDelete: Cascade)
   message   String        @db.Text
+  image_url String?
   is_admin  Boolean       @default(false)
 
   created_at DateTime @default(now())

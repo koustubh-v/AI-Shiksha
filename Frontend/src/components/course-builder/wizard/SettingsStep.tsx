@@ -151,10 +151,10 @@ export function SettingsStep({ courseId, initialData, onSave, onSaveAndContinue,
                                                 name="price"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-sm font-medium text-gray-700 ml-1">Current Price ($)</FormLabel>
+                                                        <FormLabel className="text-sm font-medium text-gray-700 ml-1">Current Price (₹)</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
-                                                                <span className="absolute left-4 top-3.5 text-gray-400 font-medium">$</span>
+                                                                <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
                                                                 <Input
                                                                     type="number"
                                                                     min="0"
@@ -173,10 +173,10 @@ export function SettingsStep({ courseId, initialData, onSave, onSaveAndContinue,
                                                 name="original_price"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-sm font-medium text-gray-700 ml-1">Original Price ($)</FormLabel>
+                                                        <FormLabel className="text-sm font-medium text-gray-700 ml-1">Original Price (₹)</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
-                                                                <span className="absolute left-4 top-3.5 text-gray-400 font-medium">$</span>
+                                                                <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
                                                                 <Input
                                                                     type="number"
                                                                     min="0"

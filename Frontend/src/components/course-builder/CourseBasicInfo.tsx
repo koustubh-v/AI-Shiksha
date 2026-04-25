@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, Image as ImageIcon, Video, DollarSign, Plus, X, Tag, FolderPlus } from "lucide-react";
-import type { CourseData } from "@/pages/dashboard/CourseBuilder";
+import type { CourseData } from "./CourseCurriculum";
 import { useState, useEffect } from "react";
 import { Categories, Tags } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -375,7 +375,7 @@ export function CourseBasicInfo({ data, onUpdate }: CourseBasicInfoProps) {
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Regular Price ($)</Label>
+                  <Label htmlFor="price">Regular Price (₹)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -388,7 +388,7 @@ export function CourseBasicInfo({ data, onUpdate }: CourseBasicInfoProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salePrice">Sale Price ($)</Label>
+                  <Label htmlFor="salePrice">Sale Price (₹)</Label>
                   <Input
                     id="salePrice"
                     type="number"

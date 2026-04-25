@@ -47,7 +47,7 @@ export default function Transactions() {
     };
 
     const formatCurrency = (amount: number) => {
-        return `$${amount.toFixed(2)}`;
+        return `₹${amount.toFixed(2)}`;
     };
 
     const filteredTransactions = transactions.filter(t =>

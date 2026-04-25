@@ -136,7 +136,7 @@ export function BasicInfoStep({ courseId, initialData, onSave, onSaveAndContinue
             const slug = title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)+/g, '');
+                .replace(/(^-|-₹)+/g, '');
             form.setValue('slug', slug, { shouldValidate: true, shouldDirty: true });
         }
     }, [title, form]);

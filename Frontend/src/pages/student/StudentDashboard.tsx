@@ -4,7 +4,6 @@ import { InProgressCourses } from "@/components/dashboard/student/InProgressCour
 import { CompletedCourses } from "@/components/dashboard/student/CompletedCourses";
 import { MilestoneWidget } from "@/components/dashboard/student/MilestoneWidget";
 import { WeeklyGoalWidget } from "@/components/dashboard/student/WeeklyGoalWidget";
-import { UpcomingMeetingsWidget } from "@/components/dashboard/student/UpcomingMeetingsWidget";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -30,7 +29,6 @@ export default function StudentDashboard() {
         <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
           <MilestoneWidget />
           <WeeklyGoalWidget />
-          <UpcomingMeetingsWidget />
         </aside>
       </div>
     </div>

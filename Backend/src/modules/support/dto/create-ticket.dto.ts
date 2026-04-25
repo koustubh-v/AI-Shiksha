@@ -13,4 +13,8 @@ export class CreateTicketDto {
     @IsOptional()
     @IsEnum(['LOW', 'MEDIUM', 'HIGH'])
     priority?: string;
+
+    @IsString()
+    @IsOptional()
+    image_url?: string;
 }

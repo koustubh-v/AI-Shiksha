@@ -324,7 +324,7 @@ export function BasicsStep({ courseData, onUpdate, onNext }: BasicsStepProps) {
                             <div className="space-y-2">
                                 <Label htmlFor="regular-price" className="text-sm font-medium">Regular Price</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
                                     <Input
                                         id="regular-price"
                                         type="number"
@@ -338,7 +338,7 @@ export function BasicsStep({ courseData, onUpdate, onNext }: BasicsStepProps) {
                             <div className="space-y-2">
                                 <Label htmlFor="sale-price" className="text-sm font-medium">Sale Price</Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
                                     <Input
                                         id="sale-price"
                                         type="number"

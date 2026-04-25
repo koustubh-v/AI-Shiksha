@@ -78,7 +78,7 @@ export const createCourseColumns = ({ onDelete }: CourseColumnsProps): ColumnDef
             const price = parseFloat(row.getValue("price"))
             const formatted = new Intl.NumberFormat("en-US", {
                 style: "currency",
-                currency: "USD",
+                currency: "INR",
             }).format(price)
 
             return <div className="font-medium">{price === 0 ? "Free" : formatted}</div>

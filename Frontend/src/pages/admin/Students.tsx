@@ -155,9 +155,6 @@ function AdminStudents() {
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
-                <TableHead className="hidden sm:table-cell">Enrolled</TableHead>
-                <TableHead className="hidden md:table-cell">Completed</TableHead>
-                <TableHead className="hidden sm:table-cell">Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Joined</TableHead>
                 <TableHead className="w-10"></TableHead>
@@ -183,16 +180,6 @@ function AdminStudents() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">0 courses</TableCell>
-                  <TableCell className="hidden md:table-cell">0 courses</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `0%` }} />
-                      </div>
-                      <span className="text-sm">0%</span>
-                    </div>
-                  </TableCell>
                   <TableCell>
                     <Badge variant="default">Active</Badge>
                   </TableCell>
@@ -203,9 +190,6 @@ function AdminStudents() {
                         <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => {
-                          // Dummy View Profile
-                        }}>View Profile</DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
                           onClick={async () => {

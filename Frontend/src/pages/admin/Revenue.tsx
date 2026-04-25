@@ -50,7 +50,7 @@ export default function RevenuePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">$284,500</p>
+                <p className="text-2xl font-bold">₹284,500</p>
                 <p className="text-sm text-accent flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3" /> +15% from last month
                 </p>
@@ -66,7 +66,7 @@ export default function RevenuePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                <p className="text-2xl font-bold">$72,000</p>
+                <p className="text-2xl font-bold">₹72,000</p>
                 <p className="text-sm text-primary flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3" /> +8% from last month
                 </p>
@@ -130,8 +130,8 @@ export default function RevenuePage() {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} className="text-xs" />
-                <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(v) => `$${v / 1000}K`} />
-                <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]} />
+                <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(v) => `₹${v / 1000}K`} />
+                <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]} />
                 <Area
                   type="monotone"
                   dataKey="revenue"

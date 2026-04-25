@@ -293,7 +293,7 @@ export function CourseDetailsForm({ courseId, course, onUpdate }: CourseDetailsF
 
                 {!isFree && (
                     <div className="space-y-2">
-                        <Label htmlFor="price">Price ($)</Label>
+                        <Label htmlFor="price">Price (₹)</Label>
                         <Input
                             id="price"
                             type="number"

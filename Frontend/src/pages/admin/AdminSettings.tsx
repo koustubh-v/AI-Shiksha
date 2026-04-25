@@ -188,7 +188,7 @@ export default function AdminSettings() {
                   </div>
                   <div className="space-y-2">
                     <Label>Minimum Payout Amount</Label>
-                    <Input defaultValue="$50" />
+                    <Input defaultValue="₹50" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between">

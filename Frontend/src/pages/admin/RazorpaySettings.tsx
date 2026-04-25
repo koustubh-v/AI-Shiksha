@@ -191,7 +191,7 @@ export default function RazorpaySettings() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INR">INR (₹) - Indian Rupee</SelectItem>
-                        <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                        <SelectItem value="INR">INR (₹) - US Dollar</SelectItem>
                         <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
                         <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
                       </SelectContent>

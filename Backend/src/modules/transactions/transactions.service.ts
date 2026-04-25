@@ -100,7 +100,7 @@ export class TransactionsService {
             status: p.payment_status,
             thumbnail: p.course.thumbnail_url,
             transactionId: p.transaction_id || 'N/A',
-            currency: 'USD' // Default
+            currency: 'INR' // Default
         }));
     }
 
@@ -123,7 +123,7 @@ export class TransactionsService {
             status: payment.payment_status,
             thumbnail: payment.course.thumbnail_url,
             transactionId: payment.transaction_id || 'N/A',
-            currency: 'USD'
+            currency: 'INR'
         };
     }
 
@@ -137,7 +137,7 @@ export class TransactionsService {
             totalSpent,
             totalTransactions,
             averageTransaction: totalSpent / totalTransactions,
-            currency: 'USD',
+            currency: 'INR',
         };
     }
 }

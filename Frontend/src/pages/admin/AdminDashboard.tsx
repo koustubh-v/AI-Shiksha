@@ -47,7 +47,7 @@ const platformStats = [
   },
   {
     title: "Monthly Revenue",
-    value: "$284,520",
+    value: "₹284,520",
     change: "+15.3%",
     positive: true,
     icon: DollarSign,
@@ -85,7 +85,7 @@ const pendingActions = [
   { type: "course", title: "Advanced React Patterns", teacher: "John Smith", status: "pending" },
   { type: "user", title: "Teacher Verification", user: "Sarah Johnson", status: "pending" },
   { type: "report", title: "Content Violation Report", course: "Python Basics", status: "urgent" },
-  { type: "payout", title: "Payout Request", teacher: "Mike Chen", amount: "$2,450", status: "pending" },
+  { type: "payout", title: "Payout Request", teacher: "Mike Chen", amount: "₹2,450", status: "pending" },
 ];
 
 const aiInsights = [
@@ -97,7 +97,7 @@ const aiInsights = [
   {
     type: "success",
     title: "Revenue Trend",
-    description: "Revenue is projected to exceed $300K next month based on current growth.",
+    description: "Revenue is projected to exceed ₹300K next month based on current growth.",
   },
   {
     type: "info",
@@ -261,14 +261,14 @@ export default function AdminDashboard() {
                   <BarChart data={revenue}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `$${v / 1000}K`} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `₹${v / 1000}K`} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
+                      formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
                     />
                     <Bar dataKey="revenue" fill="hsl(262, 83%, 58%)" radius={[4, 4, 0, 0]} />
                   </BarChart>

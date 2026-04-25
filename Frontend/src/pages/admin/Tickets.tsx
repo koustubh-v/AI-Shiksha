@@ -34,6 +34,7 @@ interface SupportTicketMessage {
     role: string;
     avatar_url: string;
   };
+  image_url?: string;
 }
 
 interface SupportTicket {
@@ -60,6 +61,8 @@ export default function TicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
 
   useEffect(() => {
@@ -124,12 +127,21 @@ export default function TicketsPage() {
   };
 
   const handleReply = async () => {
-    if (!replyMessage.trim() || !selectedTicket) return;
+    if (!replyMessage.trim() && !replyImage) return;
     setIsReplying(true);
     try {
-      await supportApi.addMessage(selectedTicket.id, { message: replyMessage });
+      let imageUrl = undefined;
+      if (replyImage) {
+          setUploadingImage(true);
+          const uploadRes = await import('@/lib/api').then(m => m.Upload.uploadFile(replyImage));
+          imageUrl = uploadRes.url;
+          setUploadingImage(false);
+      }
+
+      await supportApi.addMessage(selectedTicket!.id, { message: replyMessage || "Sent an attachment.", image_url: imageUrl });
       setReplyMessage("");
-      const details = await supportApi.getTicketDetails(selectedTicket.id);
+      setReplyImage(null);
+      const details = await supportApi.getTicketDetails(selectedTicket!.id);
       setSelectedTicket(details);
       loadTickets();
       toast({ title: "Success", description: "Reply sent successfully" });
@@ -137,6 +149,7 @@ export default function TicketsPage() {
       toast({ title: "Error", description: "Failed to send reply", variant: "destructive" });
     } finally {
       setIsReplying(false);
+      setUploadingImage(false);
     }
   };
 
@@ -353,7 +366,7 @@ export default function TicketsPage() {
                   {selectedTicket.messages?.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex gap-3 max-w-[85%] ${msg.is_admin ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                      className={`flex gap-3 max-w-[85%] ₹{msg.is_admin ? "ml-auto flex-row-reverse" : "mr-auto"}`}
                     >
                       <Avatar className="h-8 w-8 shrink-0">
                         {msg.is_admin ? (
@@ -365,7 +378,7 @@ export default function TicketsPage() {
                         )}
                       </Avatar>
 
-                      <div className={`space-y-1.5 flex flex-col ${msg.is_admin ? "items-end" : "items-start"}`}>
+                      <div className={`space-y-1.5 flex flex-col ₹{msg.is_admin ? "items-end" : "items-start"}`}>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-foreground">
                             {msg.sender?.name || (msg.is_admin ? "Admin" : "Student")}
@@ -375,12 +388,17 @@ export default function TicketsPage() {
                           </span>
                         </div>
                         <div
-                          className={`p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.is_admin
+                          className={`p-3 rounded-2xl text-sm leading-relaxed shadow-sm ₹{msg.is_admin
                             ? "bg-lms-blue text-white rounded-tr-sm"
                             : "bg-background border border-border rounded-tl-sm text-foreground"
                             }`}
                         >
                           {msg.message}
+                          {msg.image_url && (
+                              <div className="mt-2">
+                                  <img src={msg.image_url} alt="Attachment" className="max-w-xs rounded-md shadow-sm border border-border/50" />
+                              </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -393,6 +411,17 @@ export default function TicketsPage() {
           {selectedTicket?.status !== 'CLOSED' && selectedTicket?.status !== 'RESOLVED' && (
             <div className="p-4 border-t border-border bg-muted/20">
               <div className="flex flex-col gap-3">
+                {replyImage && (
+                    <div className="relative w-20 h-20 rounded border border-border/50 overflow-hidden">
+                        <img src={URL.createObjectURL(replyImage)} alt="Upload Preview" className="w-full h-full object-cover" />
+                        <button 
+                            className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5" 
+                            onClick={() => setReplyImage(null)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
+                )}
                 <Textarea
                   placeholder="Type your reply here..."
                   className="resize-none min-h-[90px] w-full"
@@ -400,21 +429,39 @@ export default function TicketsPage() {
                   onChange={(e) => setReplyMessage(e.target.value)}
                 />
                 <div className="flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-destructive"
-                    size="sm"
-                    onClick={handleCloseTicket}
-                  >
-                    Mark as Resolved
-                  </Button>
+                  <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        size="sm"
+                        onClick={handleCloseTicket}
+                      >
+                        Mark as Resolved
+                      </Button>
+                      <div className="relative">
+                          <input 
+                              type="file" 
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                      setReplyImage(e.target.files[0]);
+                                  }
+                              }}
+                          />
+                          <Button variant="outline" size="sm" type="button" className="text-muted-foreground gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                              Attach Image
+                          </Button>
+                      </div>
+                  </div>
                   <Button
                     onClick={handleReply}
-                    disabled={isReplying || !replyMessage.trim()}
+                    disabled={isReplying || uploadingImage || (!replyMessage.trim() && !replyImage)}
                     className="gap-2 bg-lms-blue hover:bg-lms-blue/90"
                     size="sm"
                   >
-                    {isReplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {isReplying || uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     Send Reply
                   </Button>
                 </div>

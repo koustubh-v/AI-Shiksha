@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Announcements as announcementsApi, Enrollments } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Announcement {
     id: string;
@@ -37,6 +38,8 @@ export function StudentNavbar() {
     const navigate = useNavigate();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [announcementsLoading, setAnnouncementsLoading] = useState(true);
+    const [hasViewedAnnouncements, setHasViewedAnnouncements] = useState(false);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -187,9 +190,14 @@ export function StudentNavbar() {
             <div className="flex items-center gap-2 flex-shrink-0">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" className="relative bg-white border-gray-200 hover:bg-gray-50 h-10 w-10 rounded-full shadow-sm">
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="relative bg-white border-gray-200 hover:bg-gray-50 h-10 w-10 rounded-full shadow-sm"
+                            onClick={() => setHasViewedAnnouncements(true)}
+                        >
                             <Bell className="h-5 w-5 text-gray-600" />
-                            {announcements.length > 0 && (
+                            {announcements.length > 0 && !hasViewedAnnouncements && (
                                 <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white transform translate-x-0.5 -translate-y-0.5 animate-pulse" />
                             )}
                         </Button>
@@ -220,7 +228,10 @@ export function StudentNavbar() {
                                 <div className="flex flex-col">
                                     {announcements.map((item, index) => (
                                         <div key={item.id}>
-                                            <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                                            <div 
+                                                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                                onClick={() => setSelectedAnnouncement(item)}
+                                            >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="text-sm font-medium text-[#1F1F1F] leading-snug">{item.title}</h4>
                                                     <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
@@ -245,6 +256,19 @@ export function StudentNavbar() {
                     </PopoverContent>
                 </Popover>
             </div>
+            <Dialog open={!!selectedAnnouncement} onOpenChange={(open) => !open && setSelectedAnnouncement(null)}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">{selectedAnnouncement?.title}</DialogTitle>
+                    </DialogHeader>
+                    <div className="pt-4 text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                        {selectedAnnouncement?.content}
+                    </div>
+                    <div className="mt-6 text-xs text-gray-400 text-right border-t pt-4">
+                        Posted on {selectedAnnouncement && new Date(selectedAnnouncement.created_at).toLocaleDateString()}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

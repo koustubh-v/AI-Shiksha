@@ -116,7 +116,7 @@ export class PaymentsService {
     const targetFranchiseId = (course && course.franchise_id) ? course.franchise_id : franchiseId;
 
     // Create Payment Record
-    const amountStr = session.amount_total ? `${session.currency?.toUpperCase() || 'USD'} ${(session.amount_total / 100).toFixed(2)}` : 'Free';
+    const amountStr = session.amount_total ? `${session.currency?.toUpperCase() || 'INR'} ${(session.amount_total / 100).toFixed(2)}` : 'Free';
 
     await this.prisma.payment.create({
       data: {

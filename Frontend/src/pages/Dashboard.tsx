@@ -14,7 +14,7 @@ export default function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Revenue"
-            value="$84,254"
+            value="₹84,254"
             change={{ value: "+12.5%", positive: true }}
             icon={DollarSign}
             iconColor="emerald"

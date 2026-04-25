@@ -15,5 +15,5 @@ export function getImageUrl(path: string | null | undefined): string {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   // Prevent double-slashes
-  return `${API_URL.replace(/\/$/, '')}${cleanPath}`;
+  return `${API_URL.replace(/\/₹/, '')}${cleanPath}`;
 }

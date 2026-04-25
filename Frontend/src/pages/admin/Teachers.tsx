@@ -95,7 +95,7 @@ export default function TeachersPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
                   <p className="text-2xl font-bold">
-                    {loadingStats ? "..." : `$${(stats.totalRevenue / 1000000).toFixed(1)}M`}
+                    {loadingStats ? "..." : `₹${(stats.totalRevenue / 1000000).toFixed(1)}M`}
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-chart-3/20 flex items-center justify-center">

@@ -38,7 +38,7 @@ const activities: Activity[] = [
     user: { name: "Emily Davis" },
     description: "purchased JavaScript Fundamentals",
     time: "1 hour ago",
-    meta: "$49.00",
+    meta: "₹49.00",
   },
   {
     id: "4",

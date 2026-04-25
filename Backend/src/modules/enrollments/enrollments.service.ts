@@ -299,12 +299,27 @@ export class EnrollmentsService {
       );
     }
 
+    // Create Payment record for manual enrollment
+    const payment = await this.prisma.payment.create({
+      data: {
+        user_id: student.id,
+        course_id: courseId,
+        amount: course.price || 0,
+        currency: 'INR',
+        payment_provider: 'Offline Enrollment',
+        payment_status: 'success',
+        transaction_id: `MANUAL-${Date.now()}`,
+        franchise_id: franchiseId,
+      }
+    });
+
     return this.prisma.enrollment.create({
       data: {
         student_id: student.id,
         course_id: courseId,
         status: 'active',
         franchise_id: franchiseId,
+        payment_id: payment.id,
       },
       include: {
         user: {
@@ -366,12 +381,27 @@ export class EnrollmentsService {
             continue;
           }
 
+          // Create Payment record for bulk enrollment
+          const payment = await this.prisma.payment.create({
+            data: {
+              user_id: studentId,
+              course_id: courseId,
+              amount: course.price || 0,
+              currency: 'INR',
+              payment_provider: 'Offline Enrollment',
+              payment_status: 'success',
+              transaction_id: `BULK-${Date.now()}-${studentId.substring(0,4)}`,
+              franchise_id: franchiseId,
+            }
+          });
+
           await this.prisma.enrollment.create({
             data: {
               student_id: studentId,
               course_id: courseId,
               status: 'active',
               franchise_id: franchiseId,
+              payment_id: payment.id,
               expires_at: (course?.access_days_limit) ? (() => {
                 const d = new Date();
                 d.setDate(d.getDate() + course.access_days_limit);

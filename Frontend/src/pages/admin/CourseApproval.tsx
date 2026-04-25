@@ -250,7 +250,7 @@ export default function CourseApprovalPage() {
                                 <Badge variant="secondary">{course.category.name}</Badge>
                               )}
                               <Badge variant={course.price === 0 ? "default" : "outline"}>
-                                {course.price === 0 ? "Free" : `$${course.price}`}
+                                {course.price === 0 ? "Free" : `₹${course.price}`}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">

@@ -93,6 +93,28 @@ ${customTemplate.body}
         }
     }
 
+    async sendSupportNotification(user: { email: string; name: string; franchise_id: string | null }, subject: string, message: string) {
+        try {
+            const context = await this.getFranchiseContext(user.franchise_id);
+
+            await this.mailerService.sendMail({
+                to: user.email,
+                replyTo: context.supportEmail,
+                subject: subject,
+                template: './notification', // We can use notification template
+                context: {
+                    name: user.name,
+                    title: subject,
+                    message: message,
+                    ...context,
+                },
+            });
+            this.logger.log(`Support notification email sent to ${user.email}`);
+        } catch (error) {
+            this.logger.error(`Failed to send support notification to ${user.email}`, error.stack);
+        }
+    }
+
     async sendNewRegistrationNotificationToAdmin(user: { email: string; name: string; franchise_id: string | null }) {
         try {
             const context = await this.getFranchiseContext(user.franchise_id);

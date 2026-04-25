@@ -9,7 +9,7 @@ export default function Pricing() {
     {
       name: "Free",
       description: "Perfect for trying out LearnAI",
-      price: "$0",
+      price: "₹0",
       period: "forever",
       features: [
         "Up to 3 courses",
@@ -24,7 +24,7 @@ export default function Pricing() {
     {
       name: "Pro",
       description: "For serious educators and learners",
-      price: "$29",
+      price: "₹29",
       period: "per month",
       features: [
         "Unlimited courses",

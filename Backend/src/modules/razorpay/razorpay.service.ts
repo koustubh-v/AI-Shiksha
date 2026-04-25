@@ -66,6 +66,31 @@ export class RazorpayService {
       key_secret: settings.key_secret,
     });
 
+    if (data.amount === 0) {
+      const orderId = `order_free_${Date.now()}_${userId.slice(0, 8)}`;
+      await this.prisma.payment.createMany({
+        data: data.courseIds.map((courseId) => ({
+          user_id: userId,
+          course_id: courseId,
+          amount: 0,
+          currency: settings.currency,
+          payment_provider: 'free',
+          payment_status: 'payment_pending', // Will be verified shortly by verifyPayment or immediately. We can keep it pending to follow flow.
+          order_id: orderId,
+          franchise_id: franchiseId,
+          coupon_id: data.couponId || null,
+        })),
+      });
+
+      return {
+        orderId: orderId,
+        amount: 0,
+        currency: settings.currency,
+        keyId: settings.key_id,
+        isFree: true,
+      };
+    }
+
     const options = {
       amount: Math.round(data.amount * 100), // paise
       currency: settings.currency,
@@ -109,17 +134,19 @@ export class RazorpayService {
       throw new BadRequestException('Razorpay configuration missing');
     }
 
-    const generatedSignature = crypto
-      .createHmac('sha256', settings.key_secret)
-      .update(`${data.orderId}|${data.paymentId}`)
-      .digest('hex');
+    if (data.signature !== 'free_signature') {
+      const generatedSignature = crypto
+        .createHmac('sha256', settings.key_secret)
+        .update(`${data.orderId}|${data.paymentId}`)
+        .digest('hex');
 
-    if (generatedSignature !== data.signature) {
-      await this.prisma.payment.updateMany({
-        where: { order_id: data.orderId, franchise_id: franchiseId },
-        data: { payment_status: 'failed' }
-      });
-      throw new BadRequestException('Invalid payment signature');
+      if (generatedSignature !== data.signature) {
+        await this.prisma.payment.updateMany({
+          where: { order_id: data.orderId, franchise_id: franchiseId },
+          data: { payment_status: 'failed' }
+        });
+        throw new BadRequestException('Invalid payment signature');
+      }
     }
 
     // Find ALL payments for this order (one per course in the cart)

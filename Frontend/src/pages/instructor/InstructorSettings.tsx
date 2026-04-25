@@ -101,7 +101,7 @@ export default function InstructorSettings() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Available Balance</span>
-                    <span className="text-2xl font-bold">$4,250.00</span>
+                    <span className="text-2xl font-bold">₹4,250.00</span>
                   </div>
                   <Button size="sm" className="bg-lms-emerald hover:bg-lms-emerald/90">
                     Request Payout

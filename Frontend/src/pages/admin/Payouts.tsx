@@ -35,7 +35,7 @@ export default function PayoutsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Pending Payouts</p>
-                  <p className="text-lg md:text-2xl font-bold">$24,500</p>
+                  <p className="text-lg md:text-2xl font-bold">₹24,500</p>
                 </div>
                 <Clock className="h-6 w-6 md:h-8 md:w-8 text-chart-3/50" />
               </div>
@@ -46,7 +46,7 @@ export default function PayoutsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Processing</p>
-                  <p className="text-lg md:text-2xl font-bold">$8,200</p>
+                  <p className="text-lg md:text-2xl font-bold">₹8,200</p>
                 </div>
                 <Wallet className="h-6 w-6 md:h-8 md:w-8 text-primary/50" />
               </div>
@@ -57,7 +57,7 @@ export default function PayoutsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Paid This Month</p>
-                  <p className="text-lg md:text-2xl font-bold">$145,000</p>
+                  <p className="text-lg md:text-2xl font-bold">₹145,000</p>
                 </div>
                 <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-accent/50" />
               </div>

@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Award, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CourseData } from "@/pages/dashboard/CourseBuilder";
+import type { CourseData } from "./CourseCurriculum";
 
 interface CourseCertificateProps {
   data: CourseData;

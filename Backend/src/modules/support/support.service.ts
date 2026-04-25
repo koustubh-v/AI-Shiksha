@@ -23,6 +23,7 @@ export class SupportService {
                 subject: createTicketDto.subject,
                 description: createTicketDto.description,
                 priority: createTicketDto.priority || 'MEDIUM',
+                image_url: createTicketDto.image_url,
             },
         });
 
@@ -33,6 +34,7 @@ export class SupportService {
                 sender_id: studentId,
                 message: createTicketDto.description,
                 is_admin: false,
+                image_url: createTicketDto.image_url,
             },
         });
 
@@ -139,6 +141,7 @@ export class SupportService {
                 sender_id: userId,
                 message: addMessageDto.message,
                 is_admin: isAdmin,
+                image_url: addMessageDto.image_url,
             },
             include: {
                 sender: {
@@ -152,6 +155,20 @@ export class SupportService {
             where: { id: ticketId },
             data: { status: newStatus },
         });
+
+        // Send email to student if admin replies
+        if (isAdmin) {
+            const student = await this.prisma.user.findUnique({
+                where: { id: ticket.student_id }
+            });
+            if (student) {
+                this.mailService.sendSupportNotification(
+                    { email: student.email, name: student.name, franchise_id: student.franchise_id },
+                    `Re: ${ticket.subject}`,
+                    `An admin has replied to your support ticket:\n\n${addMessageDto.message}`
+                ).catch(err => console.error("Failed to send support notification email:", err));
+            }
+        }
 
         return message;
     }

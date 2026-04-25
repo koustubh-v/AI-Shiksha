@@ -263,14 +263,14 @@ export default function CourseCreator() {
                 <div className="space-y-2">
                   <Label>Regular Price</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
                     <Input type="number" placeholder="99" className="pl-8" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Sale Price (Optional)</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
                     <Input type="number" placeholder="49" className="pl-8" />
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function CourseCreator() {
                   <div>
                     <p className="font-medium text-sm">AI Pricing Suggestion</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Based on similar courses and your content, we suggest pricing at <strong>$79</strong> for optimal conversions.
+                      Based on similar courses and your content, we suggest pricing at <strong>₹79</strong> for optimal conversions.
                     </p>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export default function CourseCreator() {
                 </div>
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
                   <CheckCircle className="h-5 w-5 text-lms-emerald" />
-                  <span>Pricing set at $79</span>
+                  <span>Pricing set at ₹79</span>
                 </div>
               </div>
               <div className="p-4 rounded-lg border border-lms-blue/20 bg-lms-blue/5">

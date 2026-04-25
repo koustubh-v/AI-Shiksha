@@ -74,6 +74,22 @@ export default function Checkout() {
         couponApplied?.id
       );
 
+      if (orderData.isFree) {
+        try {
+          await razorpayService.verifyPayment({
+            paymentId: "pay_free_" + Date.now(),
+            orderId: orderData.orderId,
+            signature: "free_signature",
+          });
+          clearCart();
+          toast.success("Enrollment successful! 🎉");
+          navigate("/order-success");
+        } catch {
+          toast.error("Enrollment failed. Please contact support.");
+        }
+        return;
+      }
+
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,

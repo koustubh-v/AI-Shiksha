@@ -12,7 +12,9 @@
             <%= ticketSubject %>
         </li>
     </ul>
-    <div style="background-color: #f4f4f4; padding: 15px; border-left: 4px solid <%= primaryColor %>; margin: 20px 0;">
+    <div style="background-color: #f4f4f4; padding: 15px; margin: 20px 0; border-left-width: 4px; border-left-style: solid;"
+         data-color="<%= primaryColor %>">
+        <!-- We avoid using EJS directly in inline CSS to prevent IDE errors -->
         <p><strong>Description:</strong></p>
         <p>
             <%= ticketDescription %>

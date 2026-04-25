@@ -74,19 +74,19 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 const students = [
-  { id: 1, name: "Emma Wilson", email: "emma@example.com", courses: 5, status: "active", joined: "Jan 15, 2024", spent: "$249" },
-  { id: 2, name: "James Chen", email: "james@example.com", courses: 3, status: "active", joined: "Feb 2, 2024", spent: "$149" },
-  { id: 3, name: "Sarah Johnson", email: "sarah@example.com", courses: 8, status: "active", joined: "Dec 10, 2023", spent: "$499" },
-  { id: 4, name: "Michael Brown", email: "michael@example.com", courses: 2, status: "inactive", joined: "Mar 5, 2024", spent: "$79" },
-  { id: 5, name: "Lisa Anderson", email: "lisa@example.com", courses: 4, status: "suspended", joined: "Jan 22, 2024", spent: "$199" },
+  { id: 1, name: "Emma Wilson", email: "emma@example.com", courses: 5, status: "active", joined: "Jan 15, 2024", spent: "₹249" },
+  { id: 2, name: "James Chen", email: "james@example.com", courses: 3, status: "active", joined: "Feb 2, 2024", spent: "₹149" },
+  { id: 3, name: "Sarah Johnson", email: "sarah@example.com", courses: 8, status: "active", joined: "Dec 10, 2023", spent: "₹499" },
+  { id: 4, name: "Michael Brown", email: "michael@example.com", courses: 2, status: "inactive", joined: "Mar 5, 2024", spent: "₹79" },
+  { id: 5, name: "Lisa Anderson", email: "lisa@example.com", courses: 4, status: "suspended", joined: "Jan 22, 2024", spent: "₹199" },
 ];
 
 const teachers = [
-  { id: 1, name: "Dr. John Smith", email: "john@example.com", courses: 12, students: 2840, status: "verified", earnings: "$45,200" },
-  { id: 2, name: "Prof. Maria Garcia", email: "maria@example.com", courses: 8, students: 1560, status: "verified", earnings: "$28,400" },
-  { id: 3, name: "Alex Thompson", email: "alex@example.com", courses: 3, students: 420, status: "pending", earnings: "$5,600" },
-  { id: 4, name: "Jennifer Lee", email: "jennifer@example.com", courses: 6, students: 890, status: "verified", earnings: "$15,800" },
-  { id: 5, name: "Robert Wilson", email: "robert@example.com", courses: 2, students: 150, status: "rejected", earnings: "$0" },
+  { id: 1, name: "Dr. John Smith", email: "john@example.com", courses: 12, students: 2840, status: "verified", earnings: "₹45,200" },
+  { id: 2, name: "Prof. Maria Garcia", email: "maria@example.com", courses: 8, students: 1560, status: "verified", earnings: "₹28,400" },
+  { id: 3, name: "Alex Thompson", email: "alex@example.com", courses: 3, students: 420, status: "pending", earnings: "₹5,600" },
+  { id: 4, name: "Jennifer Lee", email: "jennifer@example.com", courses: 6, students: 890, status: "verified", earnings: "₹15,800" },
+  { id: 5, name: "Robert Wilson", email: "robert@example.com", courses: 2, students: 150, status: "rejected", earnings: "₹0" },
 ];
 
 const admins = [
@@ -127,7 +127,7 @@ function AddUserModalContent({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
 
   const generatePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#₹%^&*";
     let newPassword = "";
     for (let i = 0; i < 12; i++) {
       newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -506,14 +506,14 @@ export default function UserManagement() {
     courses: 0, // Mock data as backend might not return this yet
     status: 'active', // Mock
     joined: new Date(u.created_at || Date.now()).toLocaleDateString(),
-    spent: '$0' // Mock
+    spent: '₹0' // Mock
   }));
   const teachers = users.filter(u => u.role === 'INSTRUCTOR').map(u => ({
     ...u,
     courses: 0,
     students: 0,
     status: 'verified',
-    earnings: '$0'
+    earnings: '₹0'
   }));
   const admins = users.filter(u => ["admin", "super_admin", "franchise_admin"].includes(u.role?.toLowerCase())).map(u => ({
     ...u,

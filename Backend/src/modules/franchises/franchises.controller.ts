@@ -76,6 +76,19 @@ export class FranchisesController {
         return this.franchisesService.updateMySettings(franchiseId, updateFranchiseDto);
     }
 
+    @Post('me/check-domain')
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Check DNS domain verification and update status' })
+    checkDomain(@Request() req: any) {
+        const franchiseId = req.user.franchise_id;
+        if (!franchiseId) {
+            return { verified: true, message: 'System domain is always verified', domain: 'localhost' };
+        }
+        return this.franchisesService.checkAndUpdateDomainVerification(franchiseId);
+    }
+
     @Get()
     @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Roles(Role.SUPER_ADMIN)

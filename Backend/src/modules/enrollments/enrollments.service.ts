@@ -313,7 +313,7 @@ export class EnrollmentsService {
       }
     });
 
-    return this.prisma.enrollment.create({
+    const enrollment = await this.prisma.enrollment.create({
       data: {
         student_id: student.id,
         course_id: courseId,
@@ -337,6 +337,14 @@ export class EnrollmentsService {
         },
       },
     });
+
+    // Send enrollment email to the student
+    this.mailService.sendCourseEnrollmentEmail(
+      { email: student.email, name: student.name, franchise_id: student.franchise_id },
+      course.title,
+    ).catch(err => console.error('Failed to send admin enrollment email:', err));
+
+    return enrollment;
   }
 
   async bulkEnroll(studentIds: string[], courseIds: string[], franchiseId?: string | null) {
@@ -411,6 +419,15 @@ export class EnrollmentsService {
           });
 
           results.success++;
+
+          // Send enrollment email to student for bulk enrollment
+          const enrolledStudent = await this.prisma.user.findUnique({ where: { id: studentId } });
+          if (enrolledStudent) {
+            this.mailService.sendCourseEnrollmentEmail(
+              { email: enrolledStudent.email, name: enrolledStudent.name, franchise_id: enrolledStudent.franchise_id },
+              course.title,
+            ).catch(err => console.error('Failed to send bulk enrollment email:', err));
+          }
         } catch (error) {
           console.error(`Failed to enroll student ${studentId} in course ${courseId}`, error);
           results.failed++;

@@ -1,18 +1,24 @@
-
 import { useState, useEffect } from "react";
 import { SystemSettings } from "@/lib/api";
 import { useFranchise } from "@/contexts/FranchiseContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { AlertCircle, Globe, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Globe, CheckCircle2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 export default function FranchiseSetupInstructions() {
     const { branding } = useFranchise();
     const [serverInfo, setServerInfo] = useState<{ ip: string; cname: string; instructions: string } | null>(null);
+    const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
+    const [checkingDomain, setCheckingDomain] = useState(false);
+    const [checkMessage, setCheckMessage] = useState<string | null>(null);
 
     useEffect(() => {
         fetchSettings();
-    }, []);
+        // Treat the initial branding value as the current known state
+        setDomainVerified(branding.domain_verified ?? false);
+    }, [branding.domain_verified]);
 
     const fetchSettings = async () => {
         try {
@@ -20,6 +26,21 @@ export default function FranchiseSetupInstructions() {
             setServerInfo(data);
         } catch (error) {
             console.error("Failed to load server info", error);
+        }
+    };
+
+    const handleCheckDomain = async () => {
+        setCheckingDomain(true);
+        setCheckMessage(null);
+        try {
+            const res = await api.post('/franchises/me/check-domain');
+            setDomainVerified(res.data.verified);
+            setCheckMessage(res.data.message);
+        } catch (err: any) {
+            setCheckMessage(err?.response?.data?.message || 'Domain check failed.');
+            setDomainVerified(false);
+        } finally {
+            setCheckingDomain(false);
         }
     };
 
@@ -38,25 +59,39 @@ export default function FranchiseSetupInstructions() {
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
 
-                {!branding.domain_verified && (
+                {domainVerified === false && (
                     <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800">
                         <AlertCircle className="h-4 w-4 text-amber-600" />
                         <AlertTitle className="text-amber-800 font-semibold">Domain Not Verified</AlertTitle>
                         <AlertDescription className="text-amber-700">
                             Your domain <strong>{window.location.hostname}</strong> is not yet verified or pointing correctly.
+                            {checkMessage && <p className="mt-1 text-xs">{checkMessage}</p>}
                         </AlertDescription>
                     </Alert>
                 )}
 
-                {branding.domain_verified && (
+                {domainVerified === true && (
                     <Alert className="bg-green-50 border-green-200 text-green-800">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
                         <AlertTitle className="text-green-800 font-semibold">Domain Verified</AlertTitle>
                         <AlertDescription className="text-green-700">
                             Your domain is active and serving content correctly.
+                            {checkMessage && <p className="mt-1 text-xs">{checkMessage}</p>}
                         </AlertDescription>
                     </Alert>
                 )}
+
+                <div className="flex justify-center">
+                    <Button
+                        variant="outline"
+                        onClick={handleCheckDomain}
+                        disabled={checkingDomain}
+                        className="gap-2"
+                    >
+                        {checkingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                        {checkingDomain ? 'Checking...' : 'Check Domain Now'}
+                    </Button>
+                </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
                     <div className="p-4 bg-muted rounded-lg border">

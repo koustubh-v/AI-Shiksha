@@ -5,21 +5,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { Feedback } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
 
+// Public routes where the widget should NOT appear
+const PUBLIC_ROUTES = ['/', '/about', '/pricing', '/contact', '/terms', '/privacy', '/courses', '/login', '/signup', '/forgot-password', '/reset-password'];
+
 export function StudentFeedbackWidget() {
     const { user } = useAuth();
+    const { pathname } = useLocation();
     const [open, setOpen] = useState(false);
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
-    // Only show for students
+    // Only show for logged-in students on non-public pages
     if (!user || user.role.toLowerCase() !== 'student') return null;
+    if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith('/course/'))) return null;
 
     const handleSubmit = async () => {
         if (!content.trim()) return;

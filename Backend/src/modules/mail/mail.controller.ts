@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -34,5 +34,29 @@ export class MailController {
         const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
         const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
         return this.mailService.upsertCustomTemplate(type, updateDto, franchiseId);
+    }
+}
+
+@ApiTags('Mail')
+@Controller('mail')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@ApiBearerAuth()
+export class MailNotifyController {
+    constructor(private readonly mailService: MailService) { }
+
+    @Post('send-notification')
+    @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Send a custom notification email to a student (Admin only)' })
+    async sendNotification(
+        @Request() req,
+        @Body() body: { email: string; name: string; subject: string; message: string }
+    ) {
+        const franchiseId = req.user?.franchise_id || null;
+        await this.mailService.sendSupportNotification(
+            { email: body.email, name: body.name, franchise_id: franchiseId },
+            body.subject,
+            body.message,
+        );
+        return { success: true, message: `Email sent to ${body.email}` };
     }
 }

@@ -29,21 +29,44 @@ export class AnnouncementsService {
 
         const usersToNotify = await this.prisma.user.findMany({
             where: whereUsers,
-            select: { email: true, name: true, franchise_id: true }
+            select: { id: true, email: true, name: true, franchise_id: true }
         });
 
-        const author = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+        const author = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true, franchise_id: true } });
 
-        // Fire and forget email delivery to avoid holding up the request
-        Promise.all(usersToNotify.map(user =>
-            this.mailService.sendAnnouncementEmail(
-                { email: user.email, name: user.name, franchise_id: user.franchise_id },
-                announcement.title,
-                announcement.content,
-                author?.name || 'Admin',
-                `${process.env.FRONTEND_URL || 'https://experttrainersacademy.cloud'}/dashboard`
-            )
-        )).catch(err => console.error("Error broadcasting announcement emails:", err));
+        // Pre-fetch franchise domain for dashboard URL
+        let franchiseDomain = 'localhost';
+        if (franchiseId) {
+            const fr = await this.prisma.franchise.findUnique({ where: { id: franchiseId }, select: { domain: true } });
+            if (fr?.domain) franchiseDomain = fr.domain;
+        }
+        const dashboardUrl = franchiseDomain === 'localhost'
+            ? 'http://localhost:5173/dashboard'
+            : `https://${franchiseDomain}/dashboard`;
+
+        // Send announcement to all users EXCEPT the author (admin)
+        Promise.all(
+            usersToNotify
+                .filter(u => u.id !== userId) // Skip the creator
+                .map(user =>
+                    this.mailService.sendAnnouncementEmail(
+                        { email: user.email, name: user.name, franchise_id: user.franchise_id },
+                        announcement.title,
+                        announcement.content,
+                        author?.name || 'Admin',
+                        dashboardUrl,
+                    )
+                )
+        ).catch(err => console.error("Error broadcasting announcement emails:", err));
+
+        // Send confirmation email to admin
+        if (author) {
+            this.mailService.sendSupportNotification(
+                { email: author.email, name: author.name, franchise_id: author.franchise_id },
+                `Announcement Published: "${announcement.title}"`,
+                `Hi ${author.name},\n\nYour announcement "${announcement.title}" has been published and sent to all enrolled students.\n\nContent:\n${announcement.content}`,
+            ).catch(err => console.error("Error sending announcement confirmation email:", err));
+        }
 
         return announcement;
     }

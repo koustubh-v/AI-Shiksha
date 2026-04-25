@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { QA } from '@/lib/api';
-import { Loader2, MessageSquare, Send } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Reply } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface QAProps {
@@ -16,6 +16,10 @@ export default function QASection({ lessonId }: QAProps) {
   const [loading, setLoading] = useState(true);
   const [newQuestion, setNewQuestion] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Track which question has the reply box open and its text
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replySubmitting, setReplySubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -47,6 +51,23 @@ export default function QASection({ lessonId }: QAProps) {
        toast({ title: 'Error', description: 'Failed to post question', variant: 'destructive' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleStudentReply = async (qaId: string) => {
+    if (!replyText.trim()) return;
+    try {
+      setReplySubmitting(true);
+      await QA.studentReply(qaId, replyText);
+      setReplyText('');
+      setReplyingTo(null);
+      // Reload to get fresh replies
+      await loadQuestions();
+      toast({ title: 'Reply posted', description: 'Your reply has been added.' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to post reply', variant: 'destructive' });
+    } finally {
+      setReplySubmitting(false);
     }
   };
 
@@ -116,7 +137,7 @@ export default function QASection({ lessonId }: QAProps) {
                                         <div key={reply.id} className="flex gap-3">
                                             <Avatar className="w-8 h-8 mt-1">
                                                 <AvatarImage src={reply.user?.avatar_url} />
-                                                <AvatarFallback className={reply.user?.role !== 'STUDENT' ? 'bg-primary text-white text-xs' : 'text-xs'}>
+                                                <AvatarFallback className={reply.is_admin ? 'bg-primary text-white text-xs' : 'text-xs'}>
                                                     {reply.user?.name?.charAt(0)}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -124,7 +145,7 @@ export default function QASection({ lessonId }: QAProps) {
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="font-semibold text-sm flex items-center gap-2">
                                                         {reply.user?.name}
-                                                        {reply.user?.role !== 'STUDENT' && (
+                                                        {reply.is_admin && (
                                                             <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary text-white font-bold tracking-wider">
                                                                 INSTRUCTOR
                                                             </span>
@@ -139,6 +160,54 @@ export default function QASection({ lessonId }: QAProps) {
                                         </div>
                                     ))}
                                 </div>
+                            )}
+
+                            {/* Student Reply Button / Box */}
+                            {replyingTo === q.id ? (
+                                <div className="pl-6 md:pl-10">
+                                    <div className="flex gap-3">
+                                        <Avatar className="w-8 h-8 mt-1 hidden sm:block">
+                                            <AvatarImage src={user?.avatar_url} />
+                                            <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 space-y-2">
+                                            <Textarea
+                                                placeholder="Write your reply..."
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                className="resize-none focus-visible:ring-1"
+                                                rows={2}
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 justify-end">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    className="gap-2"
+                                                    onClick={() => handleStudentReply(q.id)}
+                                                    disabled={replySubmitting || !replyText.trim()}
+                                                >
+                                                    {replySubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                                    Reply
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    className="pl-6 md:pl-10 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                                    onClick={() => { setReplyingTo(q.id); setReplyText(''); }}
+                                >
+                                    <Reply className="w-3.5 h-3.5" />
+                                    Reply
+                                </button>
                             )}
                         </div>
                     </div>

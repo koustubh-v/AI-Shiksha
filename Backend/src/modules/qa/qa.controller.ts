@@ -46,4 +46,11 @@ export class QaController {
         const franchiseId = req.user.franchise_id || null;
         return this.qaService.replyQuestion(qaId, req.user.userId, franchiseId, replyQaDto);
     }
+
+    @Post(':qaId/reply')
+    @Roles(Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
+    studentReplyQuestion(@Param('qaId') qaId: string, @Body() replyQaDto: ReplyQaDto, @Req() req: any) {
+        const franchiseId = req.user.franchise_id || null;
+        return this.qaService.studentReplyQuestion(qaId, req.user.userId, franchiseId, replyQaDto);
+    }
 }

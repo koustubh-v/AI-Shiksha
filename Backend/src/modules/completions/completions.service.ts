@@ -294,13 +294,39 @@ export class CompletionsService {
                         certificate_number: certificateNumber,
                         qr_validation_url: qrValidationUrl,
                         issued_at: new Date(),
-                        certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
+                        certificate_url: `/certificates/${studentId}/${courseId}/download`,
                         franchise_id: course.franchise_id, // Inherit franchise from course
                     },
+                });
+                // Update with proper ID-based download URL
+                certificate = await this.prisma.certificate.update({
+                    where: { id: certificate.id },
+                    data: { certificate_url: `/certificates/${certificate.id}/download` },
                 });
             } else {
                 certificate = existingCert;
             }
+        }
+
+        // Send completion + certificate email to student
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const certificateUrl = certificate
+            ? `${baseUrl}/dashboard/certificates`
+            : undefined;
+
+        if (certificateUrl) {
+            this.mailService.sendCertificateEmail(
+                { email: student.email, name: student.name, franchise_id: student.franchise_id },
+                course.title,
+                certificateUrl,
+            ).catch(err => console.error('Failed to send certificate email:', err));
+        } else {
+            // No certificate but still notify of completion
+            this.mailService.sendSupportNotification(
+                { email: student.email, name: student.name, franchise_id: student.franchise_id },
+                `Congratulations! You completed ${course.title}`,
+                `Hi ${student.name},\n\nYou have successfully completed the course "${course.title}". Keep up the great work!`,
+            ).catch(err => console.error('Failed to send completion email:', err));
         }
 
         return {
@@ -368,24 +394,31 @@ export class CompletionsService {
         const qrValidationUrl = course ? `${baseUrl}/courses/${course.slug}/validation/${studentId}` : null;
 
         // Create certificate
-        const certificate = await this.prisma.certificate.create({
+        let certificate = await this.prisma.certificate.create({
             data: {
                 student_id: studentId,
                 course_id: courseId,
                 certificate_number: certificateNumber,
                 qr_validation_url: qrValidationUrl,
                 issued_at: new Date(),
-                certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
-                franchise_id: course?.franchise_id, // Inherit franchise from course
+                certificate_url: `/certificates/${studentId}/${courseId}/download`,
+                franchise_id: course?.franchise_id,
             },
             include: { user: true },
         });
+        // Update with the real ID-based download URL
+        certificate = await this.prisma.certificate.update({
+            where: { id: certificate.id },
+            data: { certificate_url: `/certificates/${certificate.id}/download` },
+            include: { user: true },
+        });
 
-        // Send certificate email
+        // Send certificate email - link to frontend dashboard so student can download
+        const certEmailUrl = `${baseUrl}/dashboard/certificates`;
         this.mailService.sendCertificateEmail(
             { email: certificate.user.email, name: certificate.user.name, franchise_id: certificate.user.franchise_id },
             course?.title || 'Your Course',
-            `${baseUrl}${certificate.certificate_url}`
+            certEmailUrl
         );
 
         return {
@@ -639,24 +672,31 @@ export class CompletionsService {
             const qrValidationUrl = `${baseUrl}/courses/${course.slug}/validation/${studentId}`;
 
             // Create certificate — KEY FIX: include franchise_id for proper isolation
-            const certificate = await this.prisma.certificate.create({
+            let certificate = await this.prisma.certificate.create({
                 data: {
                     student_id: studentId,
                     course_id: courseId,
                     certificate_number: certificateNumber,
                     qr_validation_url: qrValidationUrl,
-                    certificate_url: `/api/certificates/${studentId}/${courseId}.pdf`,
+                    certificate_url: `/certificates/${studentId}/${courseId}/download`,
                     issued_at: new Date(),
                     franchise_id: course.franchise_id,
                 },
                 include: { user: true },
             });
 
-            // Send certificate email
+            // Update with proper ID-based download URL
+            certificate = await this.prisma.certificate.update({
+                where: { id: certificate.id },
+                data: { certificate_url: `/certificates/${certificate.id}/download` },
+                include: { user: true },
+            });
+
+            // Send certificate email - link to frontend dashboard
             this.mailService.sendCertificateEmail(
                 { email: certificate.user.email, name: certificate.user.name, franchise_id: certificate.user.franchise_id },
                 course.title,
-                `${baseUrl}${certificate.certificate_url}`
+                `${baseUrl}/dashboard/certificates`
             );
         } catch (error) {
             console.error('Error generating certificate on completion:', error);

@@ -695,6 +695,10 @@ export const QA = {
     replyQuestion: async (qaId: string, reply: string) => {
         const { data } = await api.post(`/qa/admin/${qaId}/reply`, { reply });
         return data;
+    },
+    studentReply: async (qaId: string, reply: string) => {
+        const { data } = await api.post(`/qa/${qaId}/reply`, { reply });
+        return data;
     }
 };
 

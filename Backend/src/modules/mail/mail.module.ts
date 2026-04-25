@@ -4,7 +4,7 @@ import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { MailService } from './mail.service';
-import { MailController } from './mail.controller';
+import { MailController, MailNotifyController } from './mail.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
@@ -37,7 +37,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
             }),
         }),
     ],
-    controllers: [MailController],
+    controllers: [MailController, MailNotifyController],
     providers: [MailService],
     exports: [MailService],
 })

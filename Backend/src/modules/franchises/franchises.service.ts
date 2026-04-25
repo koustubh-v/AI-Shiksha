@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateFranchiseDto } from './dto/create-franchise.dto';
 import { UpdateFranchiseDto } from './dto/update-franchise.dto';
 import * as bcrypt from 'bcrypt';
+import * as dns from 'dns/promises';
 
 @Injectable()
 export class FranchisesService {
@@ -287,6 +288,57 @@ export class FranchisesService {
             where: { id: franchiseId },
             data: dto,
         });
+    }
+
+    /**
+     * Actively verify the domain's DNS resolves to the server and update the DB flag.
+     * This is called from the Franchise Settings page in the admin panel.
+     */
+    async checkAndUpdateDomainVerification(franchiseId: string): Promise<{ verified: boolean; message: string; domain: string }> {
+
+        const franchise = await this.prisma.franchise.findUnique({
+            where: { id: franchiseId },
+            select: { id: true, domain: true, domain_verified: true },
+        });
+
+        if (!franchise) {
+            throw new NotFoundException('Franchise not found');
+        }
+
+        const domain = franchise.domain;
+
+        // localhost or blank domain is always considered verified
+        if (!domain || domain === 'localhost') {
+            await this.prisma.franchise.update({
+                where: { id: franchiseId },
+                data: { domain_verified: true },
+            });
+            return { verified: true, message: 'localhost is always verified', domain };
+        }
+
+        let verified = false;
+        let message = '';
+
+        try {
+            const addresses = await dns.resolve(domain);
+            if (addresses && addresses.length > 0) {
+                verified = true;
+                message = `Domain ${domain} resolves successfully.`;
+            } else {
+                message = `Domain ${domain} returned no DNS records.`;
+            }
+        } catch (err) {
+            message = `DNS lookup failed for ${domain}: ${err.message}`;
+            verified = false;
+        }
+
+        // Persist the result to DB
+        await this.prisma.franchise.update({
+            where: { id: franchiseId },
+            data: { domain_verified: verified },
+        });
+
+        return { verified, message, domain };
     }
 
     /**

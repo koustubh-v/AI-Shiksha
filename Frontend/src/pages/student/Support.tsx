@@ -435,7 +435,7 @@ export default function Support() {
             </div>
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0">
+            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0 text-gray-900 bg-white">
                     <SheetHeader className="p-6 border-b border-gray-100 pb-4">
                         <div className="flex items-center justify-between">
                             <div>

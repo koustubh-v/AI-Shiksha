@@ -139,7 +139,7 @@ export class AssistantService {
         courseTitle = course.title;
 
         // 1b. Validate Enrollment (Strict: must be active) - Bypass for Admins/Instructors
-        const isAdminOrInstructor = ['ADMIN', 'SUPER_ADMIN', 'INSTRUCTOR'].includes(userRole?.toUpperCase() || '');
+        const isAdminOrInstructor = ['ADMIN', 'SUPER_ADMIN', 'INSTRUCTOR', 'FRANCHISE_ADMIN'].includes(userRole?.toUpperCase() || '');
         
         if (!isAdminOrInstructor) {
           const enrollment = await this.prisma.enrollment.findUnique({

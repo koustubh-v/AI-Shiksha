@@ -129,4 +129,29 @@ export class QaService {
 
         return reply;
     }
+
+    async studentReplyQuestion(qaId: string, userId: string, franchiseId: string | null, replyQaDto: ReplyQaDto) {
+        const whereClause: any = { id: qaId };
+        if (franchiseId) {
+            whereClause.franchise_id = franchiseId;
+        }
+
+        const qa = await this.prisma.courseQA.findUnique({
+            where: whereClause,
+            include: { student: true, course: true }
+        });
+
+        if (!qa) throw new NotFoundException('Q/A not found');
+
+        const reply = await this.prisma.courseQAReply.create({
+            data: {
+                qa_id: qaId,
+                user_id: userId,
+                reply: replyQaDto.reply,
+                is_admin: false
+            }
+        });
+
+        return reply;
+    }
 }

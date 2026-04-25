@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useFranchise } from "@/contexts/FranchiseContext";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, ArrowUpDown, DollarSign, Activity, CheckCircle2, XCircle, CreditCard } from "lucide-react";
+import { Loader2, Search, ArrowUpDown, DollarSign, Activity, CheckCircle2, XCircle, CreditCard, UserCheck } from "lucide-react";
 import api from "@/lib/api";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function AdminTransactions() {
   const { branding } = useFranchise();
@@ -184,14 +185,22 @@ export default function AdminTransactions() {
                            <Loader2 className="h-5 w-5 animate-spin" />}
                         </div>
                         
-                        <div className="space-y-1 max-w-[200px] sm:max-w-md">
-                          <p className="font-bold text-zinc-900 dark:text-white truncate">
-                            {txn.billing_name || txn.user?.name || 'Unknown Customer'}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400">
-                            <span className="truncate max-w-[120px]" title={txn.transaction_id}>{txn.transaction_id || 'PENDING-TXN'}</span>
-                            <span className="hidden sm:inline text-zinc-300 dark:text-zinc-700">•</span>
-                            <span className="hidden sm:inline">{new Date(txn.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 rounded-none border border-black/10 dark:border-white/10 shrink-0">
+                            <AvatarImage src={txn.user?.avatar_url} alt={txn.user?.name} />
+                            <AvatarFallback className="rounded-none bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-sm">
+                              {(txn.billing_name || txn.user?.name || '?').charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-1 max-w-[200px] sm:max-w-md">
+                            <p className="font-bold text-zinc-900 dark:text-white truncate">
+                              {txn.billing_name || txn.user?.name || 'Unknown Customer'}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                              <span className="truncate max-w-[120px]" title={txn.transaction_id}>{txn.transaction_id || 'PENDING-TXN'}</span>
+                              <span className="hidden sm:inline text-zinc-300 dark:text-zinc-700">•</span>
+                              <span className="hidden sm:inline">{new Date(txn.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -217,9 +226,18 @@ export default function AdminTransactions() {
                             )}>
                               {txn.currency} {(txn.amount).toFixed(2)}
                             </span>
-                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                              {txn.payment_provider || 'Stripe'}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              {txn.payment_provider === 'admin_enrolled' ? (
+                                <Badge variant="outline" className="rounded-none text-[9px] px-1.5 py-0.5 border uppercase tracking-wider font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-500/20 flex items-center gap-1">
+                                  <UserCheck className="h-2.5 w-2.5" />
+                                  Admin Enrolled
+                                </Badge>
+                              ) : (
+                                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                                  {txn.payment_provider || 'Razorpay'}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

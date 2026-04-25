@@ -2,7 +2,7 @@ import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Search,
   Filter,
@@ -205,6 +205,7 @@ function AdminStudents() {
                 <div key={student.id} className="group p-4 md:p-6 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12 rounded-none border border-black/10 dark:border-white/10 shadow-sm">
+                      <AvatarImage src={student.avatar_url} alt={student.name} />
                       <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black rounded-none">
                         {student.name.charAt(0)}
                       </AvatarFallback>

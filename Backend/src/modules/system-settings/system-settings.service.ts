@@ -6,11 +6,24 @@ export class SystemSettingsService {
     constructor(private prisma: PrismaService) { }
 
     async getTerms(franchiseId?: string | null) {
-        const key = franchiseId ? `terms_and_conditions__${franchiseId}` : 'terms_and_conditions';
-        const setting = await this.prisma.systemSetting.findUnique({
-            where: { key },
+        const franchiseKey = franchiseId ? `terms_and_conditions__${franchiseId}` : null;
+        const globalKey = 'terms_and_conditions';
+
+        // Try franchise-scoped key first, then fall back to global key
+        if (franchiseKey) {
+            const franchiseSetting = await this.prisma.systemSetting.findUnique({
+                where: { key: franchiseKey },
+            });
+            if (franchiseSetting?.value) {
+                return { content: franchiseSetting.value };
+            }
+        }
+
+        // Fall back to global key
+        const globalSetting = await this.prisma.systemSetting.findUnique({
+            where: { key: globalKey },
         });
-        return { content: setting?.value || '' };
+        return { content: globalSetting?.value || '' };
     }
 
     async updateTerms(content: string, franchiseId?: string | null) {

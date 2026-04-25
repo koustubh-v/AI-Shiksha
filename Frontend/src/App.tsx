@@ -72,6 +72,7 @@ import MyCertificatesPage from "./pages/student/MyCertificates";
 import AIAssistant from "./pages/student/AIAssistant";
 import Leaderboard from "./pages/student/Leaderboard";
 import Support from "./pages/student/Support";
+import StudentTransactions from "./pages/student/Transactions";
 import { EnrolledCourseView } from "./pages/course/EnrolledCourseView";
 import { ManageTerms } from "./pages/admin/ManageTerms";
 import PolicyPages from "./pages/admin/PolicyPages";
@@ -184,6 +185,7 @@ const App = () => (
                     <Route path="/dashboard/ai-assistant" element={<AIAssistant />} />
                     <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
                     <Route path="/dashboard/support" element={<Support />} />
+                    <Route path="/dashboard/transactions" element={<StudentTransactions />} />
                     <Route path="/dashboard/users" element={<UsersPage />} />
                     <Route path="/dashboard/moderation" element={<Moderation />} />
 

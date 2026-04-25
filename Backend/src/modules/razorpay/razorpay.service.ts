@@ -242,13 +242,63 @@ export class RazorpayService {
 
   async getTransactions(franchiseId: string) {
     const resolvedId = await this.resolveFranchiseId(franchiseId);
-    return this.prisma.payment.findMany({
+
+    // 1. Fetch actual payment records
+    const payments = await this.prisma.payment.findMany({
       where: { franchise_id: resolvedId },
       include: {
-        user: { select: { name: true, email: true } },
-        course: { select: { title: true } }
+        user: { select: { id: true, name: true, email: true, avatar_url: true } },
+        course: { select: { title: true } },
       },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
     });
+
+    // 2. Find manually enrolled students (have enrollment but NO payment record, with non-zero course price)
+    const manualEnrollments = await this.prisma.enrollment.findMany({
+      where: {
+        OR: [
+          { franchise_id: resolvedId },
+          { course: { franchise_id: resolvedId } },
+        ],
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatar_url: true } },
+        course: { select: { id: true, title: true, price: true, is_free: true } },
+      },
+    });
+
+    // Build set of (user_id, course_id) pairs that already have a payment
+    const paidPairs = new Set(payments.map(p => `${p.user_id}_${p.course_id}`));
+
+    // 3. Build virtual "manual enrollment" transactions for those without payments and non-free/zero-price course
+    const virtualTransactions = manualEnrollments
+      .filter(e => {
+        const key = `${e.student_id}_${e.course_id}`;
+        // Only include if: no payment exists AND course is NOT free AND course has price > 0
+        return !paidPairs.has(key) && !e.course.is_free && (e.course.price ?? 0) > 0;
+      })
+      .map(e => ({
+        id: `manual_${e.id}`,
+        user_id: e.student_id,
+        course_id: e.course_id,
+        amount: e.course.price ?? 0,
+        currency: 'INR',
+        payment_provider: 'admin_enrolled',
+        payment_status: 'success',
+        order_id: `ADMIN-ENROLL-${e.id.slice(0, 8).toUpperCase()}`,
+        transaction_id: `ADMIN-${e.id.slice(0, 8).toUpperCase()}`,
+        billing_name: e.user.name,
+        franchise_id: resolvedId,
+        coupon_id: null,
+        created_at: e.enrolled_at ?? new Date(),
+        updated_at: e.enrolled_at ?? new Date(),
+        user: { id: e.user.id, name: e.user.name, email: e.user.email, avatar_url: e.user.avatar_url },
+        course: { title: e.course.title },
+      }));
+
+    // 4. Merge and sort by date descending
+    const all = [...payments, ...virtualTransactions];
+    all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return all;
   }
 }

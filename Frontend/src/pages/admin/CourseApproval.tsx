@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 interface PendingCourse {
   id: string;
   title: string;
+  thumbnail_url?: string;
   instructor: {
     user: {
       name: string;
@@ -240,8 +241,12 @@ export default function CourseApprovalPage() {
                       {/* Course Info */}
                       <div className="flex-1">
                         <div className="flex items-start gap-4">
-                          <div className="h-20 w-32 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                            <PlayCircle className="h-8 w-8 text-muted-foreground" />
+                          <div className="h-20 w-32 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {course.thumbnail_url && !course.thumbnail_url.startsWith('blob:') ? (
+                                <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover" />
+                            ) : (
+                                <PlayCircle className="h-8 w-8 text-muted-foreground" />
+                            )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">

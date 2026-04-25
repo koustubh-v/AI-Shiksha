@@ -736,7 +736,7 @@ export default function CoursePreview() {
     const fetchCourse = async () => {
       try {
         let courseDetails;
-        const isUUID = slug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}₹/i.test(slug);
+        const isUUID = slug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
         if (isUUID) {
           courseDetails = await Courses.getOne(slug);
         } else {

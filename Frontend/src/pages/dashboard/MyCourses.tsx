@@ -322,13 +322,11 @@ function TeacherCourses() {
                             Edit Course
                         </Button>
                     </Link>
-                    {course.status === 'PUBLISHED' && (
-                        <Link to={`/dashboard/courses/${course.slug || course.id}/preview`} className="w-full">
-                            <Button variant="ghost" className="w-full rounded-full text-gray-500 hover:text-gray-900 transition-all">
-                                Preview
-                            </Button>
-                        </Link>
-                    )}
+                    <Link to={`/dashboard/courses/${course.id}/preview`} className="w-full">
+                        <Button variant="ghost" className="w-full rounded-full text-gray-500 hover:text-gray-900 transition-all">
+                            Preview
+                        </Button>
+                    </Link>
                 </div>
               </div>
             ))}

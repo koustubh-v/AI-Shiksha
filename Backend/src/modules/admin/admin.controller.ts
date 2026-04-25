@@ -49,8 +49,7 @@ export class AdminController {
 
   @Get('ai-settings')
   async getAiSettings(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    let franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    let franchiseId = req.user?.franchise_id || undefined;
 
     // Fallback to tenantId from middleware if no explicit franchise is set on user
     franchiseId = franchiseId || req.tenantId || req.tenantBranding?.id;
@@ -67,8 +66,7 @@ export class AdminController {
 
   @Put('ai-settings')
   async updateAiSettings(@Request() req, @Body() updateAiSettingsDto: UpdateAiSettingsDto) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    let franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    let franchiseId = req.user?.franchise_id || undefined;
 
     franchiseId = franchiseId || req.tenantId || req.tenantBranding?.id;
 

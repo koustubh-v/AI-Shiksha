@@ -29,8 +29,7 @@ export class InstructorsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all instructors with stats (Admin)' })
   getAdminList(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.instructorsService.findAllWithStats(franchiseId);
   }
 

@@ -32,13 +32,9 @@ export class CategoriesService {
   }
 
   async findAll(franchiseId?: string | null) {
-    // If franchiseId is provided: show only this franchise's categories
-    // If undefined (super admin): show only system categories (franchise_id: null)
     const where: any = {};
     if (franchiseId !== undefined) {
-      where.franchise_id = franchiseId;  // shows franchise-specific OR null for system
-    } else {
-      where.franchise_id = null;  // super admin sees system (global) categories
+      where.franchise_id = franchiseId;
     }
 
     return this.prisma.category.findMany({

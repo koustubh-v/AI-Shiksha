@@ -73,8 +73,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student statistics (Admin only)' })
   getStudentStats(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    const franchiseId = req.user?.franchise_id || undefined;
     return this.usersService.getStudentStats(franchiseId);
   }
 
@@ -83,8 +82,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get teacher statistics (Admin only)' })
   getTeacherStats(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    const franchiseId = req.user?.franchise_id || undefined;
     return this.usersService.getTeacherStats(franchiseId);
   }
 
@@ -96,7 +94,7 @@ export class UsersController {
     const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
     // IF SUPER_ADMIN, and franchise_id query param is passed, filter by it.
     // IF NOT SUPER_ADMIN, enforce req.user.franchise_id.
-    let targetFranchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || null);
+    const targetFranchiseId = req.user?.franchise_id || null;
 
     // Allow Super Admin to filter by franchise if query param provided (future proofing)
     // For now, let's keep it simple: Super Admin sees all, Franchise Admin sees theirs.
@@ -109,8 +107,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new user (Admin only)' })
   create(@Body() createUserDto: CreateUserDto, @Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
+    const franchiseId = req.user?.franchise_id || null;
     const domain = req.headers.origin || req.headers.host || 'https://experttrainersacademy.cloud';
     // Ensure we construct a proper URL
     const loginUrl = domain.startsWith('http') ? `${domain}/login` : `https://${domain}/login`;
@@ -122,8 +119,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create multiple users in bulk (Admin only)' })
   createBulk(@Body() bulkCreateUserDto: BulkCreateUserDto, @Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
+    const franchiseId = req.user?.franchise_id || null;
     const domain = req.headers.origin || req.headers.host || 'https://experttrainersacademy.cloud';
     // Ensure we construct a proper URL
     const loginUrl = domain.startsWith('http') ? `${domain}/login` : `https://${domain}/login`;
@@ -139,8 +135,7 @@ export class UsersController {
     if (id === req.user.userId) {
       throw new BadRequestException('Cannot delete your own account');
     }
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    const franchiseId = req.user?.franchise_id || undefined;
     return this.usersService.delete(id, franchiseId);
   }
 
@@ -156,8 +151,7 @@ export class UsersController {
     if (id === req.user.userId) {
       throw new BadRequestException('Cannot change your own role this way');
     }
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    const franchiseId = req.user?.franchise_id || undefined;
     return this.usersService.updateRole(id, newRole, franchiseId);
   }
 
@@ -170,8 +164,7 @@ export class UsersController {
     @Body('created_at') createdAt: string,
     @Request() req,
   ) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || undefined);
+    const franchiseId = req.user?.franchise_id || undefined;
     return this.usersService.updateJoiningDate(id, new Date(createdAt), franchiseId);
   }
 }

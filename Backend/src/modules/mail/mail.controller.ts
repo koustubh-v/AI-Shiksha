@@ -18,8 +18,7 @@ export class MailController {
     @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
     @ApiOperation({ summary: 'Get all custom email templates for the current franchise' })
     async getTemplates(@Request() req) {
-        const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-        const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
+        const franchiseId = req.user?.franchise_id || null;
         return this.mailService.getCustomTemplates(franchiseId);
     }
 
@@ -31,8 +30,7 @@ export class MailController {
         @Body() updateDto: UpdateEmailTemplateDto,
         @Request() req
     ) {
-        const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-        const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id || null);
+        const franchiseId = req.user?.franchise_id || null;
         return this.mailService.upsertCustomTemplate(type, updateDto, franchiseId);
     }
 }

@@ -38,8 +38,7 @@ export class FeedbackController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all feedback (Admin)' })
   getAdminFeedback(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || null);
+    const franchiseId = req.user?.franchise_id || null;
     return this.feedbackService.getAdminFeedback(franchiseId);
   }
 
@@ -52,8 +51,7 @@ export class FeedbackController {
     @Param('id') id: string,
     @Body('status') status: string,
   ) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || null);
+    const franchiseId = req.user?.franchise_id || null;
     return this.feedbackService.updateFeedbackStatus(id, status, franchiseId);
   }
 }

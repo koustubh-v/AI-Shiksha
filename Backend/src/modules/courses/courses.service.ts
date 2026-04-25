@@ -117,11 +117,6 @@ export class CoursesService {
     const whereClause: any = {};
     if (franchiseId) {
       whereClause.franchise_id = franchiseId;
-    } else if (userRole === 'SUPER_ADMIN') {
-      // SUPER ADMIN ISOLATION:
-      // If Super Admin requests "All Courses" without a specific franchise filter,
-      // show ONLY System Courses (franchise_id: null).
-      whereClause.franchise_id = null;
     }
 
     if (!adminRequest) {

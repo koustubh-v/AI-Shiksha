@@ -39,8 +39,7 @@ export class QuizzesController {
   @Get()
   @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   findAll(@Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN;
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id || null);
+    const franchiseId = req.user?.franchise_id || null;
     return this.quizzesService.findAll(franchiseId);
   }
 

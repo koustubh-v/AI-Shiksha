@@ -27,8 +27,7 @@ export class TagsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new tag' })
   create(@Request() req, @Body() createTagDto: CreateTagDto) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.tagsService.create(createTagDto, franchiseId);
   }
 
@@ -41,8 +40,7 @@ export class TagsController {
       const tenantId = (req as any).tenantId;
       return this.tagsService.findAll(tenantId);
     }
-    const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    const franchiseId = user.franchise_id ?? null;
     return this.tagsService.findAll(franchiseId);
   }
 
@@ -68,8 +66,7 @@ export class TagsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete tag (Admin only)' })
   remove(@Param('id') id: string, @Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.tagsService.remove(id, franchiseId);
   }
 }

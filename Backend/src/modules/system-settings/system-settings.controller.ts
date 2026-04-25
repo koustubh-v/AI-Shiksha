@@ -16,8 +16,7 @@ export class SystemSettingsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get Terms and Conditions (franchise-scoped)' })
     async getTerms(@Request() req) {
-        const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-        const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id ?? null);
+        const franchiseId = req.user?.franchise_id ?? null;
         return this.systemSettingsService.getTerms(franchiseId);
     }
 
@@ -27,8 +26,7 @@ export class SystemSettingsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update Terms and Conditions (Admin only, franchise-scoped)' })
     async updateTerms(@Request() req, @Body('content') content: string) {
-        const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-        const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id ?? null);
+        const franchiseId = req.user?.franchise_id ?? null;
         return this.systemSettingsService.updateTerms(content, franchiseId);
     }
 

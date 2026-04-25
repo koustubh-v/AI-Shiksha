@@ -218,10 +218,14 @@ export default function TeachersPage() {
                     {/* Right: Status & Actions */}
                     <div className="flex items-center justify-between lg:justify-end gap-6 shrink-0">
                       <div className="flex items-center gap-4">
-                        {teacher.rating > 0 && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-none border border-amber-100 dark:border-amber-500/20 text-xs font-bold">
+                        {teacher.rating > 0 ? (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-none border border-amber-100 dark:border-amber-500/20 text-xs font-bold w-[60px] justify-center">
                             <Star className="h-3 w-3 fill-current" />
                             <span>{teacher.rating.toFixed(1)}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-50 dark:bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 rounded-none border border-zinc-200 dark:border-zinc-500/20 text-xs font-bold w-[60px] justify-center">
+                            <span>New</span>
                           </div>
                         )}
                         <Badge variant="outline" className={cn(

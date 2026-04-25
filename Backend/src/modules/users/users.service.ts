@@ -343,16 +343,6 @@ export class UsersService {
 
     if (franchiseId) {
       where.franchise_id = franchiseId;
-    } else if (isSuperAdmin) {
-      // SUPER ADMIN ISOLATION:
-      // If Super Admin requests "All Users" without a specific franchise filter,
-      // show ONLY System Users (franchise_id: null).
-      // This prevents the main admin dashboard from being cluttered with franchise users.
-      where.franchise_id = null;
-    } else {
-      // Fallback (shouldn't happen due to controller checks): 
-      // If not super admin and no franchise ID, they strictly shouldn't see anything or just their own.
-      // But let's keep it safe.
     }
 
     // What about "System Users" (users with franchise_id = null)?

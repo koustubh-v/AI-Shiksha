@@ -30,8 +30,7 @@ export class CategoriesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new category (Admin only)' })
   create(@Request() req, @Body() createCategoryDto: CreateCategoryDto) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? null : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.categoriesService.create(createCategoryDto, franchiseId);
   }
 
@@ -44,8 +43,7 @@ export class CategoriesController {
       const tenantId = (req as any).tenantId;
       return this.categoriesService.findAll(tenantId);
     }
-    const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+    const franchiseId = user.franchise_id ?? null;
     return this.categoriesService.findAll(franchiseId);
   }
 
@@ -75,8 +73,7 @@ export class CategoriesController {
     @Body() updateCategoryDto: CreateCategoryDto,
     @Request() req,
   ) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.categoriesService.update(id, updateCategoryDto, franchiseId);
   }
 
@@ -86,8 +83,7 @@ export class CategoriesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete category (Admin only)' })
   remove(@Param('id') id: string, @Request() req) {
-    const isSuperAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === 'SUPER_ADMIN';
-    const franchiseId = isSuperAdmin ? undefined : (req.user?.franchise_id ?? null);
+    const franchiseId = req.user?.franchise_id ?? null;
     return this.categoriesService.remove(id, franchiseId);
   }
 }

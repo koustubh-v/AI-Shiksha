@@ -32,13 +32,9 @@ export class TagsService {
   }
 
   async findAll(franchiseId?: string | null) {
-    // Super admin (franchiseId === undefined): sees system tags (franchise_id: null)
-    // Franchise admin: sees their franchise's tags
     const where: any = {};
     if (franchiseId !== undefined) {
       where.franchise_id = franchiseId;
-    } else {
-      where.franchise_id = null;
     }
 
     return this.prisma.tag.findMany({

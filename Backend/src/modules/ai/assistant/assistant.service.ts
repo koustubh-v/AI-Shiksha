@@ -152,7 +152,7 @@ export class AssistantService {
             select: { status: true },
           });
 
-          if (!enrollment || enrollment.status !== 'active') {
+          if (!enrollment || !['active', 'completed'].includes(enrollment.status)) {
             throw new ForbiddenException(
               'You must have an active enrollment in this course to use the AI assistant.',
             );

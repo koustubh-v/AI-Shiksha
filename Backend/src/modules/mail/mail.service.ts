@@ -97,17 +97,30 @@ ${customTemplate.body}
         try {
             const context = await this.getFranchiseContext(user.franchise_id);
 
+            // Convert plain-text message (with \n) to HTML paragraphs
+            const messageHtml = message
+                .split('\n')
+                .map(line => line.trim() ? `<p>${line}</p>` : '')
+                .join('');
+
+            const html = `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                    ${context.brandLogo ? `<div style="text-align:center;padding:20px 0;"><img src="${context.brandLogo}" alt="${context.brandName}" style="max-height:60px;"/></div>` : ''}
+                    <div style="background:#f9f9f9;padding:30px;border-radius:8px;">
+                        <h2 style="color:#1a1a1a;margin-top:0;">${subject}</h2>
+                        <p style="color:#333;">Hi ${user.name},</p>
+                        ${messageHtml}
+                        <p style="color:#666;font-size:12px;margin-top:30px;">Best regards,<br>The ${context.brandName} Team</p>
+                    </div>
+                    <p style="text-align:center;color:#999;font-size:11px;padding:15px;">© ${new Date().getFullYear()} ${context.brandName}. All rights reserved.</p>
+                </div>
+            `;
+
             await this.mailerService.sendMail({
                 to: user.email,
                 replyTo: context.supportEmail,
                 subject: subject,
-                template: './notification', // We can use notification template
-                context: {
-                    name: user.name,
-                    title: subject,
-                    message: message,
-                    ...context,
-                },
+                html,
             });
             this.logger.log(`Support notification email sent to ${user.email}`);
         } catch (error) {
@@ -300,14 +313,17 @@ ${customTemplate.body}
         }
     }
 
-    async sendCertificateEmail(user: { email: string; name: string; franchise_id: string | null }, courseTitle: string, certificateUrl: string) {
+    async sendCertificateEmail(user: { email: string; name: string; franchise_id: string | null }, courseTitle: string, certificateUrl?: string) {
         try {
             const context = await this.getFranchiseContext(user.franchise_id);
+
+            // Always use the franchise-specific frontendUrl, not whatever was passed in
+            const resolvedCertUrl = `${context.frontendUrl}/dashboard/certificates`;
 
             const fullContext = {
                 name: user.name,
                 courseTitle,
-                certificateUrl,
+                certificateUrl: resolvedCertUrl,
                 franchise_id: user.franchise_id,
                 ...context,
             };

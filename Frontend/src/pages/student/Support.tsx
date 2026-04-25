@@ -436,11 +436,11 @@ export default function Support() {
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0 text-gray-900 bg-white">
-                    <SheetHeader className="p-6 border-b border-gray-100 pb-4">
+                    <SheetHeader className="p-6 border-b border-gray-100 pb-4 bg-white">
                         <div className="flex items-center justify-between">
                             <div>
-                                <SheetTitle className="text-lg pb-1">{selectedTicket?.subject}</SheetTitle>
-                                <SheetDescription>
+                                <SheetTitle className="text-lg pb-1 text-gray-900">{selectedTicket?.subject}</SheetTitle>
+                                <SheetDescription className="text-gray-500">
                                     Ticket ID: TICK-{selectedTicket?.id?.split('-')[0]} • Created {selectedTicket && new Date(selectedTicket.created_at).toLocaleDateString()}
                                 </SheetDescription>
                             </div>

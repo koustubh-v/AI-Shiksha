@@ -1,10 +1,8 @@
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Search,
   Filter,
@@ -12,7 +10,8 @@ import {
   GraduationCap,
   BookOpen,
   TrendingUp,
-  Mail,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { UnifiedDashboard } from "@/components/layout/UnifiedDashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,9 +25,9 @@ import {
 import { useUsers } from "@/hooks/useUsers";
 import { Users as UsersAPI, Instructors } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useDeleteUser } from "@/hooks/useUsers";
+import { cn } from "@/lib/utils";
 
 export default function StudentsPage() {
   const { user } = useAuth();
@@ -51,6 +50,7 @@ function AdminStudents() {
     newThisMonth: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -66,132 +66,178 @@ function AdminStudents() {
     fetchStats();
   }, []);
 
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    s.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const content = (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-2xl font-bold">
-                  {loadingStats ? "..." : stats.totalStudents.toLocaleString()}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-primary" />
-              </div>
+    <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto transition-all duration-700 ease-out animate-in fade-in slide-in-from-bottom-8">
+      
+      {/* Dynamic Header */}
+      <div className="relative overflow-hidden rounded-none bg-zinc-950 p-8 shadow-2xl border border-white/10 group">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-pink-500/20 opacity-50 transition-opacity duration-1000 group-hover:opacity-70"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/30 blur-3xl transition-transform duration-1000 group-hover:scale-110"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+              Students Roster
+            </h2>
+            <p className="text-sm md:text-lg text-white/60 font-medium max-w-xl">
+              Track student progress, monitor engagement, and manage their learning journey.
+            </p>
+          </div>
+          <div className="shrink-0 relative w-full md:w-80">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-white/40" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Learners</p>
-                <p className="text-2xl font-bold">
-                  {loadingStats ? "..." : stats.activeStudents.toLocaleString()}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-accent" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Completion</p>
-                <p className="text-2xl font-bold">
-                  {loadingStats ? "..." : `${stats.avgCompletion}%`}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-chart-3/20 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-chart-3" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5 border-chart-4/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">New This Month</p>
-                <p className="text-2xl font-bold">
-                  {loadingStats ? "..." : `+${stats.newThisMonth.toLocaleString()}`}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-chart-4" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Input
+              placeholder="Search students by name or email..."
+              className="pl-12 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-indigo-500 shadow-[0_0_40px_rgba(0,0,0,0.3)] backdrop-blur-md font-medium"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Filters & Search */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>All Students</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 sm:flex-none">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search students..." className="pl-9 sm:w-64 w-full" />
+      {/* Floating Glass Stats */}
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+          <div className="relative p-6 flex flex-col h-full z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 group-hover:scale-110 transition-transform duration-500">
+                <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <Button variant="outline" size="icon" className="shrink-0">
-                <Filter className="h-4 w-4" />
-              </Button>
+            </div>
+            <div className="mt-auto space-y-1">
+              <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                {loadingStats ? "..." : stats.totalStudents.toLocaleString()}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Total Students</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="h-24 text-center">Loading students...</TableCell></TableRow>
-              ) : students.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="h-24 text-center">No students found.</TableCell></TableRow>
-              ) : students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {student.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{student.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{student.email}</p>
-                      </div>
+        </div>
+
+        <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+          <div className="relative p-6 flex flex-col h-full z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 group-hover:scale-110 transition-transform duration-500">
+                <BookOpen className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+            <div className="mt-auto space-y-1">
+              <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                {loadingStats ? "..." : stats.activeStudents.toLocaleString()}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Active Learners</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+          <div className="relative p-6 flex flex-col h-full z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 group-hover:scale-110 transition-transform duration-500">
+                <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <div className="mt-auto space-y-1">
+              <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                {loadingStats ? "..." : `${stats.avgCompletion}%`}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Avg. Completion</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-fuchsia-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+          <div className="relative p-6 flex flex-col h-full z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
+                <GraduationCap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <div className="mt-auto space-y-1">
+              <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                {loadingStats ? "..." : `+${stats.newThisMonth.toLocaleString()}`}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">New This Month</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Ledger */}
+      <div className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+        <div className="border-b border-black/5 dark:border-white/5 p-6 bg-white/40 dark:bg-zinc-950/40 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-zinc-400" />
+            Students Ledger
+          </h3>
+          <Button variant="outline" size="icon" className="rounded-none border-black/10 dark:border-white/10 shrink-0">
+            <Filter className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="p-0">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+              <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Loading Students...</p>
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4 text-center px-4">
+              <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-none flex items-center justify-center mb-2">
+                <GraduationCap className="h-8 w-8 text-zinc-400" />
+              </div>
+              <p className="text-lg font-bold text-zinc-900 dark:text-white">No students found</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Try adjusting your search filters.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {filteredStudents.map((student) => (
+                <div key={student.id} className="group p-4 md:p-6 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 rounded-none border border-black/10 dark:border-white/10 shadow-sm">
+                      <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black rounded-none">
+                        {student.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-zinc-900 dark:text-white text-base truncate">
+                        {student.name}
+                      </h4>
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                        {student.email}
+                      </p>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="default">Active</Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">{new Date(student.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
+                  </div>
+                  
+                  <div className="flex items-center gap-6 sm:ml-auto">
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant="outline" className="rounded-none uppercase tracking-widest text-[10px] px-2 py-0.5 border border-emerald-500/30 text-emerald-600 bg-emerald-500/5">
+                        Active
+                      </Badge>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest hidden sm:block">
+                        Joined {new Date(student.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="rounded-none border border-transparent hover:border-black/10 dark:hover:border-white/10 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="rounded-none border-black/10 dark:border-white/10">
                         <DropdownMenuItem 
-                          className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                          className="text-red-600 focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-500/10 rounded-none cursor-pointer gap-2 font-medium text-xs uppercase tracking-widest"
                           onClick={async () => {
                             if (confirm("Are you sure you want to delete this student?")) {
                               try {
@@ -203,18 +249,18 @@ function AdminStudents() {
                             }
                           }}
                         >
-                          Delete
+                          <Trash2 className="h-4 w-4" />
+                          Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 
@@ -254,108 +300,102 @@ function TeacherStudents() {
     fetchStudents();
   }, []);
 
-  const filteredStudents = students.filter((s: any) => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
-    s.email.toLowerCase().includes(search.toLowerCase()) ||
-    s.courseTitle.toLowerCase().includes(search.toLowerCase())
+  const filteredStudents = students.filter(
+    (student) =>
+      student.name.toLowerCase().includes(search.toLowerCase()) ||
+      student.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <UnifiedDashboard title="My Students" subtitle="Manage students enrolled in your courses">
-      <div className="p-6 max-w-7xl mx-auto space-y-8 font-sans">
+    <UnifiedDashboard title="My Students" subtitle="Track progress of students in your courses">
+      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto transition-all duration-700 ease-out animate-in fade-in slide-in-from-bottom-8">
         
-        {/* Header Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <div>
-            <h2 className="text-2xl font-light text-[#1F1F1F]">Enrolled Students</h2>
-            <p className="text-sm text-[#555555]">View progress and engagement for your learners</p>
-          </div>
-        </div>
-
-        {/* Filters & Search */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        {/* Dynamic Header */}
+        <div className="relative overflow-hidden rounded-none bg-zinc-950 p-8 shadow-2xl border border-white/10 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-blue-500/10 to-sky-500/20 opacity-50 transition-opacity duration-1000 group-hover:opacity-70"></div>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/30 blur-3xl transition-transform duration-1000 group-hover:scale-110"></div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+                My Students
+              </h2>
+              <p className="text-sm md:text-lg text-white/60 font-medium max-w-xl">
+                View all students enrolled in the courses you teach.
+              </p>
+            </div>
+            <div className="shrink-0 relative w-full md:w-80">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-white/40" />
+              </div>
               <Input
-                placeholder="Search students or courses..."
+                placeholder="Search students..."
+                className="pl-12 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-indigo-500 shadow-[0_0_40px_rgba(0,0,0,0.3)] backdrop-blur-md font-medium"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-gray-50 border-0 focus-visible:ring-1 focus-visible:ring-lms-blue/20 rounded-full"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <Table>
-            <TableHeader className="bg-gray-50/50">
-              <TableRow>
-                <TableHead className="py-4">Student</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Enrolled Date</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading students...</TableCell>
-                </TableRow>
-              ) : filteredStudents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No students found matching your criteria.</TableCell>
-                </TableRow>
-              ) : (
-                filteredStudents.map((student: any, idx: number) => (
-                  <TableRow key={`${student.id}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="py-4">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                            <AvatarImage src={student.avatar} alt={student.name} />
-                            <AvatarFallback>{student.name.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{student.name}</span>
-                            <span className="text-xs text-gray-500">{student.email}</span>
-                            </div>
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium text-gray-700">{student.courseTitle}</span>
+        {/* Ledger */}
+        <div className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+          <div className="border-b border-black/5 dark:border-white/5 p-6 bg-white/40 dark:bg-zinc-950/40 flex items-center justify-between">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-zinc-400" />
+              Roster
+            </h3>
+          </div>
+          
+          <div className="p-0">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Loading Roster...</p>
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4 text-center px-4">
+                <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-none flex items-center justify-center mb-2">
+                  <GraduationCap className="h-8 w-8 text-zinc-400" />
+                </div>
+                <p className="text-lg font-bold text-zinc-900 dark:text-white">No students yet</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">Wait for students to enroll in your courses.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-black/5 dark:divide-white/5">
+                {filteredStudents.map((student) => (
+                  <div key={student.id} className="group p-4 md:p-6 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 rounded-none border border-black/10 dark:border-white/10 shadow-sm">
+                        <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black rounded-none">
+                          {student.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-zinc-900 dark:text-white text-base truncate">
+                          {student.name}
+                        </h4>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                          {student.email}
+                        </p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{student.progress}%</span>
-                        <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-lms-blue transition-all" 
-                                style={{ width: `${student.progress}%` }}
-                            />
-                        </div>
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-gray-500">
-                        {new Date(student.enrolledAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={
-                          student.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 
-                          student.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          'bg-gray-50 text-gray-700 border-gray-200'
-                      }>
-                        {student.status?.replace('_', ' ') || 'Unknown'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    </div>
+                    
+                    <div className="flex items-center gap-6 sm:ml-auto">
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="outline" className="rounded-none uppercase tracking-widest text-[10px] px-2 py-0.5 border border-indigo-500/30 text-indigo-600 bg-indigo-500/5">
+                          Enrolled
+                        </Badge>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest hidden sm:block">
+                          {student.courseCount || 1} Courses
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </UnifiedDashboard>

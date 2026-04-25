@@ -11,16 +11,23 @@ export class RazorpayService {
     private mailService: MailService,
   ) {}
 
+  private async resolveFranchiseId(franchiseId?: string) {
+    if (franchiseId) return franchiseId;
+    const defaultFranchise = await this.prisma.franchise.findFirst({ orderBy: { created_at: 'asc' } });
+    if (!defaultFranchise) throw new BadRequestException('No franchise found');
+    return defaultFranchise.id;
+  }
+
   async getSettings(franchiseId: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     const settings = await this.prisma.razorpaySetting.findUnique({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
     });
     
-    // Create default if not exists
     if (!settings) {
       return this.prisma.razorpaySetting.create({
         data: {
-          franchise_id: franchiseId,
+          franchise_id: resolvedId,
           key_id: '',
           key_secret: '',
           webhook_secret: '',
@@ -34,10 +41,11 @@ export class RazorpayService {
   }
 
   async updateSettings(franchiseId: string, data: any) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     return this.prisma.razorpaySetting.upsert({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
       create: {
-        franchise_id: franchiseId,
+        franchise_id: resolvedId,
         key_id: data.key_id || '',
         key_secret: data.key_secret || '',
         webhook_secret: data.webhook_secret || '',
@@ -55,7 +63,8 @@ export class RazorpayService {
   }
 
   async createOrder(franchiseId: string, userId: string, data: { courseIds: string[]; amount: number; couponId?: string }) {
-    const settings = await this.getSettings(franchiseId);
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
+    const settings = await this.getSettings(resolvedId);
     
     if (!settings.is_enabled || !settings.key_id || !settings.key_secret) {
       throw new BadRequestException('Razorpay is not configured for this franchise');
@@ -101,7 +110,6 @@ export class RazorpayService {
     try {
       const order = await razorpay.orders.create(options);
 
-      // Create one Payment record per course, all tied to the same orderId
       const amountPerCourse = data.amount / data.courseIds.length;
       await this.prisma.payment.createMany({
         data: data.courseIds.map((courseId) => ({
@@ -112,7 +120,7 @@ export class RazorpayService {
           payment_provider: 'razorpay',
           payment_status: 'payment_pending',
           order_id: order.id,
-          franchise_id: franchiseId,
+          franchise_id: resolvedId,
           coupon_id: data.couponId || null,
         })),
       });
@@ -129,7 +137,8 @@ export class RazorpayService {
   }
 
   async verifyPayment(franchiseId: string, data: { paymentId: string; orderId: string; signature: string }) {
-    const settings = await this.getSettings(franchiseId);
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
+    const settings = await this.getSettings(resolvedId);
     
     if (!settings.key_secret) {
       throw new BadRequestException('Razorpay configuration missing');
@@ -143,26 +152,24 @@ export class RazorpayService {
 
       if (generatedSignature !== data.signature) {
         await this.prisma.payment.updateMany({
-          where: { order_id: data.orderId, franchise_id: franchiseId },
+          where: { order_id: data.orderId, franchise_id: resolvedId },
           data: { payment_status: 'failed' }
         });
         throw new BadRequestException('Invalid payment signature');
       }
     }
 
-    // Find ALL payments for this order (one per course in the cart)
     const payments = await this.prisma.payment.findMany({
-      where: { order_id: data.orderId, franchise_id: franchiseId }
+      where: { order_id: data.orderId, franchise_id: resolvedId }
     });
 
     if (!payments.length) {
       throw new NotFoundException('Payment records not found');
     }
 
-    // Mark all payments as success and enroll in all courses
     await this.prisma.$transaction([
       this.prisma.payment.updateMany({
-        where: { order_id: data.orderId, franchise_id: franchiseId },
+        where: { order_id: data.orderId, franchise_id: resolvedId },
         data: {
           payment_status: 'success',
           transaction_id: data.paymentId,
@@ -179,7 +186,7 @@ export class RazorpayService {
           create: {
             student_id: payment.user_id,
             course_id: payment.course_id,
-            franchise_id: franchiseId,
+            franchise_id: resolvedId,
             payment_id: payment.id,
             status: 'active',
             progress_percentage: 0,
@@ -190,7 +197,6 @@ export class RazorpayService {
           }
         })
       ),
-      // Increment coupon usage once (if any payment has coupon)
       ...(payments[0]?.coupon_id ? [
         this.prisma.coupon.update({
           where: { id: payments[0].coupon_id },
@@ -199,7 +205,6 @@ export class RazorpayService {
       ] : [])
     ]);
 
-    // Send purchase confirmation emails
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: payments[0].user_id },
@@ -229,7 +234,6 @@ export class RazorpayService {
         );
       }
     } catch (emailError) {
-      // Don't fail the payment verification if email sending fails
       console.error('Failed to send purchase confirmation email:', emailError);
     }
 
@@ -237,8 +241,9 @@ export class RazorpayService {
   }
 
   async getTransactions(franchiseId: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     return this.prisma.payment.findMany({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
       include: {
         user: { select: { name: true, email: true } },
         course: { select: { title: true } }

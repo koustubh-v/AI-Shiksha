@@ -5,10 +5,18 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class CouponsService {
   constructor(private prisma: PrismaService) {}
 
+  private async resolveFranchiseId(franchiseId?: string) {
+    if (franchiseId) return franchiseId;
+    const defaultFranchise = await this.prisma.franchise.findFirst({ orderBy: { created_at: 'asc' } });
+    if (!defaultFranchise) throw new BadRequestException('No franchise found');
+    return defaultFranchise.id;
+  }
+
   async create(franchiseId: string, data: any) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     const existing = await this.prisma.coupon.findUnique({
       where: {
-        code_franchise_id: { code: data.code, franchise_id: franchiseId },
+        code_franchise_id: { code: data.code, franchise_id: resolvedId },
       },
     });
 
@@ -19,14 +27,15 @@ export class CouponsService {
     return this.prisma.coupon.create({
       data: {
         ...data,
-        franchise_id: franchiseId,
+        franchise_id: resolvedId,
       },
     });
   }
 
   async findAll(franchiseId: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     return this.prisma.coupon.findMany({
-      where: { franchise_id: franchiseId },
+      where: { franchise_id: resolvedId },
       orderBy: { created_at: 'desc' },
       include: {
         course: { select: { id: true, title: true } }
@@ -35,8 +44,9 @@ export class CouponsService {
   }
 
   async findOne(franchiseId: string, id: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     const coupon = await this.prisma.coupon.findFirst({
-      where: { id, franchise_id: franchiseId },
+      where: { id, franchise_id: resolvedId },
     });
     if (!coupon) throw new NotFoundException('Coupon not found');
     return coupon;
@@ -58,8 +68,9 @@ export class CouponsService {
   }
 
   async validate(franchiseId: string, code: string, courseId: string, userId: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     const coupon = await this.prisma.coupon.findFirst({
-      where: { code, franchise_id: franchiseId, is_active: true }
+      where: { code, franchise_id: resolvedId, is_active: true }
     });
 
     if (!coupon) throw new NotFoundException('Invalid or expired coupon');
@@ -121,8 +132,9 @@ export class CouponsService {
   }
 
   async validateBatch(franchiseId: string, code: string, courseIds: string[], userId: string) {
+    const resolvedId = await this.resolveFranchiseId(franchiseId);
     const coupon = await this.prisma.coupon.findFirst({
-      where: { code, franchise_id: franchiseId, is_active: true }
+      where: { code, franchise_id: resolvedId, is_active: true }
     });
 
     if (!coupon) throw new NotFoundException('Invalid or expired coupon');

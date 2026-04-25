@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,28 +19,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import {
   Search,
   Plus,
   MoreVertical,
-  Mail,
   Ban,
   Shield,
   Users,
@@ -53,8 +36,10 @@ import {
   X,
   Trash2,
   UserCog,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 import Papa from "papaparse";
 import { useUsers, useCreateUser, useBulkCreateUsers, useDeleteUser, useUpdateUserRole } from "@/hooks/useUsers";
@@ -75,7 +60,6 @@ export default function UsersPage() {
   const [isUploadingCSV, setIsUploadingCSV] = useState(false);
   const { toast } = useToast();
 
-  // Fetch all users to ensure correct stats counts
   const { users: allUsers = [], isLoading } = useUsers();
 
   const createUserMutation = useCreateUser();
@@ -83,7 +67,6 @@ export default function UsersPage() {
   const deleteUserMutation = useDeleteUser();
   const updateUserRoleMutation = useUpdateUserRole();
 
-  // Filter users based on active tab
   const tabFilteredUsers = allUsers.filter((user) => {
     if (activeTab === 'all') return true;
     const role = user.role.toLowerCase();
@@ -93,12 +76,11 @@ export default function UsersPage() {
     return false;
   });
 
-  // Filter users based on search
   const filteredUsers = tabFilteredUsers.filter((user) => {
-    const matchesSearch =
+    return (
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   const handleAddUser = async () => {
@@ -160,7 +142,6 @@ export default function UsersPage() {
             return;
           }
 
-          // Validate row data loosely before sending to backend
           const validUsers = data.filter((row: any) =>
             row.name && row.email && row.role && row.password &&
             row.password.length >= 6
@@ -202,7 +183,7 @@ export default function UsersPage() {
           });
         } finally {
           setIsUploadingCSV(false);
-          if (e.target) e.target.value = ''; // Reset input
+          if (e.target) e.target.value = '';
         }
       },
       error: (error) => {
@@ -271,13 +252,6 @@ export default function UsersPage() {
     setSelectedUsers([]);
   };
 
-  const handleSendEmail = (user: any) => {
-    toast({
-      title: "Email Sent",
-      description: `Email sent to ${user.email}`,
-    });
-  };
-
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!confirm(`Are you sure you want to delete ${userName}?`)) return;
 
@@ -323,504 +297,444 @@ export default function UsersPage() {
     }
   };
 
-  const stats = [
-    { label: "Total Users", value: allUsers.length, icon: Users, color: "text-primary" },
-    { label: "Active", value: allUsers.length, icon: UserCheck, color: "text-emerald-600" },
-    { label: "Teachers", value: allUsers.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length, icon: Shield, color: "text-primary" },
-    { label: "Suspended", value: 0, icon: UserX, color: "text-destructive" },
-  ];
+  const getRoleColor = (role: string) => {
+    const r = role.toLowerCase();
+    if (r === "admin" || r === "super_admin" || r === "franchise_admin") return "border-red-500/30 text-red-600 bg-red-500/5";
+    if (r === "instructor" || r === "teacher") return "border-purple-500/30 text-purple-600 bg-purple-500/5";
+    return "border-emerald-500/30 text-emerald-600 bg-emerald-500/5"; // Student
+  };
 
   return (
     <AdminDashboardLayout title="User Management" subtitle="Manage platform users and permissions">
-      <div className="space-y-4 md:space-y-6">
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-2xl font-semibold">{stat.value}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto transition-all duration-700 ease-out animate-in fade-in slide-in-from-bottom-8">
+        
+        {/* Dynamic Header */}
+        <div className="relative overflow-hidden rounded-none bg-zinc-950 p-8 shadow-2xl border border-white/10 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-rose-500/10 to-orange-500/20 opacity-50 transition-opacity duration-1000 group-hover:opacity-70"></div>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-500/30 blur-3xl transition-transform duration-1000 group-hover:scale-110"></div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+                Global Users
+              </h2>
+              <p className="text-sm md:text-lg text-white/60 font-medium max-w-xl">
+                Manage roles, permissions, and accounts across the entire platform.
+              </p>
+            </div>
+            
+            {/* Actions Container */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Input
+                  placeholder="Search by name or email..."
+                  className="pl-9 h-12 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-red-500 shadow-[0_0_40px_rgba(0,0,0,0.3)] backdrop-blur-md font-medium w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
-        {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search users by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background"
-            />
-          </div>
-          <div className="flex gap-2">
-            {/* CSV Upload Dialog */}
-            <Dialog open={isCSVUploadOpen} onOpenChange={setIsCSVUploadOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">Import CSV</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Import Users from CSV</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {/* Guidelines */}
-                  <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <FileText className="h-4 w-4 text-primary" />
-                      CSV Format Guidelines
+              {/* CSV Upload */}
+              <Dialog open={isCSVUploadOpen} onOpenChange={setIsCSVUploadOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-12 rounded-none border-white/20 bg-white/5 text-white hover:bg-white/10 w-full sm:w-auto">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg rounded-none border border-black/10 dark:border-white/10">
+                  <DialogHeader>
+                    <DialogTitle className="font-black text-xl uppercase tracking-widest">Import Users</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 pt-4">
+                    <div className="bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-none p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-zinc-900 dark:text-white">
+                        <FileText className="h-4 w-4 text-red-500" />
+                        CSV Guidelines
+                      </div>
+                      <ul className="text-sm font-medium text-zinc-500 dark:text-zinc-400 space-y-2 list-disc pl-5">
+                        <li>Headers required: <code className="bg-black/5 dark:bg-white/5 px-1 py-0.5 font-mono text-xs">name,email,role,password</code></li>
+                        <li>Role options: <code className="bg-black/5 dark:bg-white/5 px-1 py-0.5 font-mono text-xs">student</code>, <code className="bg-black/5 dark:bg-white/5 px-1 py-0.5 font-mono text-xs">teacher</code>, <code className="bg-black/5 dark:bg-white/5 px-1 py-0.5 font-mono text-xs">admin</code></li>
+                        <li>Max 500 rows per upload</li>
+                      </ul>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="gap-1 p-0 h-auto text-red-600 dark:text-red-400 hover:text-red-700 font-bold uppercase tracking-widest text-[10px]"
+                        onClick={downloadCSVTemplate}
+                      >
+                        <Download className="h-3 w-3" />
+                        Download Template
+                      </Button>
                     </div>
-                    <ul className="text-sm text-muted-foreground space-y-1.5 ml-6 list-disc">
-                      <li>First row must contain headers: <code className="bg-muted px-1 rounded text-xs">name,email,role,password</code></li>
-                      <li>Role must be one of: <code className="bg-muted px-1 rounded text-xs">student</code>, <code className="bg-muted px-1 rounded text-xs">teacher</code>, or <code className="bg-muted px-1 rounded text-xs">admin</code></li>
-                      <li>Email addresses must be unique and valid</li>
-                      <li>Password must be at least 8 characters</li>
-                      <li>Maximum 500 users per upload</li>
-                    </ul>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="gap-1 p-0 h-auto text-primary"
-                      onClick={downloadCSVTemplate}
-                    >
-                      <Download className="h-3 w-3" />
-                      Download Template CSV
-                    </Button>
-                  </div>
 
-                  {/* Upload Area */}
-                  <div className={`border-2 border-dashed border-border rounded-lg p-8 text-center transition-colors ${isUploadingCSV ? 'opacity-50 pointer-events-none' : 'hover:border-primary/50'}`}>
-                    <input
-                      type="file"
-                      accept=".csv"
-                      onChange={handleCSVUpload}
-                      className="hidden"
-                      id="csv-upload"
-                      disabled={isUploadingCSV}
-                    />
-                    <label htmlFor="csv-upload" className="cursor-pointer">
-                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm font-medium">
-                        {isUploadingCSV ? "Processing CSV... Please wait." : "Click to upload or drag and drop"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">CSV files only (max 500 rows)</p>
-                    </label>
+                    <div className={`border-2 border-dashed rounded-none p-8 text-center transition-colors ${isUploadingCSV ? 'border-zinc-300 dark:border-zinc-700 opacity-50 pointer-events-none' : 'border-black/20 dark:border-white/20 hover:border-red-500'}`}>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCSVUpload}
+                        className="hidden"
+                        id="csv-upload"
+                        disabled={isUploadingCSV}
+                      />
+                      <label htmlFor="csv-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="h-10 w-10 text-zinc-400 mb-3" />
+                        <p className="text-sm font-bold uppercase tracking-widest text-zinc-900 dark:text-white">
+                          {isUploadingCSV ? "Processing CSV..." : "Click to upload"}
+                        </p>
+                      </label>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
 
-            {/* Add User Dialog */}
-            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Add User</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter full name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter email address"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-3 pt-2">
-                    <Label className="text-sm font-medium">Role *</Label>
-                    <RadioGroup
-                      value={newUser.role}
-                      onValueChange={(value) => setNewUser({ ...newUser, role: value })}
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                    >
-                      <div>
-                        <RadioGroupItem value="student" id="role-student" className="peer sr-only" />
-                        <Label
-                          htmlFor="role-student"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                        >
-                          Student
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="teacher" id="role-teacher" className="peer sr-only" />
-                        <Label
-                          htmlFor="role-teacher"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                        >
-                          Teacher
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="admin" id="role-admin" className="peer sr-only" />
-                        <Label
-                          htmlFor="role-admin"
-                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                        >
-                          Admin
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Minimum 8 characters"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
+              {/* Add User Dialog */}
+              <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                <DialogTrigger asChild>
+                  <Button className="h-12 rounded-none bg-white hover:bg-zinc-200 text-zinc-900 font-bold uppercase tracking-widest w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md rounded-none border border-black/10 dark:border-white/10">
+                  <DialogHeader>
+                    <DialogTitle className="font-black text-xl uppercase tracking-widest">Add New User</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 pt-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-widest">Full Name *</Label>
+                      <Input
+                        placeholder="John Doe"
+                        className="rounded-none border-black/10 dark:border-white/10 h-10"
+                        value={newUser.name}
+                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-widest">Email Address *</Label>
+                      <Input
+                        type="email"
+                        placeholder="john@example.com"
+                        className="rounded-none border-black/10 dark:border-white/10 h-10"
+                        value={newUser.email}
+                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-xs font-bold uppercase tracking-widest">Role *</Label>
+                      <RadioGroup
+                        value={newUser.role}
+                        onValueChange={(value) => setNewUser({ ...newUser, role: value })}
+                        className="grid grid-cols-3 gap-3"
+                      >
+                        <div>
+                          <RadioGroupItem value="student" id="role-student" className="peer sr-only" />
+                          <Label
+                            htmlFor="role-student"
+                            className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-red-500 peer-data-[state=checked]:bg-red-50 dark:peer-data-[state=checked]:bg-red-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                          >
+                            Student
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem value="teacher" id="role-teacher" className="peer sr-only" />
+                          <Label
+                            htmlFor="role-teacher"
+                            className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-red-500 peer-data-[state=checked]:bg-red-50 dark:peer-data-[state=checked]:bg-red-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                          >
+                            Teacher
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem value="admin" id="role-admin" className="peer sr-only" />
+                          <Label
+                            htmlFor="role-admin"
+                            className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-red-500 peer-data-[state=checked]:bg-red-50 dark:peer-data-[state=checked]:bg-red-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                          >
+                            Admin
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-widest">Password *</Label>
+                      <Input
+                        type="password"
+                        placeholder="Min 8 characters"
+                        className="rounded-none border-black/10 dark:border-white/10 h-10"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      />
+                    </div>
                     <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setIsAddUserOpen(false)}
-                      disabled={createUserMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="flex-1 bg-primary hover:bg-primary/90"
+                      className="w-full rounded-none h-12 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 font-bold uppercase tracking-widest"
                       onClick={handleAddUser}
                       disabled={createUserMutation.isPending}
                     >
-                      {createUserMutation.isPending ? "Adding..." : "Add User"}
+                      {createUserMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Create User
                     </Button>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
-        {/* Bulk Actions Bar */}
-        {selectedUsers.length > 0 && (
-          <Card className="border-primary/50 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-sm font-medium">
-                  {selectedUsers.length} user{selectedUsers.length !== 1 ? "s" : ""} selected
-                </p>
-                <div className="flex gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <UserCog className="h-4 w-4" />
-                        Change Role
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleBulkRoleChange("student")}>
-                        Student
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleBulkRoleChange("teacher")}>
-                        Teacher
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleBulkRoleChange("admin")}>
-                        Admin
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedUsers([])}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+        {/* Floating Glass Stats */}
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+            <div className="relative p-6 flex flex-col h-full z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="mt-auto space-y-1">
+                <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{allUsers.length}</p>
+                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Total Users</p>
+              </div>
+            </div>
+          </div>
 
-        {/* Tabs and Table */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
-            <TabsTrigger value="student">Students ({allUsers.filter((u) => u.role === "STUDENT" || u.role === "student").length})</TabsTrigger>
-            <TabsTrigger value="teacher">Teachers ({allUsers.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length})</TabsTrigger>
-            <TabsTrigger value="admin">Admins ({allUsers.filter((u) => ["admin", "super_admin", "franchise_admin", "admin"].includes(u.role?.toLowerCase())).length})</TabsTrigger>
-          </TabsList>
+          <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+            <div className="relative p-6 flex flex-col h-full z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div className="mt-auto space-y-1">
+                <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{allUsers.length}</p>
+                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Active Users</p>
+              </div>
+            </div>
+          </div>
 
-          <TabsContent value={activeTab} className="mt-4">
-            <Card className="border-border/50">
-              <CardContent className="p-0">
-                <Table className="hidden md:table">
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="font-semibold">User</TableHead>
-                      <TableHead className="font-semibold">Role</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="font-semibold hidden md:table-cell">Joined</TableHead>
-                      <TableHead className="font-semibold hidden lg:table-cell">Last Active</TableHead>
-                      <TableHead className="text-right font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+          <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-fuchsia-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+            <div className="relative p-6 flex flex-col h-full z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+              <div className="mt-auto space-y-1">
+                <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{allUsers.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length}</p>
+                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Instructors</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-rose-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+            <div className="relative p-6 flex flex-col h-full z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 rounded-none flex items-center justify-center shadow-sm bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+              <div className="mt-auto space-y-1">
+                <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">0</p>
+                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Suspended</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ledger */}
+        <div className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="border-b border-black/5 dark:border-white/5 bg-white/40 dark:bg-zinc-950/40 p-0">
+              <TabsList className="bg-transparent h-14 p-0 w-full justify-start rounded-none">
+                <TabsTrigger value="all" className="rounded-none h-full data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:border-b-2 data-[state=active]:border-red-500 data-[state=active]:shadow-none font-bold uppercase tracking-widest text-xs px-6">
+                  All ({allUsers.length})
+                </TabsTrigger>
+                <TabsTrigger value="student" className="rounded-none h-full data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:shadow-none font-bold uppercase tracking-widest text-xs px-6">
+                  Students ({allUsers.filter((u) => u.role === "STUDENT" || u.role === "student").length})
+                </TabsTrigger>
+                <TabsTrigger value="teacher" className="rounded-none h-full data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 data-[state=active]:shadow-none font-bold uppercase tracking-widest text-xs px-6">
+                  Teachers ({allUsers.filter((u) => u.role === "INSTRUCTOR" || u.role === "teacher").length})
+                </TabsTrigger>
+                <TabsTrigger value="admin" className="rounded-none h-full data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:border-b-2 data-[state=active]:border-red-500 data-[state=active]:shadow-none font-bold uppercase tracking-widest text-xs px-6">
+                  Admins ({allUsers.filter((u) => ["admin", "super_admin", "franchise_admin"].includes(u.role?.toLowerCase())).length})
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value={activeTab} className="m-0 border-0 outline-none">
+              
+              {/* Bulk Actions Bar */}
+              {selectedUsers.length > 0 && (
+                <div className="bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-900/50 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      className="border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:text-white rounded-none"
+                    />
+                    <span className="text-sm font-bold text-red-900 dark:text-red-200 uppercase tracking-widest">
+                      {selectedUsers.length} Selected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="rounded-none border-red-200 dark:border-red-900/50 bg-white/50 dark:bg-zinc-900/50 hover:bg-white dark:hover:bg-zinc-900 text-xs font-bold uppercase tracking-widest gap-2">
+                          <UserCog className="h-3 w-3" />
+                          Change Role
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="rounded-none border border-black/10 dark:border-white/10">
+                        <DropdownMenuItem className="cursor-pointer text-xs uppercase tracking-widest font-bold" onClick={() => handleBulkRoleChange("student")}>Student</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer text-xs uppercase tracking-widest font-bold" onClick={() => handleBulkRoleChange("teacher")}>Teacher</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer text-xs uppercase tracking-widest font-bold text-red-600" onClick={() => handleBulkRoleChange("admin")}>Admin</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="destructive" size="sm" className="rounded-none text-xs font-bold uppercase tracking-widest gap-2" onClick={handleBulkDelete}>
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-0">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                    <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm font-bold text-zinc-500 tracking-widest uppercase">Loading Directory...</p>
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 space-y-4 text-center px-4">
+                    <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-none flex items-center justify-center mb-2">
+                      <Users className="h-8 w-8 text-zinc-400" />
+                    </div>
+                    <p className="text-lg font-bold text-zinc-900 dark:text-white">No users found</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">No matching users for this criteria.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-black/5 dark:divide-white/5">
                     {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
+                      <div key={user.id} className="group p-4 md:p-6 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        
+                        {/* Left: Checkbox & Info */}
+                        <div className="flex items-center gap-4 flex-1 min-w-[300px]">
                           <Checkbox
                             checked={selectedUsers.includes(user.id)}
                             onCheckedChange={() => handleSelectUser(user.id)}
+                            className="rounded-none"
                           />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={user.avatar_url} />
-                              <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                                {user.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">{user.name}</p>
-                              <p className="text-xs text-muted-foreground">{user.email}</p>
-                            </div>
+                          <Avatar className="h-12 w-12 rounded-none border border-black/10 dark:border-white/10 shadow-sm">
+                            <AvatarImage src={user.avatar_url} className="rounded-none" />
+                            <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black rounded-none">
+                              {user.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-zinc-900 dark:text-white text-base truncate max-w-[200px] md:max-w-md">
+                              {user.name}
+                            </h4>
+                            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                              {user.email}
+                            </p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              user.role === "ADMIN" || user.role === "admin"
-                                ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                : user.role === "INSTRUCTOR" || user.role === "teacher"
-                                  ? "bg-primary/10 text-primary hover:bg-primary/10"
-                                  : "bg-muted text-muted-foreground"
-                            }
-                          >
-                            {user.role === "INSTRUCTOR" ? "Instructor" : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
+                        </div>
+
+                        {/* Middle: Badges */}
+                        <div className="flex items-center gap-2 py-2 md:py-0 border-y md:border-y-0 border-black/5 dark:border-white/5 md:px-6">
+                          <Badge variant="outline" className={cn("rounded-none uppercase tracking-widest text-[10px] px-2 py-1 border", getRoleColor(user.role))}>
+                            {user.role === "INSTRUCTOR" ? "TEACHER" : user.role}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                          >
+                          <Badge variant="outline" className="rounded-none uppercase tracking-widest text-[10px] px-2 py-1 border border-emerald-500/30 text-emerald-600 bg-emerald-500/5">
                             Active
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden md:table-cell">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">
-                          -
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </div>
+
+                        {/* Right: Actions */}
+                        <div className="flex items-center justify-end gap-4 shrink-0 min-w-[120px]">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest hidden lg:block">
+                            Joined {new Date(user.created_at).toLocaleDateString()}
+                          </span>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="rounded-none border border-transparent hover:border-black/10 dark:hover:border-white/10 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
-                                <Shield className="h-4 w-4" />
+                            <DropdownMenuContent align="end" className="rounded-none border-black/10 dark:border-white/10 min-w-[160px]">
+                              <DropdownMenuItem className="gap-2 cursor-pointer text-xs font-bold uppercase tracking-widest" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
+                                <Shield className="h-3 w-3" />
                                 Change Role
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleDeleteUser(user.id, user.name)}>
-                                <Ban className="h-4 w-4" />
+                              <DropdownMenuItem className="gap-2 cursor-pointer text-xs font-bold uppercase tracking-widest text-red-600 focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-500/10" onClick={() => handleDeleteUser(user.id, user.name)}>
+                                <Ban className="h-3 w-3" />
                                 Delete User
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
-
-                {/* Mobile Responsive Cards View */}
-                <div className="md:hidden flex flex-col">
-                  {filteredUsers.length > 0 ? (
-                    <>
-                      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/20">
-                        <Checkbox
-                          id="mobile-select-all"
-                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                        <Label htmlFor="mobile-select-all" className="text-sm font-medium cursor-pointer">
-                          Select All Users
-                        </Label>
-                      </div>
-                      <div className="flex flex-col gap-3 p-4">
-                        {filteredUsers.map((user) => (
-                          <Card key={user.id} className="border border-border/50 shadow-sm">
-                            <CardContent className="p-4 space-y-4">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Checkbox
-                                    checked={selectedUsers.includes(user.id)}
-                                    onCheckedChange={() => handleSelectUser(user.id)}
-                                  />
-                                  <Avatar className="h-10 w-10">
-                                    <AvatarImage src={user.avatar_url} />
-                                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                                      {user.name.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col overflow-hidden">
-                                    <span className="font-semibold text-sm line-clamp-1">{user.name}</span>
-                                    <span className="text-xs text-muted-foreground line-clamp-1">{user.email}</span>
-                                  </div>
-                                </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem className="gap-2" onClick={() => handleChangeRole(user.id, user.name, user.role)}>
-                                      <Shield className="h-4 w-4" />
-                                      Change Role
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleDeleteUser(user.id, user.name)}>
-                                      <Ban className="h-4 w-4" />
-                                      Delete User
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 pl-[3.25rem]">
-                                <Badge
-                                  variant="secondary"
-                                  className={
-                                    user.role === "ADMIN" || user.role === "admin"
-                                      ? "bg-amber-100 text-amber-700"
-                                      : user.role === "INSTRUCTOR" || user.role === "teacher"
-                                        ? "bg-primary/10 text-primary"
-                                        : "bg-muted text-muted-foreground"
-                                  }
-                                >
-                                  {user.role === "INSTRUCTOR" ? "Instructor" : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
-                                </Badge>
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-emerald-100 text-emerald-700"
-                                >
-                                  Active
-                                </Badge>
-                                <span className="text-xs text-muted-foreground ml-auto">
-                                  {new Date(user.created_at).toLocaleDateString()}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                      No users found.
-                    </div>
-                  )}
-                </div>
-
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Role Change Dialog */}
-        <Dialog open={!!roleChangeUser} onOpenChange={(open) => !open && setRoleChangeUser(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Change User Role</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Change role for <span className="font-medium text-foreground">{roleChangeUser?.name}</span>
-              </p>
-              <div className="space-y-3 pt-2">
-                <Label className="text-sm font-medium">New Role</Label>
-                <RadioGroup
-                  value={roleChangeUser?.currentRole}
-                  onValueChange={handleConfirmRoleChange}
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                >
-                  <div>
-                    <RadioGroupItem value="STUDENT" id="change-role-student" className="peer sr-only" />
-                    <Label
-                      htmlFor="change-role-student"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      Student
-                    </Label>
                   </div>
-                  <div>
-                    <RadioGroupItem value="INSTRUCTOR" id="change-role-teacher" className="peer sr-only" />
-                    <Label
-                      htmlFor="change-role-teacher"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      Instructor
-                    </Label>
-                  </div>
-                  <div>
-                    <RadioGroupItem value="ADMIN" id="change-role-admin" className="peer sr-only" />
-                    <Label
-                      htmlFor="change-role-admin"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      Admin
-                    </Label>
-                  </div>
-                </RadioGroup>
+                )}
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
+
+      {/* Role Change Dialog */}
+      <Dialog open={!!roleChangeUser} onOpenChange={(open) => !open && setRoleChangeUser(null)}>
+        <DialogContent className="sm:max-w-md rounded-none border border-black/10 dark:border-white/10">
+          <DialogHeader>
+            <DialogTitle className="font-black text-xl uppercase tracking-widest">Update Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 pt-4">
+            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Select a new role for <strong className="text-zinc-900 dark:text-white font-bold">{roleChangeUser?.name}</strong>.
+            </p>
+            <RadioGroup
+              value={roleChangeUser?.currentRole.toLowerCase() === 'instructor' ? 'teacher' : roleChangeUser?.currentRole.toLowerCase()}
+              onValueChange={handleConfirmRoleChange}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+            >
+              <div>
+                <RadioGroupItem value="student" id="change-role-student" className="peer sr-only" />
+                <Label
+                  htmlFor="change-role-student"
+                  className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-emerald-500 peer-data-[state=checked]:bg-emerald-50 dark:peer-data-[state=checked]:bg-emerald-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                >
+                  Student
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="teacher" id="change-role-teacher" className="peer sr-only" />
+                <Label
+                  htmlFor="change-role-teacher"
+                  className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-purple-500 peer-data-[state=checked]:bg-purple-50 dark:peer-data-[state=checked]:bg-purple-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                >
+                  Teacher
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="admin" id="change-role-admin" className="peer sr-only" />
+                <Label
+                  htmlFor="change-role-admin"
+                  className="flex flex-col items-center justify-center rounded-none border border-black/10 dark:border-white/10 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 peer-data-[state=checked]:border-red-500 peer-data-[state=checked]:bg-red-50 dark:peer-data-[state=checked]:bg-red-500/10 cursor-pointer font-bold text-xs uppercase tracking-widest text-center"
+                >
+                  Admin
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminDashboardLayout>
   );
 }

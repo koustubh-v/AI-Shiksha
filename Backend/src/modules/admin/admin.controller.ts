@@ -12,27 +12,38 @@ import { UpdateAiSettingsDto } from './dto/update-ai-settings.dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
 
+  private async resolveFranchiseId(req: any) {
+    let franchiseId = req.user?.franchise_id || req.tenantId || req.tenantBranding?.id;
+    if (!franchiseId) {
+      const defaultFranchise = await this.adminService.getFirstFranchise();
+      if (defaultFranchise) {
+        franchiseId = defaultFranchise.id;
+      }
+    }
+    return franchiseId;
+  }
+
   @Get('stats')
-  getStats(@Request() req) {
-    const franchiseId = req.user?.franchise_id || req.tenantId || req.tenantBranding?.id;
+  async getStats(@Request() req) {
+    const franchiseId = await this.resolveFranchiseId(req);
     return this.adminService.getPlatformStats(franchiseId);
   }
 
   @Get('analytics/user-growth')
-  getUserGrowth(@Request() req) {
-    const franchiseId = req.user?.franchise_id || req.tenantId || req.tenantBranding?.id;
+  async getUserGrowth(@Request() req) {
+    const franchiseId = await this.resolveFranchiseId(req);
     return this.adminService.getUserGrowth(franchiseId);
   }
 
   @Get('analytics/revenue')
-  getRevenue(@Request() req) {
-    const franchiseId = req.user?.franchise_id || req.tenantId || req.tenantBranding?.id;
+  async getRevenue(@Request() req) {
+    const franchiseId = await this.resolveFranchiseId(req);
     return this.adminService.getRevenueData(franchiseId);
   }
 
   @Get('pending-actions')
-  getPendingActions(@Request() req) {
-    const franchiseId = req.user?.franchise_id || req.tenantId || req.tenantBranding?.id;
+  async getPendingActions(@Request() req) {
+    const franchiseId = await this.resolveFranchiseId(req);
     return this.adminService.getPendingActions(franchiseId);
   }
 

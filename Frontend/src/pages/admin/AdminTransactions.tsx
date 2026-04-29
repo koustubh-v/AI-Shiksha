@@ -40,7 +40,7 @@ export default function AdminTransactions() {
 
   const stats = useMemo(() => {
     const totalTransactions = data.length;
-    const successfulTransactions = data.filter(t => t.payment_status === 'success');
+    const successfulTransactions = data.filter(t => t.payment_status === 'success' || t.payment_status === 'completed');
     const totalRevenue = successfulTransactions.reduce((acc, curr) => acc + curr.amount, 0);
     const successRate = totalTransactions > 0 ? (successfulTransactions.length / totalTransactions) * 100 : 0;
     
@@ -166,7 +166,7 @@ export default function AdminTransactions() {
             ) : (
               <div className="divide-y divide-black/5 dark:divide-white/5">
                 {filteredData.map((txn) => {
-                  const isSuccess = txn.payment_status === 'success';
+                  const isSuccess = txn.payment_status === 'success' || txn.payment_status === 'completed';
                   const isFailed = txn.payment_status === 'failed';
                   
                   return (

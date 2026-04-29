@@ -62,7 +62,13 @@ export class CoursesController {
       franchiseId = (req as any).tenantId;
     } else {
       const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
-      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+      if (isSuperAdmin) {
+        // SuperAdmin browsing via a franchise domain should see that franchise's courses
+        // only. If accessed directly (no tenant context), tenantId is undefined → show all.
+        franchiseId = (req as any).tenantId ?? undefined;
+      } else {
+        franchiseId = user.franchise_id ?? null;
+      }
     }
     return this.coursesService.findAll(false, franchiseId);
   }
@@ -78,7 +84,11 @@ export class CoursesController {
       franchiseId = (req as any).tenantId;
     } else {
       const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
-      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+      if (isSuperAdmin) {
+        franchiseId = (req as any).tenantId ?? undefined;
+      } else {
+        franchiseId = user.franchise_id ?? null;
+      }
     }
     return this.coursesService.findBySlug(slug, franchiseId);
   }
@@ -94,7 +104,11 @@ export class CoursesController {
       franchiseId = (req as any).tenantId;
     } else {
       const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN';
-      franchiseId = isSuperAdmin ? undefined : (user.franchise_id ?? null);
+      if (isSuperAdmin) {
+        franchiseId = (req as any).tenantId ?? undefined;
+      } else {
+        franchiseId = user.franchise_id ?? null;
+      }
     }
     return this.coursesService.findOne(id, franchiseId);
   }

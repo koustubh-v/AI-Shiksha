@@ -228,21 +228,23 @@ export default function UserManagement() {
 
   return (
     <AdminDashboardLayout title="Users" subtitle="Manage all platform users">
-      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="p-4 md:p-8 space-y-6 w-full overflow-x-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
 
         {/* Hero Banner */}
-        <div className="relative overflow-hidden rounded-none bg-zinc-950 p-6 md:p-8 shadow-2xl border border-white/10 group">
+        <div className="relative overflow-hidden rounded-none bg-zinc-950 p-5 md:p-8 shadow-2xl border border-white/10 group">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-blue-500/10 to-indigo-500/20 opacity-50 group-hover:opacity-70 transition-opacity duration-1000" />
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-violet-500/30 blur-3xl group-hover:scale-110 transition-transform duration-1000" />
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white">Users</h2>
-              <p className="text-sm md:text-lg text-white/60 font-medium">Manage students, instructors, and administrators.</p>
+          {/* Decorative blob — clipped by overflow-hidden on parent */}
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-violet-500/30 blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-4">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-5xl font-black tracking-tight text-white">Users</h2>
+              <p className="text-sm text-white/60 font-medium">Manage students, instructors, and administrators.</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <div className="relative w-full sm:w-72">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none"><Search className="h-5 w-5 text-white/40" /></div>
-                <Input placeholder="Search by name or email..." className="pl-12 h-12 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-violet-500 backdrop-blur-md font-medium" value={search} onChange={e => setSearch(e.target.value)} />
+            {/* Search + Add — full width on mobile, row on md+ */}
+            <div className="flex flex-col sm:flex-row items-stretch gap-2 w-full">
+              <div className="relative flex-1 min-w-0">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-white/40" /></div>
+                <Input placeholder="Search by name or email..." className="pl-10 h-11 w-full bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-violet-500 backdrop-blur-md font-medium" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
               <AddUserDialog onSuccess={load} />
             </div>
@@ -250,16 +252,16 @@ export default function UserManagement() {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           {statCards.map(c => (
-            <div key={c.label} className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+            <div key={c.label} className="relative group rounded-none bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 overflow-hidden">
               <div className={`absolute inset-0 bg-gradient-to-br ${c.colors} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-              <div className="relative p-5 flex flex-col h-full z-10">
-                <div className={`w-10 h-10 rounded-none flex items-center justify-center mb-4 border ${c.bg} ${c.border} group-hover:scale-110 transition-transform duration-500`}>
-                  <c.icon className={`h-5 w-5 ${c.iconColor}`} />
+              <div className="relative p-4 flex flex-col h-full z-10">
+                <div className={`w-9 h-9 rounded-none flex items-center justify-center mb-3 border ${c.bg} ${c.border}`}>
+                  <c.icon className={`h-4 w-4 ${c.iconColor}`} />
                 </div>
-                <p className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">{loading ? "..." : c.value}</p>
-                <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mt-1">{c.label}</p>
+                <p className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">{loading ? "..." : c.value}</p>
+                <p className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mt-0.5 leading-tight">{c.label}</p>
               </div>
             </div>
           ))}
@@ -309,11 +311,11 @@ export default function UserManagement() {
                       </div>
                     </div>
 
-                    {/* Meta row */}
-                    <div className="flex items-center justify-between sm:justify-end gap-4 flex-wrap shrink-0">
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        <span>{user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
+                    {/* Meta row — wraps naturally on mobile */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+                        <Calendar className="h-3 w-3 shrink-0" />
+                        <span className="whitespace-nowrap">{user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
                       </div>
                       <Badge className={cn("rounded-none text-[10px] font-bold uppercase tracking-widest px-2 py-1 border-0", rc.className)}>
                         {rc.label}

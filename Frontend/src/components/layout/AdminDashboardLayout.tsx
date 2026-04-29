@@ -29,12 +29,12 @@ export function AdminDashboardLayout({ children, title, subtitle }: AdminDashboa
       <AdminSidebar />
       <div
         className={cn(
-          "flex flex-1 flex-col transition-all duration-300",
+          "flex flex-1 flex-col transition-all duration-300 min-w-0 overflow-x-hidden",
           collapsed ? "md:pl-[70px]" : "md:pl-[280px]"
         )}
       >
         <AdminTopBar title={title} subtitle={subtitle} />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>
     </div>
   );

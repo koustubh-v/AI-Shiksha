@@ -94,7 +94,6 @@ export class FranchisesService {
             'api.technosquareacademy.com',
             'technosquareacademy.com',
             'www.technosquareacademy.com',
-            'mockaipro.com',
             'iconsafetyinstitute.com',
             'www.iconsafetyinstitute.com',
             'api.iconsafetyinstitute.com'

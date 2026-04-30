@@ -172,7 +172,7 @@ export default function AnnouncementsPage() {
                         >
                             <option value="ALL">All Users</option>
                             <option value="STUDENT">Students</option>
-                            <option value="TEACHER">Teachers</option>
+                            <option value="INSTRUCTOR">Instructors</option>
                             <option value="ADMIN">Admins</option>
                         </select>
                         <Button 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { MailService } from '../mail/mail.service';
+import { Role } from '../../enums/role.enum';
 
 @Injectable()
 export class AnnouncementsService {
@@ -31,7 +32,19 @@ export class AnnouncementsService {
             whereUsers.franchise_id = franchiseId;
         }
         if (roleIntended) {
-            whereUsers.role = roleIntended;   // ← THIS was the missing filter
+            // Map any legacy "TEACHER" value to the correct enum "INSTRUCTOR"
+            const roleMap: Record<string, Role> = {
+                STUDENT: Role.STUDENT,
+                INSTRUCTOR: Role.INSTRUCTOR,
+                TEACHER: Role.INSTRUCTOR,  // legacy frontend value
+                ADMIN: Role.ADMIN,
+                FRANCHISE_ADMIN: Role.FRANCHISE_ADMIN,
+                SUPER_ADMIN: Role.SUPER_ADMIN,
+            };
+            const mappedRole = roleMap[roleIntended.toUpperCase()];
+            if (mappedRole) {
+                whereUsers.role = mappedRole;
+            }
         }
 
         const usersToNotify = await this.prisma.user.findMany({

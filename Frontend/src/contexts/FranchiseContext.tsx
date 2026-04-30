@@ -67,6 +67,7 @@ const FranchiseContext = createContext<FranchiseContextType>({
 export function FranchiseProvider({ children }: { children: ReactNode }) {
     const [branding, setBranding] = useState<FranchiseBranding>(DEFAULT_BRANDING);
     const [isLoading, setIsLoading] = useState(true);
+    const [isNotFound, setIsNotFound] = useState(false);
 
     const fetchBranding = async () => {
         try {
@@ -213,8 +214,7 @@ export function FranchiseProvider({ children }: { children: ReactNode }) {
                 }
             }
         } catch {
-            // Silently fall back to defaults — franchise branding is non-critical
-            setBranding(DEFAULT_BRANDING);
+            setIsNotFound(true);
         } finally {
             setIsLoading(false);
         }
@@ -223,6 +223,27 @@ export function FranchiseProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         fetchBranding();
     }, []);
+
+    if (isNotFound) {
+        return (
+            <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
+                <div className="max-w-md w-full bg-background rounded-xl shadow-lg border p-8 text-center space-y-4">
+                    <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight">Platform Not Found</h1>
+                    <p className="text-muted-foreground">
+                        The learning platform you are trying to access does not exist, has been deleted, or is currently suspended.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-4">
+                        Please contact the administrator or check the URL and try again.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <FranchiseContext.Provider value={{ branding, isLoading, refresh: fetchBranding }}>

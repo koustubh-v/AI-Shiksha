@@ -88,40 +88,56 @@ export class FranchisesService {
             },
         });
 
-        // If not found, it is likely the master system domain (e.g., iconsafetyinstitute.com)
+        // Define recognized main system domains
+        const mainDomains = [
+            'localhost',
+            'api.technosquareacademy.com',
+            'technosquareacademy.com',
+            'www.technosquareacademy.com',
+            'mockaipro.com',
+            'iconsafetyinstitute.com',
+            'www.iconsafetyinstitute.com',
+            'api.iconsafetyinstitute.com'
+        ];
+
+        // If not found, check if it's a main domain.
         // Master settings are stored under the 'localhost' domain record.
         if (!franchise) {
-            franchise = await this.prisma.franchise.findFirst({
-                where: {
-                    domain: 'localhost',
-                    is_active: true,
-                },
-                select: {
-                    id: true,
-                    name: true,
-                    lms_name: true,
-                    logo_url: true,
-                    favicon_url: true,
-                    primary_color: true,
-                    support_email: true,
-                    domain_verified: true,
-                    maintenance_mode: true,
-                    description: true,
-                    seo_title: true,
-                    seo_description: true,
-                    seo_keywords: true,
-                    seo_og_title: true,
-                    seo_og_description: true,
-                    seo_og_image: true,
-                    seo_twitter_card: true,
-                    seo_twitter_handle: true,
-                    seo_technical_sitemap: true,
-                    seo_technical_robots_txt: true,
-                    seo_technical_schema_markup: true,
-                    seo_technical_canonical_tags: true,
-                    seo_custom_head_scripts: true,
-                },
-            });
+            if (mainDomains.includes(normalizedDomain)) {
+                franchise = await this.prisma.franchise.findFirst({
+                    where: {
+                        domain: 'localhost',
+                        is_active: true,
+                    },
+                    select: {
+                        id: true,
+                        name: true,
+                        lms_name: true,
+                        logo_url: true,
+                        favicon_url: true,
+                        primary_color: true,
+                        support_email: true,
+                        domain_verified: true,
+                        maintenance_mode: true,
+                        description: true,
+                        seo_title: true,
+                        seo_description: true,
+                        seo_keywords: true,
+                        seo_og_title: true,
+                        seo_og_description: true,
+                        seo_og_image: true,
+                        seo_twitter_card: true,
+                        seo_twitter_handle: true,
+                        seo_technical_sitemap: true,
+                        seo_technical_robots_txt: true,
+                        seo_technical_schema_markup: true,
+                        seo_technical_canonical_tags: true,
+                        seo_custom_head_scripts: true,
+                    },
+                });
+            } else {
+                throw new NotFoundException(`Franchise for domain ${domain} not found or is suspended`);
+            }
         }
 
         if (!franchise) {

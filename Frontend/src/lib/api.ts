@@ -736,4 +736,72 @@ export const Feedback = {
     }
 };
 
+// ============================================
+// REPORTS API
+// ============================================
+export const Reports = {
+    getStudents: async (params?: { startDate?: string; endDate?: string; courseId?: string }) => {
+        const { data } = await api.get('/reports/students', { params });
+        return data;
+    },
+    getCourses: async (params?: { startDate?: string; endDate?: string; courseId?: string }) => {
+        const { data } = await api.get('/reports/courses', { params });
+        return data;
+    },
+    getAssessments: async (params?: { startDate?: string; endDate?: string; courseId?: string }) => {
+        const { data } = await api.get('/reports/assessments', { params });
+        return data;
+    },
+    getRevenue: async (params?: { startDate?: string; endDate?: string; courseId?: string; paymentMethod?: string }) => {
+        const { data } = await api.get('/reports/revenue', { params });
+        return data;
+    },
+};
+
+// ============================================
+// ANALYTICS API (Google Analytics)
+// ============================================
+export const Analytics = {
+    getStatus: async () => {
+        const { data } = await api.get('/analytics/status');
+        return data;
+    },
+    getOAuthUrl: async () => {
+        const { data } = await api.get('/analytics/auth/google');
+        return data;
+    },
+    listProperties: async () => {
+        const { data } = await api.get('/analytics/properties');
+        return data;
+    },
+    connectProperty: async (propertyId: string, propertyName: string) => {
+        const { data } = await api.post('/analytics/connect', { propertyId, propertyName });
+        return data;
+    },
+    disconnect: async () => {
+        const { data } = await api.delete('/analytics/disconnect');
+        return data;
+    },
+    getTraffic: async () => {
+        const { data } = await api.get('/analytics/data/traffic');
+        return data;
+    },
+    getAcquisition: async () => {
+        const { data } = await api.get('/analytics/data/acquisition');
+        return data;
+    },
+    getAudience: async () => {
+        const { data } = await api.get('/analytics/data/audience');
+        return data;
+    },
+    getContent: async () => {
+        const { data } = await api.get('/analytics/data/content');
+        return data;
+    },
+    forceRefresh: async () => {
+        const { data } = await api.post('/analytics/refresh');
+        return data;
+    },
+};
+
 export default api;

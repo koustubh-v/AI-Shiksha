@@ -68,6 +68,7 @@ model Franchise {
   footer_setting        FooterSetting?
   StudentFeedback       StudentFeedback[]
   Quiz                  Quiz[]
+  analytics_credential  AnalyticsCredential?
 
   @@map("franchises")
 }
@@ -1009,4 +1010,25 @@ model FooterSetting {
   updated_at DateTime @updatedAt
 
   @@map("footer_settings")
+}
+
+// ============================================
+// ANALYTICS CREDENTIALS (per-tenant GA4)
+// ============================================
+
+model AnalyticsCredential {
+  id                   String    @id @default(uuid())
+  franchise_id         String    @unique
+  franchise            Franchise @relation(fields: [franchise_id], references: [id], onDelete: Cascade)
+  google_account_email String
+  ga_property_id       String
+  ga_property_name     String?
+  access_token         String    @db.Text
+  refresh_token        String    @db.Text
+  connected_at         DateTime  @default(now())
+  last_synced_at       DateTime?
+  cache_data           Json?
+  cache_expires_at     DateTime?
+
+  @@map("analytics_credentials")
 }

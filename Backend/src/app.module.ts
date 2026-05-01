@@ -43,6 +43,8 @@ import { PagesModule } from './modules/pages/pages.module';
 import { FooterSettingsModule } from './modules/footer-settings/footer-settings.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -89,6 +91,8 @@ import { SeoModule } from './modules/seo/seo.module';
     FooterSettingsModule,
     FeedbackModule,
     SeoModule,
+    ReportsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService, InvoicesService],

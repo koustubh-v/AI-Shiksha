@@ -66,6 +66,8 @@ import CertificateTemplatesPage from "./pages/admin/CertificateTemplates";
 import RazorpaySettings from "./pages/admin/RazorpaySettings";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import Coupons from "./pages/admin/Coupons";
+import AdminReports from "./pages/admin/Reports";
+import AdminAnalytics from "./pages/admin/Analytics";
 
 // Student Pages
 import MyCertificatesPage from "./pages/student/MyCertificates";
@@ -207,6 +209,8 @@ const App = () => (
                       <Route path="/dashboard/payments/razorpay" element={<RazorpaySettings />} />
                       <Route path="/dashboard/payments/transactions" element={<AdminTransactions />} />
                       <Route path="/dashboard/coupons" element={<Coupons />} />
+                      <Route path="/dashboard/reports" element={<AdminReports />} />
+                      <Route path="/dashboard/analytics" element={<AdminAnalytics />} />
                       <Route path="/dashboard/payouts" element={<PayoutsPage />} />
                       <Route path="/dashboard/coupons" element={<CouponsPage />} />
 

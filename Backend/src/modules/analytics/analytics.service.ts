@@ -1,0 +1,434 @@
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
+import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+
+const ALGORITHM = 'aes-256-gcm';
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+@Injectable()
+export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private http: HttpService,
+    private config: ConfigService,
+  ) {}
+
+  // ────── ENCRYPTION ──────
+  private getEncryptionKey(): Buffer {
+    const key = this.config.get<string>('ANALYTICS_ENCRYPTION_KEY') || '0'.repeat(64);
+    return Buffer.from(key.padEnd(64, '0').slice(0, 64), 'hex');
+  }
+
+  private encrypt(text: string): string {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, this.getEncryptionKey(), iv);
+    let enc = cipher.update(text, 'utf8', 'hex');
+    enc += cipher.final('hex');
+    const tag = cipher.getAuthTag();
+    return `${iv.toString('hex')}:${tag.toString('hex')}:${enc}`;
+  }
+
+  private decrypt(data: string): string {
+    const [ivHex, tagHex, enc] = data.split(':');
+    const decipher = crypto.createDecipheriv(
+      ALGORITHM,
+      this.getEncryptionKey(),
+      Buffer.from(ivHex, 'hex'),
+    );
+    decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+    let dec = decipher.update(enc, 'hex', 'utf8');
+    dec += decipher.final('utf8');
+    return dec;
+  }
+
+  // ────── OAUTH HELPERS ──────
+  getOAuthUrl(franchiseId: string): string {
+    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
+    const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI') || '';
+    const state = Buffer.from(franchiseId).toString('base64');
+    const scopes = [
+      'https://www.googleapis.com/auth/analytics.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ].join(' ');
+
+    return (
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${encodeURIComponent(scopes)}&` +
+      `access_type=offline&` +
+      `prompt=consent&` +
+      `state=${state}`
+    );
+  }
+
+  async handleOAuthCallback(code: string, state: string): Promise<string> {
+    const franchiseId = Buffer.from(state, 'base64').toString('utf8');
+    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
+    const clientSecret = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+    const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI');
+
+    // Exchange code for tokens
+    const tokenResp = await firstValueFrom(
+      this.http.post('https://oauth2.googleapis.com/token', {
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }),
+    );
+
+    const { access_token, refresh_token } = tokenResp.data;
+
+    // Get email
+    const profileResp = await firstValueFrom(
+      this.http.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      }),
+    );
+    const email = profileResp.data.email;
+
+    // Store temporarily (no property yet)
+    await (this.prisma as any).analyticsCredential.upsert({
+      where: { franchise_id: franchiseId },
+      update: {
+        google_account_email: email,
+        access_token: this.encrypt(access_token),
+        refresh_token: this.encrypt(refresh_token),
+        ga_property_id: '',
+        connected_at: new Date(),
+        cache_data: null,
+        cache_expires_at: null,
+      },
+      create: {
+        franchise_id: franchiseId,
+        google_account_email: email,
+        access_token: this.encrypt(access_token),
+        refresh_token: this.encrypt(refresh_token),
+        ga_property_id: '',
+      },
+    });
+
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:8080';
+    return `${frontendUrl}/dashboard/analytics?step=select-property`;
+  }
+
+  // ────── TOKEN REFRESH ──────
+  private async refreshAccessToken(franchiseId: string): Promise<string> {
+    const cred = await (this.prisma as any).analyticsCredential.findUnique({
+      where: { franchise_id: franchiseId },
+    });
+    if (!cred) throw new UnauthorizedException('No analytics credentials found');
+
+    const refreshToken = this.decrypt(cred.refresh_token);
+    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
+    const clientSecret = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+
+    const resp = await firstValueFrom(
+      this.http.post('https://oauth2.googleapis.com/token', {
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'refresh_token',
+      }),
+    );
+
+    const newAccessToken = resp.data.access_token;
+    await (this.prisma as any).analyticsCredential.update({
+      where: { franchise_id: franchiseId },
+      data: { access_token: this.encrypt(newAccessToken) },
+    });
+    return newAccessToken;
+  }
+
+  private async getAccessToken(franchiseId: string): Promise<string> {
+    const cred = await (this.prisma as any).analyticsCredential.findUnique({
+      where: { franchise_id: franchiseId },
+    });
+    if (!cred) throw new UnauthorizedException('Analytics not connected');
+    try {
+      return this.decrypt(cred.access_token);
+    } catch {
+      return this.refreshAccessToken(franchiseId);
+    }
+  }
+
+  // ────── PROPERTIES ──────
+  async listProperties(franchiseId: string) {
+    const token = await this.getAccessToken(franchiseId);
+    try {
+      const resp = await firstValueFrom(
+        this.http.get(
+          'https://analyticsadmin.googleapis.com/v1beta/accountSummaries',
+          { headers: { Authorization: `Bearer ${token}` } },
+        ),
+      );
+      const summaries = resp.data.accountSummaries || [];
+      const properties: { id: string; name: string; displayName: string }[] = [];
+      summaries.forEach((account: any) => {
+        (account.propertySummaries || []).forEach((prop: any) => {
+          properties.push({
+            id: prop.property.replace('properties/', ''),
+            name: prop.property,
+            displayName: prop.displayName,
+          });
+        });
+      });
+      return { properties };
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        const newToken = await this.refreshAccessToken(franchiseId);
+        const resp2 = await firstValueFrom(
+          this.http.get(
+            'https://analyticsadmin.googleapis.com/v1beta/accountSummaries',
+            { headers: { Authorization: `Bearer ${newToken}` } },
+          ),
+        );
+        return { properties: resp2.data.accountSummaries || [] };
+      }
+      throw err;
+    }
+  }
+
+  async connectProperty(franchiseId: string, propertyId: string, propertyName: string) {
+    await (this.prisma as any).analyticsCredential.update({
+      where: { franchise_id: franchiseId },
+      data: { ga_property_id: propertyId, ga_property_name: propertyName },
+    });
+    return { success: true };
+  }
+
+  async getStatus(franchiseId: string) {
+    const cred = await (this.prisma as any).analyticsCredential.findUnique({
+      where: { franchise_id: franchiseId },
+    });
+    if (!cred) return { connected: false };
+    return {
+      connected: true,
+      propertySelected: !!cred.ga_property_id,
+      email: cred.google_account_email,
+      propertyId: cred.ga_property_id,
+      propertyName: cred.ga_property_name,
+      connectedAt: cred.connected_at,
+      lastSynced: cred.last_synced_at,
+    };
+  }
+
+  async disconnect(franchiseId: string) {
+    await (this.prisma as any).analyticsCredential.deleteMany({
+      where: { franchise_id: franchiseId },
+    });
+    return { success: true };
+  }
+
+  // ────── GA4 DATA FETCH (with caching) ──────
+  private async runGA4Report(
+    propertyId: string,
+    token: string,
+    body: object,
+  ) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+    const resp = await firstValueFrom(
+      this.http.post(url, body, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    );
+    return resp.data;
+  }
+
+  private async fetchAndCacheGA4Data(franchiseId: string): Promise<any> {
+    const cred = await (this.prisma as any).analyticsCredential.findUnique({
+      where: { franchise_id: franchiseId },
+    });
+    if (!cred || !cred.ga_property_id) throw new Error('Analytics not connected or no property selected');
+
+    // Check cache
+    if (cred.cache_expires_at && new Date(cred.cache_expires_at) > new Date() && cred.cache_data) {
+      return cred.cache_data;
+    }
+
+    let token: string;
+    try {
+      token = this.decrypt(cred.access_token);
+    } catch {
+      token = await this.refreshAccessToken(franchiseId);
+    }
+
+    const propId = cred.ga_property_id;
+
+    const [trafficRaw, acquisitionRaw, deviceRaw, countryRaw, pagesRaw, eventsRaw] =
+      await Promise.all([
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'date' }],
+          metrics: [
+            { name: 'sessions' },
+            { name: 'totalUsers' },
+            { name: 'newUsers' },
+            { name: 'engagementRate' },
+            { name: 'averageSessionDuration' },
+          ],
+        }),
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+          metrics: [{ name: 'sessions' }],
+        }),
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'deviceCategory' }],
+          metrics: [{ name: 'sessions' }, { name: 'totalUsers' }],
+        }),
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'country' }],
+          metrics: [{ name: 'sessions' }],
+          orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+          limit: 10,
+        }),
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+          metrics: [{ name: 'screenPageViews' }, { name: 'averageSessionDuration' }],
+          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 20,
+        }),
+        this.runGA4Report(propId, token, {
+          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'eventName' }],
+          metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }],
+          orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+          limit: 20,
+        }),
+      ]);
+
+    // Parse traffic
+    const trafficByDay = (trafficRaw.rows || []).map((row: any) => ({
+      date: row.dimensionValues[0].value,
+      sessions: Number(row.metricValues[0].value),
+      users: Number(row.metricValues[1].value),
+      newUsers: Number(row.metricValues[2].value),
+      engagementRate: Math.round(Number(row.metricValues[3].value) * 100),
+      avgDuration: Math.round(Number(row.metricValues[4].value)),
+    }));
+
+    const totals = trafficByDay.reduce(
+      (acc: any, row: any) => ({
+        sessions: acc.sessions + row.sessions,
+        users: acc.users + row.users,
+        newUsers: acc.newUsers + row.newUsers,
+      }),
+      { sessions: 0, users: 0, newUsers: 0 },
+    );
+    const returningUsers = Math.max(0, totals.users - totals.newUsers);
+
+    // Parse acquisition
+    const acquisition = (acquisitionRaw.rows || []).map((row: any) => ({
+      channel: row.dimensionValues[0].value,
+      sessions: Number(row.metricValues[0].value),
+    }));
+
+    // Parse devices
+    const devices = (deviceRaw.rows || []).map((row: any) => ({
+      device: row.dimensionValues[0].value,
+      sessions: Number(row.metricValues[0].value),
+      users: Number(row.metricValues[1].value),
+    }));
+
+    // Parse countries
+    const countries = (countryRaw.rows || []).map((row: any) => ({
+      country: row.dimensionValues[0].value,
+      sessions: Number(row.metricValues[0].value),
+    }));
+
+    // Parse pages
+    const pages = (pagesRaw.rows || []).map((row: any) => ({
+      path: row.dimensionValues[0].value,
+      title: row.dimensionValues[1].value,
+      views: Number(row.metricValues[0].value),
+      avgDuration: Math.round(Number(row.metricValues[1].value)),
+    }));
+
+    // Parse events
+    const events = (eventsRaw.rows || []).map((row: any) => ({
+      event: row.dimensionValues[0].value,
+      count: Number(row.metricValues[0].value),
+      users: Number(row.metricValues[1].value),
+    }));
+
+    const cachedData = {
+      traffic: {
+        summary: {
+          ...totals,
+          returningUsers,
+          avgEngagementRate:
+            trafficByDay.length > 0
+              ? Math.round(
+                  trafficByDay.reduce((s: number, r: any) => s + r.engagementRate, 0) /
+                    trafficByDay.length,
+                )
+              : 0,
+          avgSessionDuration:
+            trafficByDay.length > 0
+              ? Math.round(
+                  trafficByDay.reduce((s: number, r: any) => s + r.avgDuration, 0) /
+                    trafficByDay.length,
+                )
+              : 0,
+        },
+        daily: trafficByDay,
+      },
+      acquisition,
+      audience: { devices, countries },
+      content: { pages, events },
+    };
+
+    const expiresAt = new Date(Date.now() + CACHE_TTL_MS);
+    await (this.prisma as any).analyticsCredential.update({
+      where: { franchise_id: franchiseId },
+      data: {
+        cache_data: cachedData,
+        cache_expires_at: expiresAt,
+        last_synced_at: new Date(),
+      },
+    });
+
+    return cachedData;
+  }
+
+  async getTrafficData(franchiseId: string) {
+    const data = await this.fetchAndCacheGA4Data(franchiseId);
+    return data.traffic;
+  }
+
+  async getAcquisitionData(franchiseId: string) {
+    const data = await this.fetchAndCacheGA4Data(franchiseId);
+    return data.acquisition;
+  }
+
+  async getAudienceData(franchiseId: string) {
+    const data = await this.fetchAndCacheGA4Data(franchiseId);
+    return data.audience;
+  }
+
+  async getContentData(franchiseId: string) {
+    const data = await this.fetchAndCacheGA4Data(franchiseId);
+    return data.content;
+  }
+
+  async forceRefresh(franchiseId: string) {
+    // Clear cache so next fetch is fresh
+    await (this.prisma as any).analyticsCredential.update({
+      where: { franchise_id: franchiseId },
+      data: { cache_data: null, cache_expires_at: null },
+    });
+    return this.fetchAndCacheGA4Data(franchiseId);
+  }
+}

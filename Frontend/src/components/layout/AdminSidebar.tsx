@@ -61,6 +61,8 @@ import {
   CheckSquare,
   Landmark,
   PanelBottom,
+  FileBarChart,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -129,6 +131,16 @@ const adminNavItems: NavItem[] = [
     icon: Bot,
     label: "Ai Control Center",
     href: "/dashboard/ai-control",
+  },
+  {
+    icon: FileBarChart,
+    label: "Reports",
+    href: "/dashboard/reports",
+  },
+  {
+    icon: LineChart,
+    label: "Analytics",
+    href: "/dashboard/analytics",
   },
   {
     icon: Building2,

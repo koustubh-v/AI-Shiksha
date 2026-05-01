@@ -123,33 +123,33 @@ export class AnalyticsController {
   @Get('data/traffic')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
-  async getTraffic(@Request() req) {
+  async getTraffic(@Request() req, @Query('dateRange') dateRange = '30days') {
     const franchiseId = await this.resolveFranchiseId(req);
-    return this.analyticsService.getTrafficData(franchiseId);
+    return this.analyticsService.getTrafficData(franchiseId, dateRange);
   }
 
   @Get('data/acquisition')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
-  async getAcquisition(@Request() req) {
+  async getAcquisition(@Request() req, @Query('dateRange') dateRange = '30days') {
     const franchiseId = await this.resolveFranchiseId(req);
-    return this.analyticsService.getAcquisitionData(franchiseId);
+    return this.analyticsService.getAcquisitionData(franchiseId, dateRange);
   }
 
   @Get('data/audience')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
-  async getAudience(@Request() req) {
+  async getAudience(@Request() req, @Query('dateRange') dateRange = '30days') {
     const franchiseId = await this.resolveFranchiseId(req);
-    return this.analyticsService.getAudienceData(franchiseId);
+    return this.analyticsService.getAudienceData(franchiseId, dateRange);
   }
 
   @Get('data/content')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
-  async getContent(@Request() req) {
+  async getContent(@Request() req, @Query('dateRange') dateRange = '30days') {
     const franchiseId = await this.resolveFranchiseId(req);
-    return this.analyticsService.getContentData(franchiseId);
+    return this.analyticsService.getContentData(franchiseId, dateRange);
   }
 
   // ── Force cache refresh (admin only) ──

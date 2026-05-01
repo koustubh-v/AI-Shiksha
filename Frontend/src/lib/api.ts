@@ -783,20 +783,20 @@ export const Analytics = {
         const { data } = await api.delete('/analytics/disconnect');
         return data;
     },
-    getTraffic: async () => {
-        const { data } = await api.get('/analytics/data/traffic');
+    getTraffic: async (dateRange = '30days') => {
+        const { data } = await api.get('/analytics/data/traffic', { params: { dateRange } });
         return data;
     },
-    getAcquisition: async () => {
-        const { data } = await api.get('/analytics/data/acquisition');
+    getAcquisition: async (dateRange = '30days') => {
+        const { data } = await api.get('/analytics/data/acquisition', { params: { dateRange } });
         return data;
     },
-    getAudience: async () => {
-        const { data } = await api.get('/analytics/data/audience');
+    getAudience: async (dateRange = '30days') => {
+        const { data } = await api.get('/analytics/data/audience', { params: { dateRange } });
         return data;
     },
-    getContent: async () => {
-        const { data } = await api.get('/analytics/data/content');
+    getContent: async (dateRange = '30days') => {
+        const { data } = await api.get('/analytics/data/content', { params: { dateRange } });
         return data;
     },
     forceRefresh: async () => {

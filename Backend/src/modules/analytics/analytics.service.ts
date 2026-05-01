@@ -290,15 +290,33 @@ export class AnalyticsService {
     return resp.data;
   }
 
-  private async fetchAndCacheGA4Data(franchiseId: string): Promise<any> {
+  private resolveDateRange(range: string): { startDate: string; endDate: string } {
+    switch (range) {
+      case 'today':     return { startDate: 'today',    endDate: 'today' };
+      case '7days':     return { startDate: '7daysAgo',  endDate: 'today' };
+      case 'thisMonth': {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        return { startDate: `${y}-${m}-01`, endDate: 'today' };
+      }
+      default:          return { startDate: '30daysAgo', endDate: 'today' };
+    }
+  }
+
+  private async fetchAndCacheGA4Data(franchiseId: string, dateRange = '30days'): Promise<any> {
     const cred = await (this.prisma as any).analyticsCredential.findUnique({
       where: { franchise_id: franchiseId },
     });
     if (!cred || !cred.ga_property_id) throw new Error('Analytics not connected or no property selected');
 
-    // Check cache
-    if (cred.cache_expires_at && new Date(cred.cache_expires_at) > new Date() && cred.cache_data) {
-      return cred.cache_data;
+    // Check cache — use per-range cache key stored in a JSON blob
+    const cacheKey = `cache_${dateRange}`;
+    const cachedBlob: any = cred.cache_data || {};
+    const expiresAt: any = cred.cache_expires_at ? new Date(cred.cache_expires_at) : null;
+    const cacheTTL = dateRange === 'today' ? 30 * 60 * 1000 : CACHE_TTL_MS; // 30 min for today, 4hr otherwise
+    if (expiresAt && expiresAt > new Date() && cachedBlob[cacheKey]) {
+      return cachedBlob[cacheKey];
     }
 
     let token: string;
@@ -309,10 +327,11 @@ export class AnalyticsService {
     }
 
     const propId = cred.ga_property_id;
+    const dr = this.resolveDateRange(dateRange);
 
     const executeReports = (currentToken: string) => Promise.all([
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'date' }],
           metrics: [
             { name: 'sessions' },
@@ -323,31 +342,31 @@ export class AnalyticsService {
           ],
         }),
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'sessionDefaultChannelGroup' }],
           metrics: [{ name: 'sessions' }],
         }),
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'deviceCategory' }],
           metrics: [{ name: 'sessions' }, { name: 'totalUsers' }],
         }),
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'country' }],
           metrics: [{ name: 'sessions' }],
           orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
           limit: 10,
         }),
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
           metrics: [{ name: 'screenPageViews' }, { name: 'averageSessionDuration' }],
           orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
           limit: 20,
         }),
         this.runGA4Report(propId, currentToken, {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [dr],
           dimensions: [{ name: 'eventName' }],
           metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }],
           orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
@@ -450,11 +469,12 @@ export class AnalyticsService {
       content: { pages, events },
     };
 
-    const expiresAt = new Date(Date.now() + CACHE_TTL_MS);
+    const expiresAt = new Date(Date.now() + cacheTTL);
+    const updatedBlob = { ...cachedBlob, [cacheKey]: cachedData };
     await (this.prisma as any).analyticsCredential.update({
       where: { franchise_id: franchiseId },
       data: {
-        cache_data: cachedData,
+        cache_data: updatedBlob,
         cache_expires_at: expiresAt,
         last_synced_at: new Date(),
       },
@@ -463,23 +483,23 @@ export class AnalyticsService {
     return cachedData;
   }
 
-  async getTrafficData(franchiseId: string) {
-    const data = await this.fetchAndCacheGA4Data(franchiseId);
+  async getTrafficData(franchiseId: string, dateRange = '30days') {
+    const data = await this.fetchAndCacheGA4Data(franchiseId, dateRange);
     return data.traffic;
   }
 
-  async getAcquisitionData(franchiseId: string) {
-    const data = await this.fetchAndCacheGA4Data(franchiseId);
+  async getAcquisitionData(franchiseId: string, dateRange = '30days') {
+    const data = await this.fetchAndCacheGA4Data(franchiseId, dateRange);
     return data.acquisition;
   }
 
-  async getAudienceData(franchiseId: string) {
-    const data = await this.fetchAndCacheGA4Data(franchiseId);
+  async getAudienceData(franchiseId: string, dateRange = '30days') {
+    const data = await this.fetchAndCacheGA4Data(franchiseId, dateRange);
     return data.audience;
   }
 
-  async getContentData(franchiseId: string) {
-    const data = await this.fetchAndCacheGA4Data(franchiseId);
+  async getContentData(franchiseId: string, dateRange = '30days') {
+    const data = await this.fetchAndCacheGA4Data(franchiseId, dateRange);
     return data.content;
   }
 

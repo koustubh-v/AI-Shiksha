@@ -20,8 +20,8 @@ export class AnalyticsService {
 
   // ────── ENCRYPTION ──────
   private getEncryptionKey(): Buffer {
-    const key = this.config.get<string>('ANALYTICS_ENCRYPTION_KEY') || '0'.repeat(64);
-    return Buffer.from(key.padEnd(64, '0').slice(0, 64), 'hex');
+    const key = this.config.get<string>('ANALYTICS_ENCRYPTION_KEY') || 'default-fallback-secret-do-not-use';
+    return crypto.createHash('sha256').update(String(key)).digest();
   }
 
   private encrypt(text: string): string {

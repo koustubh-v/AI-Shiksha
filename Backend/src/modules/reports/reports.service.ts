@@ -6,11 +6,16 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   private buildDateFilter(startDate?: string, endDate?: string) {
-    if (!startDate && !endDate) return undefined;
-    return {
-      ...(startDate ? { gte: new Date(startDate) } : {}),
-      ...(endDate ? { lte: new Date(endDate + 'T23:59:59Z') } : {}),
-    };
+    const filter: any = {};
+    if (startDate && startDate !== 'undefined' && startDate !== 'null') {
+      const d = new Date(startDate);
+      if (!isNaN(d.getTime())) filter.gte = d;
+    }
+    if (endDate && endDate !== 'undefined' && endDate !== 'null') {
+      const d = new Date(endDate + 'T23:59:59Z');
+      if (!isNaN(d.getTime())) filter.lte = d;
+    }
+    return Object.keys(filter).length > 0 ? filter : undefined;
   }
 
   // ──────────────────────────────────────────────────────────────

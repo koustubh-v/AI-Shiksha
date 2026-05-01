@@ -469,13 +469,13 @@ export class AnalyticsService {
       content: { pages, events },
     };
 
-    const expiresAt = new Date(Date.now() + cacheTTL);
+    const newExpiresAt = new Date(Date.now() + cacheTTL);
     const updatedBlob = { ...cachedBlob, [cacheKey]: cachedData };
     await (this.prisma as any).analyticsCredential.update({
       where: { franchise_id: franchiseId },
       data: {
         cache_data: updatedBlob,
-        cache_expires_at: expiresAt,
+        cache_expires_at: newExpiresAt,
         last_synced_at: new Date(),
       },
     });

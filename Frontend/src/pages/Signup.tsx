@@ -82,7 +82,7 @@ export default function Signup() {
               <img 
                 src={getImageUrl(branding.logo_url)} 
                 alt={`${branding.name} Logo`} 
-                className="h-8 w-auto object-contain brightness-0 invert"
+                className="h-8 w-auto object-contain"
               />
             ) : (
               <UserPlus className="h-6 w-6 text-white" />

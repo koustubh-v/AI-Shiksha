@@ -47,8 +47,35 @@ export class AnalyticsService {
   }
 
   // ────── OAUTH HELPERS ──────
-  getOAuthUrl(franchiseId: string): string {
-    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
+  async getOAuthCredentials() {
+    // Check DB first
+    const [clientIdSetting, clientSecretSetting] = await Promise.all([
+      this.prisma.systemSetting.findUnique({ where: { key: 'google_analytics_client_id' } }),
+      this.prisma.systemSetting.findUnique({ where: { key: 'google_analytics_client_secret' } })
+    ]);
+
+    const clientId = clientIdSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
+    const clientSecret = clientSecretSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+
+    return { clientId, clientSecret };
+  }
+
+  async saveOAuthCredentials(clientId: string, clientSecret: string) {
+    await this.prisma.systemSetting.upsert({
+      where: { key: 'google_analytics_client_id' },
+      update: { value: clientId },
+      create: { key: 'google_analytics_client_id', value: clientId }
+    });
+    await this.prisma.systemSetting.upsert({
+      where: { key: 'google_analytics_client_secret' },
+      update: { value: clientSecret },
+      create: { key: 'google_analytics_client_secret', value: clientSecret }
+    });
+    return { success: true };
+  }
+
+  async getOAuthUrl(franchiseId: string): Promise<string> {
+    const { clientId } = await this.getOAuthCredentials();
     const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI') || '';
     const state = Buffer.from(franchiseId).toString('base64');
     const scopes = [
@@ -70,8 +97,7 @@ export class AnalyticsService {
 
   async handleOAuthCallback(code: string, state: string): Promise<string> {
     const franchiseId = Buffer.from(state, 'base64').toString('utf8');
-    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
-    const clientSecret = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+    const { clientId, clientSecret } = await this.getOAuthCredentials();
     const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI');
 
     // Exchange code for tokens
@@ -128,8 +154,7 @@ export class AnalyticsService {
     if (!cred) throw new UnauthorizedException('No analytics credentials found');
 
     const refreshToken = this.decrypt(cred.refresh_token);
-    const clientId = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
-    const clientSecret = this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+    const { clientId, clientSecret } = await this.getOAuthCredentials();
 
     const resp = await firstValueFrom(
       this.http.post('https://oauth2.googleapis.com/token', {

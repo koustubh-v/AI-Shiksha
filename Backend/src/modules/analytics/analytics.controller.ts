@@ -40,8 +40,23 @@ export class AnalyticsController {
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
   async startOAuth(@Request() req) {
     const franchiseId = await this.resolveFranchiseId(req);
-    const url = this.analyticsService.getOAuthUrl(franchiseId);
+    const url = await this.analyticsService.getOAuthUrl(franchiseId);
     return { url };
+  }
+
+  // ── Super Admin Config ──
+  @Get('config')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  async getConfig() {
+    return this.analyticsService.getOAuthCredentials();
+  }
+
+  @Post('config')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  async saveConfig(@Body() body: { clientId: string; clientSecret: string }) {
+    return this.analyticsService.saveOAuthCredentials(body.clientId, body.clientSecret);
   }
 
   // ── OAuth: Callback (no JWT — called by Google) ──

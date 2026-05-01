@@ -46,6 +46,9 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showSuperAdminSetup, setShowSuperAdminSetup] = useState(false);
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     // Check if returning from OAuth
@@ -65,6 +68,11 @@ export default function AnalyticsPage() {
       setStatus(res);
       if (res.connected && res.propertySelected) {
         fetchAllData();
+      }
+      if (isSuperAdmin) {
+        const config = await Analytics.getConfig();
+        if (config.clientId) setClientId(config.clientId);
+        if (config.clientSecret) setClientSecret(config.clientSecret);
       }
     } catch (error) {
       console.error("Failed to fetch analytics status", error);
@@ -128,6 +136,23 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleSaveConfig = async () => {
+    if (!clientId || !clientSecret) {
+      toast.error("Please enter both Client ID and Client Secret");
+      return;
+    }
+    setSavingConfig(true);
+    try {
+      await Analytics.saveConfig(clientId, clientSecret);
+      toast.success("OAuth Configuration saved successfully");
+      setShowSuperAdminSetup(false);
+    } catch (error) {
+      toast.error("Failed to save configuration");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   if (loading && !data) {
     return (
       <AdminDashboardLayout title="Google Analytics">
@@ -182,13 +207,33 @@ export default function AnalyticsPage() {
                     <div className="mt-4 space-y-4 p-4 bg-muted/30 rounded-lg">
                       <div className="space-y-2">
                         <Label>Google Client ID</Label>
-                        <Input placeholder="Enter Client ID from Google Cloud Console" />
+                        <Input 
+                          value={clientId} 
+                          onChange={e => setClientId(e.target.value)} 
+                          placeholder="Enter Client ID from Google Cloud Console" 
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Google Client Secret</Label>
-                        <Input type="password" placeholder="Enter Client Secret" />
+                        <Input 
+                          type="password" 
+                          value={clientSecret} 
+                          onChange={e => setClientSecret(e.target.value)} 
+                          placeholder="Enter Client Secret" 
+                        />
                       </div>
-                      <Button variant="secondary" className="w-full">Save Configuration</Button>
+                      <Button 
+                        variant="secondary" 
+                        className="w-full"
+                        onClick={handleSaveConfig}
+                        disabled={savingConfig}
+                      >
+                        {savingConfig ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                        ) : (
+                          "Save Configuration"
+                        )}
+                      </Button>
                       <p className="text-xs text-muted-foreground mt-2">
                         These credentials are used globally for the platform's OAuth flow. Individual franchise admins will still authenticate with their own Google accounts to access their respective properties.
                       </p>

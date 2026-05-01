@@ -802,6 +802,14 @@ export const Analytics = {
         const { data } = await api.post('/analytics/refresh');
         return data;
     },
+    getConfig: async () => {
+        const { data } = await api.get('/analytics/config');
+        return data;
+    },
+    saveConfig: async (clientId: string, clientSecret: string) => {
+        const { data } = await api.post('/analytics/config', { clientId, clientSecret });
+        return data;
+    },
 };
 
 export default api;

@@ -767,7 +767,8 @@ export const Analytics = {
         return data;
     },
     getOAuthUrl: async () => {
-        const { data } = await api.get('/analytics/auth/google');
+        const returnUrl = window.location.origin;
+        const { data } = await api.get(`/analytics/auth/google?returnUrl=${encodeURIComponent(returnUrl)}`);
         return data;
     },
     listProperties: async () => {

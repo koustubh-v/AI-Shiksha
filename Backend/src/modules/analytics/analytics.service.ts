@@ -54,8 +54,8 @@ export class AnalyticsService {
       this.prisma.systemSetting.findUnique({ where: { key: 'google_analytics_client_secret' } })
     ]);
 
-    const clientId = clientIdSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID');
-    const clientSecret = clientSecretSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET');
+    const clientId = (clientIdSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_ID') || '').trim();
+    const clientSecret = (clientSecretSetting?.value || this.config.get<string>('GOOGLE_ANALYTICS_CLIENT_SECRET') || '').trim();
 
     return { clientId, clientSecret };
   }
@@ -63,21 +63,24 @@ export class AnalyticsService {
   async saveOAuthCredentials(clientId: string, clientSecret: string) {
     await this.prisma.systemSetting.upsert({
       where: { key: 'google_analytics_client_id' },
-      update: { value: clientId },
-      create: { key: 'google_analytics_client_id', value: clientId }
+      update: { value: clientId.trim() },
+      create: { key: 'google_analytics_client_id', value: clientId.trim() }
     });
     await this.prisma.systemSetting.upsert({
       where: { key: 'google_analytics_client_secret' },
-      update: { value: clientSecret },
-      create: { key: 'google_analytics_client_secret', value: clientSecret }
+      update: { value: clientSecret.trim() },
+      create: { key: 'google_analytics_client_secret', value: clientSecret.trim() }
     });
     return { success: true };
   }
 
-  async getOAuthUrl(franchiseId: string): Promise<string> {
+  async getOAuthUrl(franchiseId: string, frontendOrigin: string): Promise<string> {
     const { clientId } = await this.getOAuthCredentials();
     const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI') || '';
-    const state = Buffer.from(franchiseId).toString('base64');
+    
+    // Pass both franchise ID and the caller's origin in the state
+    const stateObj = { f: franchiseId, o: frontendOrigin };
+    const state = Buffer.from(JSON.stringify(stateObj)).toString('base64');
     const scopes = [
       'https://www.googleapis.com/auth/analytics.readonly',
       'https://www.googleapis.com/auth/userinfo.email',
@@ -95,55 +98,74 @@ export class AnalyticsService {
     );
   }
 
-  async handleOAuthCallback(code: string, state: string): Promise<string> {
-    const franchiseId = Buffer.from(state, 'base64').toString('utf8');
+  async handleOAuthCallback(code: string, state: string): Promise<{ redirectUrl: string; origin: string }> {
+    let franchiseId = '';
+    let frontendOrigin = this.config.get<string>('FRONTEND_URL') || 'https://iconsafetyinstitute.com';
+    
+    try {
+      const decoded = Buffer.from(state, 'base64').toString('utf8');
+      if (decoded.startsWith('{')) {
+        const stateObj = JSON.parse(decoded);
+        franchiseId = stateObj.f;
+        frontendOrigin = stateObj.o || frontendOrigin;
+      } else {
+        franchiseId = decoded;
+      }
+    } catch (e) {
+      franchiseId = Buffer.from(state, 'base64').toString('utf8');
+    }
+
     const { clientId, clientSecret } = await this.getOAuthCredentials();
     const redirectUri = this.config.get<string>('GOOGLE_ANALYTICS_REDIRECT_URI');
 
-    // Exchange code for tokens
-    const tokenResp = await firstValueFrom(
-      this.http.post('https://oauth2.googleapis.com/token', {
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      }),
-    );
+    try {
+      // Exchange code for tokens
+      const tokenResp = await firstValueFrom(
+        this.http.post('https://oauth2.googleapis.com/token', {
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      );
 
-    const { access_token, refresh_token } = tokenResp.data;
+      const { access_token, refresh_token } = tokenResp.data;
 
-    // Get email
-    const profileResp = await firstValueFrom(
-      this.http.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }),
-    );
-    const email = profileResp.data.email;
+      // Get email
+      const profileResp = await firstValueFrom(
+        this.http.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }),
+      );
+      const email = profileResp.data.email;
 
-    // Store temporarily (no property yet)
-    await (this.prisma as any).analyticsCredential.upsert({
-      where: { franchise_id: franchiseId },
-      update: {
-        google_account_email: email,
-        access_token: this.encrypt(access_token),
-        refresh_token: this.encrypt(refresh_token),
-        ga_property_id: '',
-        connected_at: new Date(),
-        cache_data: null,
-        cache_expires_at: null,
-      },
-      create: {
-        franchise_id: franchiseId,
-        google_account_email: email,
-        access_token: this.encrypt(access_token),
-        refresh_token: this.encrypt(refresh_token),
-        ga_property_id: '',
-      },
-    });
+      // Store temporarily (no property yet)
+      await (this.prisma as any).analyticsCredential.upsert({
+        where: { franchise_id: franchiseId },
+        update: {
+          google_account_email: email,
+          access_token: this.encrypt(access_token),
+          refresh_token: this.encrypt(refresh_token),
+          ga_property_id: '',
+          connected_at: new Date(),
+          cache_data: null,
+          cache_expires_at: null,
+        },
+        create: {
+          franchise_id: franchiseId,
+          google_account_email: email,
+          access_token: this.encrypt(access_token),
+          refresh_token: this.encrypt(refresh_token),
+          ga_property_id: '',
+        },
+      });
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:8080';
-    return `${frontendUrl}/dashboard/analytics?step=select-property`;
+      return { redirectUrl: `${frontendOrigin}/admin/analytics?connected=true`, origin: frontendOrigin };
+    } catch (error: any) {
+      this.logger.error('OAuth token exchange failed', error?.response?.data || error?.message || error);
+      throw { origin: frontendOrigin, error };
+    }
   }
 
   // ────── TOKEN REFRESH ──────

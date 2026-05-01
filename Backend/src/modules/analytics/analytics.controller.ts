@@ -38,9 +38,10 @@ export class AnalyticsController {
   @Get('auth/google')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.ADMIN, Role.FRANCHISE_ADMIN, Role.SUPER_ADMIN)
-  async startOAuth(@Request() req) {
+  async startOAuth(@Request() req, @Query('returnUrl') returnUrl: string) {
     const franchiseId = await this.resolveFranchiseId(req);
-    const url = await this.analyticsService.getOAuthUrl(franchiseId);
+    const frontendOrigin = returnUrl || process.env.FRONTEND_URL || 'https://iconsafetyinstitute.com';
+    const url = await this.analyticsService.getOAuthUrl(franchiseId, frontendOrigin);
     return { url };
   }
 
@@ -67,11 +68,11 @@ export class AnalyticsController {
     @Res() res: Response,
   ) {
     try {
-      const redirectUrl = await this.analyticsService.handleOAuthCallback(code, state);
+      const { redirectUrl } = await this.analyticsService.handleOAuthCallback(code, state);
       return res.redirect(redirectUrl);
-    } catch (err) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
-      return res.redirect(`${frontendUrl}/dashboard/analytics?error=oauth_failed`);
+    } catch (err: any) {
+      const frontendUrl = err?.origin || process.env.FRONTEND_URL || 'https://iconsafetyinstitute.com';
+      return res.redirect(`${frontendUrl}/admin/analytics?error=oauth_failed`);
     }
   }
 

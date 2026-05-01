@@ -113,6 +113,7 @@ import RoleProtectedRoute from "./components/common/RoleProtectedRoute";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import { StudentFeedbackWidget } from "./components/common/StudentFeedbackWidget";
 import ScrollToTop from "./components/common/ScrollToTop";
+import { AnalyticsTracker } from "./components/common/AnalyticsTracker";
 
 const queryClient = new QueryClient();
 
@@ -146,6 +147,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
+                <AnalyticsTracker />
                 <StudentFeedbackWidget />
                 <Routes>
                   {/* Auth Routes (Never Blocked by Maintenance Mode) */}

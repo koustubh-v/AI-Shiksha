@@ -183,23 +183,9 @@ export function FranchiseProvider({ children }: { children: ReactNode }) {
                     canonical.setAttribute('href', window.location.href.split('?')[0]);
                 }
 
-                // Custom head scripts
-                if (data.seo_custom_head_scripts) {
-                    let scriptContainer = document.getElementById('custom-head-scripts');
-                    if (!scriptContainer) {
-                        scriptContainer = document.createElement('div');
-                        scriptContainer.id = 'custom-head-scripts';
-                        document.head.appendChild(scriptContainer);
-                    }
-                    // Insert raw HTML (Note: scripts added via innerHTML do not execute,
-                    // but for meta tags and valid tracking pixels it can work.
-                    // For full <script> execution we need a slightly more robust approach)
-                    const range = document.createRange();
-                    range.selectNode(scriptContainer);
-                    const documentFragment = range.createContextualFragment(data.seo_custom_head_scripts);
-                    scriptContainer.innerHTML = '';
-                    scriptContainer.appendChild(documentFragment);
-                }
+                // Custom head scripts are injected by AnalyticsTracker (components/common/AnalyticsTracker.tsx)
+                // which also fires gtag page_view events on every route change.
+                // Do NOT inject here to avoid duplicate script execution.
 
                 if (data.favicon_url) {
                     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;

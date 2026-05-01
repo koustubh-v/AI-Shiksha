@@ -142,16 +142,7 @@ const adminNavItems: NavItem[] = [
     label: "Analytics",
     href: "/dashboard/analytics",
   },
-  {
-    icon: FileBarChart,
-    label: "Reports",
-    href: "/dashboard/reports",
-  },
-  {
-    icon: LineChart,
-    label: "Analytics",
-    href: "/dashboard/analytics",
-  },
+
   {
     icon: Building2,
     label: "Franchise",

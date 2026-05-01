@@ -132,16 +132,7 @@ const adminNavItems: NavItem[] = [
     label: "Ai Control Center",
     href: "/dashboard/ai-control",
   },
-  {
-    icon: FileBarChart,
-    label: "Reports",
-    href: "/dashboard/reports",
-  },
-  {
-    icon: LineChart,
-    label: "Analytics",
-    href: "/dashboard/analytics",
-  },
+
   {
     icon: Building2,
     label: "Franchise",

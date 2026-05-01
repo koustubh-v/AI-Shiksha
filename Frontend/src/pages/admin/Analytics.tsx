@@ -49,6 +49,8 @@ export default function AnalyticsPage() {
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [savingConfig, setSavingConfig] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [selectingProperty, setSelectingProperty] = useState(false);
 
   useEffect(() => {
     // Check if returning from OAuth
@@ -68,6 +70,8 @@ export default function AnalyticsPage() {
       setStatus(res);
       if (res.connected && res.propertySelected) {
         fetchAllData();
+      } else if (res.connected && !res.propertySelected) {
+        fetchProperties();
       }
       if (isSuperAdmin) {
         const config = await Analytics.getConfig();
@@ -153,7 +157,31 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (loading && !data) {
+  const fetchProperties = async () => {
+    try {
+      const props = await Analytics.listProperties();
+      setProperties(props);
+    } catch (error) {
+      console.error("Failed to fetch properties", error);
+      toast.error("Failed to load Google Analytics properties");
+    }
+  };
+
+  const handleSelectProperty = async (propertyId: string, propertyName: string) => {
+    setSelectingProperty(true);
+    try {
+      await Analytics.connectProperty(propertyId, propertyName);
+      toast.success(`Connected to ${propertyName}`);
+      setStatus((prev: any) => ({ ...prev, propertySelected: true, propertyName }));
+      fetchAllData();
+    } catch (error) {
+      toast.error("Failed to connect property");
+    } finally {
+      setSelectingProperty(false);
+    }
+  };
+
+  if (loading && !data && !properties.length) {
     return (
       <AdminDashboardLayout title="Google Analytics">
         <div className="flex justify-center items-center h-[60vh]">
@@ -248,8 +276,55 @@ export default function AnalyticsPage() {
     );
   }
 
+  // Select Property View
+  if (status?.connected && !status?.propertySelected) {
+    return (
+      <AdminDashboardLayout title="Google Analytics">
+        <div className="max-w-3xl mx-auto mt-10">
+          <Card>
+            <CardHeader className="text-center pb-8 pt-10">
+              <CardTitle className="text-2xl font-bold">Select Analytics Property</CardTitle>
+              <CardDescription className="text-lg mt-2">
+                Choose the GA4 property you want to connect to this franchise.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col pb-12 space-y-6">
+              {properties.length === 0 ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {properties.map((prop) => (
+                    <div key={prop.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div>
+                        <h4 className="font-medium text-foreground">{prop.name}</h4>
+                        <p className="text-sm text-muted-foreground">Property ID: {prop.id}</p>
+                      </div>
+                      <Button 
+                        onClick={() => handleSelectProperty(prop.id, prop.name)}
+                        disabled={selectingProperty}
+                      >
+                        Select
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="mt-6 flex justify-center border-t pt-6">
+                     <Button variant="outline" onClick={handleDisconnect} className="text-destructive">
+                       Cancel & Disconnect
+                     </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
+
   // Dashboard View
-  if (data) {
+  if (status?.propertySelected && data) {
     const ts = data.traffic.summary;
     return (
       <AdminDashboardLayout title="Google Analytics Dashboard">

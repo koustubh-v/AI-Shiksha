@@ -161,7 +161,7 @@ export class AnalyticsService {
         },
       });
 
-      return { redirectUrl: `${frontendOrigin}/admin/analytics?connected=true`, origin: frontendOrigin };
+      return { redirectUrl: `${frontendOrigin}/dashboard/analytics?connected=true`, origin: frontendOrigin };
     } catch (error: any) {
       this.logger.error('OAuth token exchange failed', error?.response?.data || error?.message || error);
       throw { origin: frontendOrigin, error };

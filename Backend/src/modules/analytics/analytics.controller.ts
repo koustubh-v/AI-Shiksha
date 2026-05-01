@@ -72,7 +72,7 @@ export class AnalyticsController {
       return res.redirect(redirectUrl);
     } catch (err: any) {
       const frontendUrl = err?.origin || process.env.FRONTEND_URL || 'https://iconsafetyinstitute.com';
-      return res.redirect(`${frontendUrl}/admin/analytics?error=oauth_failed`);
+      return res.redirect(`${frontendUrl}/dashboard/analytics?error=oauth_failed`);
     }
   }
 

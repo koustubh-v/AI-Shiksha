@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,12 +68,16 @@ export default function ReportsPage() {
     from: undefined,
     to: undefined,
   });
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null);
+  const activeTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   const fetchReport = async () => {
     setLoading(true);
     setData(null);
+    const requestingTab = activeTabRef.current;
     try {
       const params = {
         startDate: date.from ? date.from.toISOString() : undefined,
@@ -95,7 +99,11 @@ export default function ReportsPage() {
           res = await Reports.getRevenue(params);
           break;
       }
-      setData(res);
+      
+      // Only update state if the user hasn't switched tabs while fetching
+      if (activeTabRef.current === requestingTab) {
+        setData(res);
+      }
     } catch (error) {
       console.error("Failed to fetch report:", error);
     } finally {

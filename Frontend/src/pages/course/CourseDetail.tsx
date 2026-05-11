@@ -192,7 +192,7 @@ export default function CourseDetail() {
           toast({ title: "Error", description: "Razorpay SDK failed to load. Are you online?", variant: "destructive" });
           return;
         }
-        const orderData = await razorpayService.createOrder(course.id, currentPrice, couponData?.coupon_id);
+        const orderData = await razorpayService.createOrder([course.id], currentPrice, couponData?.coupon_id);
         const options = {
           key: orderData.keyId,
           amount: orderData.amount,

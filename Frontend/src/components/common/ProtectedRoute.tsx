@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 export default function ProtectedRoute() {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, isLoading: loading } = useAuth();
 
     if (loading) {
         return (

@@ -51,7 +51,7 @@ export function QuizEditor({
     );
     const [questions, setQuestions] = useState<any[]>(initialData?.questions || []);
 
-    const handleSaveQuestions = async (updatedQuestions: any[]) => {
+    const handleSaveQuestions = (updatedQuestions: any[]) => {
         setQuestions(updatedQuestions);
     };
 
@@ -136,8 +136,8 @@ export function QuizEditor({
                     {/* Quiz Builder */}
                     <QuizBuilder
                         quizId={quizId}
-                        initialQuestions={questions}
-                        onSave={handleSaveQuestions}
+                        questions={questions}
+                        onChange={handleSaveQuestions}
                         saving={false}
                     />
                 </div>

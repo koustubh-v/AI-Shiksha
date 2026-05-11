@@ -26,7 +26,7 @@ export function AiAssistantButton({ onGenerate, context }: AiAssistantButtonProp
         setLoading(true);
         try {
             // @ts-ignore
-            const response = await AI.generateText(prompt, context);
+            const response = (await AI.generateText(prompt, context)) as { text: string };
             onGenerate(response.text);
             setOpen(false);
             setPrompt('');

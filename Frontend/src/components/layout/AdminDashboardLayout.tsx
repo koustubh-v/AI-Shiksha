@@ -29,7 +29,7 @@ export function AdminDashboardLayout({ children, title, subtitle }: AdminDashboa
       <AdminSidebar />
       <div
         className={cn(
-          "flex flex-1 flex-col transition-all duration-300 min-w-0 overflow-x-hidden",
+          "flex flex-1 flex-col transition-all duration-300 min-w-0",
           collapsed ? "md:pl-[70px]" : "md:pl-[280px]"
         )}
       >

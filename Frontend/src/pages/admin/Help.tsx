@@ -1,12 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
+import { Link } from 'react-router-dom';
 import {
   Search, BookOpen, Users, Video, CreditCard, Mail, Bot,
   Settings, BarChart, HelpCircle, AlertTriangle, ChevronRight,
   ChevronDown, Rocket, LayoutTemplate, UserCog, Briefcase,
   ShieldAlert, PlayCircle, MessageSquare, Monitor, CheckCircle2,
-  XCircle, Zap, LayoutDashboard
+  XCircle, Zap, LayoutDashboard, Bug, ExternalLink
 } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // ============================================================================
 // INTERFACES
@@ -20,7 +24,12 @@ interface HelpSectionData {
   featureCount: number;
   overview: string;
   features: string[];
-  workflow: string[];
+  workflow: {
+    title: string;
+    detail: string;
+    link?: string;
+    linkText?: string;
+  }[];
   commonIssues: string[];
   bestPractices: string[];
   keywords: string[];
@@ -59,99 +68,26 @@ const SECTIONS: HelpSectionData[] = [
       "Login process",
       "Dashboard navigation",
       "Role based access",
-      "Sidebar overview",
-      "Admin workflow",
-      "Instructor workflow",
-      "Student workflow"
+      "Sidebar overview"
     ],
     workflow: [
-      "Open LMS portal",
-      "Login with credentials",
-      "Access dashboard",
-      "Navigate modules using sidebar",
-      "Manage users/courses/settings"
+      {
+        title: "Platform Overview",
+        detail: "The Admin Dashboard is your central hub for managing the entire LMS platform. Here you can see key metrics, manage users, and configure settings. The navigation sidebar on the left gives you quick access to all modules.",
+        link: "/dashboard",
+        linkText: "Go to Dashboard"
+      },
+      {
+        title: "Understanding Roles",
+        detail: "The platform has three main roles: Students (learners), Teachers (course creators/instructors), and Admins (platform managers). Ensure you assign the correct role when creating a new user.",
+        link: "/dashboard/users",
+        linkText: "Manage Users"
+      }
     ],
-    commonIssues: [
-      "Invalid login credentials",
-      "Session expired",
-      "Dashboard not loading"
-    ],
-    bestPractices: [
-      "Use secure passwords",
-      "Logout after use",
-      "Maintain role permissions properly"
-    ],
+    commonIssues: ["Invalid login credentials", "Session expired", "Dashboard not loading"],
+    bestPractices: ["Use secure passwords", "Logout after use", "Maintain role permissions properly"],
     keywords: ["login", "roles", "dashboard", "overview", "start"],
     lastUpdated: "Updated 2 days ago"
-  },
-  {
-    id: "franchise-setup",
-    title: "Franchise Setup",
-    icon: Briefcase,
-    shortDesc: "Manage franchise level configuration and setup.",
-    featureCount: 5,
-    overview: "Manage franchise level configuration and setup.",
-    features: [
-      "Create franchise",
-      "Configure franchise details",
-      "Assign franchise managers",
-      "Manage branding",
-      "Configure permissions"
-    ],
-    workflow: [
-      "Open Franchise Setup",
-      "Add franchise information",
-      "Configure branding/settings",
-      "Assign managers",
-      "Save configuration"
-    ],
-    commonIssues: [
-      "Missing required fields",
-      "Permission denied",
-      "Duplicate franchise name"
-    ],
-    bestPractices: [
-      "Use consistent naming",
-      "Verify admin permissions",
-      "Review branding before publishing"
-    ],
-    keywords: ["franchise", "managers", "branches", "setup"],
-    lastUpdated: "Updated 1 week ago"
-  },
-  {
-    id: "basic-website-setup",
-    title: "Basic Website Setup",
-    icon: LayoutTemplate,
-    shortDesc: "Configure website branding and LMS platform settings.",
-    featureCount: 6,
-    overview: "Configure website branding and LMS platform settings.",
-    features: [
-      "Logo upload",
-      "Theme customization",
-      "Homepage configuration",
-      "Contact information",
-      "Website branding",
-      "SEO/basic settings"
-    ],
-    workflow: [
-      "Open Website Setup",
-      "Upload logo/favicon",
-      "Configure branding",
-      "Save settings",
-      "Preview changes"
-    ],
-    commonIssues: [
-      "Invalid image format",
-      "Theme changes not updating",
-      "Homepage settings not saving"
-    ],
-    bestPractices: [
-      "Use optimized images",
-      "Keep branding consistent",
-      "Preview before publishing"
-    ],
-    keywords: ["branding", "logo", "theme", "seo", "contact"],
-    lastUpdated: "Updated 3 days ago"
   },
   {
     id: "user-management",
@@ -160,32 +96,29 @@ const SECTIONS: HelpSectionData[] = [
     shortDesc: "Manage users, permissions, and account access.",
     featureCount: 6,
     overview: "Manage users, permissions, and account access. Roles include: Admin, Instructor, Student, Franchise Manager.",
-    features: [
-      "Add users",
-      "Edit users",
-      "Delete users",
-      "Assign roles",
-      "Activate/deactivate accounts",
-      "Manage permissions"
-    ],
+    features: ["Add users", "Edit users", "Delete users", "Assign roles", "Activate/deactivate accounts", "Manage permissions"],
     workflow: [
-      "Open User Management",
-      "Click Add User",
-      "Enter details",
-      "Assign role",
-      "Save user"
+      {
+        title: "Adding a New User",
+        detail: "To add a new user, navigate to the Users page, click the 'Add User' button, and fill in their name, email, role, and a secure password. They can use these credentials to log in.",
+        link: "/dashboard/users",
+        linkText: "Open Users Page"
+      },
+      {
+        title: "Bulk Importing Users",
+        detail: "If you have a large list of students or teachers, you can import them using a CSV file. Make sure your CSV has the columns: name, email, role, password. The maximum limit is 500 users per upload.",
+        link: "/dashboard/users",
+        linkText: "Import Users via CSV"
+      },
+      {
+        title: "Changing Roles & Deleting",
+        detail: "You can change a user's role or delete their account permanently using the action menu (three dots) next to their name in the user list. Be careful, as deleting an account cannot be undone.",
+        link: "/dashboard/users",
+        linkText: "Manage Roles"
+      }
     ],
-    commonIssues: [
-      "Duplicate email",
-      "User not receiving credentials",
-      "Permission denied",
-      "Login access failed"
-    ],
-    bestPractices: [
-      "Verify email addresses",
-      "Assign minimum required permissions",
-      "Disable inactive accounts"
-    ],
+    commonIssues: ["Duplicate email", "User not receiving credentials", "Permission denied", "Login access failed"],
+    bestPractices: ["Verify email addresses", "Assign minimum required permissions", "Disable inactive accounts"],
     keywords: ["users", "roles", "permissions", "students", "instructors"],
     lastUpdated: "Updated yesterday"
   },
@@ -196,37 +129,29 @@ const SECTIONS: HelpSectionData[] = [
     shortDesc: "Create and manage LMS courses and educational content.",
     featureCount: 10,
     overview: "Create and manage LMS courses and educational content.",
-    features: [
-      "Create course",
-      "Edit course",
-      "Add modules",
-      "Upload videos",
-      "Upload resources",
-      "Add quizzes",
-      "Publish/unpublish courses",
-      "Course categories",
-      "Student enrollment",
-      "Progress tracking"
-    ],
+    features: ["Create course", "Edit course", "Add modules", "Upload videos", "Upload resources", "Add quizzes", "Publish/unpublish courses", "Course categories", "Student enrollment", "Progress tracking"],
     workflow: [
-      "Open Course Management",
-      "Create new course",
-      "Add title/description",
-      "Upload lessons/resources",
-      "Configure quizzes",
-      "Publish course"
+      {
+        title: "Creating a New Course",
+        detail: "Go to Course Management and click 'Create Course'. You will need to provide a title, description, category, and pricing. You can also set a course thumbnail and promotional video.",
+        link: "/dashboard/courses",
+        linkText: "Go to Courses"
+      },
+      {
+        title: "Building the Curriculum",
+        detail: "A course is divided into Sections (Modules) and Items (Lessons, Quizzes, Assignments). Use the Course Builder to drag-and-drop content. Ensure you add at least one section before publishing.",
+        link: "/dashboard/courses",
+        linkText: "Open Course Builder"
+      },
+      {
+        title: "Approving Courses",
+        detail: "If an instructor creates a course, it might require Admin approval before it goes live. Check the Course Approval page to review and publish pending courses.",
+        link: "/dashboard/course-approval",
+        linkText: "Review Pending Courses"
+      }
     ],
-    commonIssues: [
-      "Video upload failed",
-      "Course not visible",
-      "Resource attachment failed",
-      "Publish action failed"
-    ],
-    bestPractices: [
-      "Use structured course modules",
-      "Optimize video sizes",
-      "Add clear descriptions"
-    ],
+    commonIssues: ["Video upload failed", "Course not visible", "Resource attachment failed", "Publish action failed"],
+    bestPractices: ["Use structured course modules", "Optimize video sizes", "Add clear descriptions"],
     keywords: ["courses", "lessons", "modules", "video", "quiz"],
     lastUpdated: "Updated 5 days ago"
   },
@@ -237,130 +162,25 @@ const SECTIONS: HelpSectionData[] = [
     shortDesc: "Configure Razorpay payment gateway integration.",
     featureCount: 5,
     overview: "Configure Razorpay payment gateway integration.",
-    features: [
-      "API key configuration",
-      "Test/live mode",
-      "Payment verification",
-      "Transaction tracking",
-      "Webhook configuration"
-    ],
+    features: ["API key configuration", "Test/live mode", "Payment verification", "Transaction tracking", "Webhook configuration"],
     workflow: [
-      "Open Razorpay Setup",
-      "Enter API keys",
-      "Configure environment",
-      "Save settings",
-      "Test payment flow"
+      {
+        title: "Razorpay Setup (Payments)",
+        detail: "To accept payments for your courses, you must configure Razorpay. Go to Platform Settings > Payments, and enter your Razorpay Key ID and Key Secret. Ensure you test this in Sandbox mode before going live.",
+        link: "/dashboard/settings",
+        linkText: "Configure Payments"
+      },
+      {
+        title: "Testing Transactions",
+        detail: "Once configured, use Razorpay test cards to simulate a purchase. Ensure the webhook successfully updates the order status to 'Completed'.",
+        link: "/dashboard/transactions",
+        linkText: "View Transactions"
+      }
     ],
-    commonIssues: [
-      "Invalid API key",
-      "Webhook failure",
-      "Payment pending",
-      "Currency mismatch"
-    ],
-    bestPractices: [
-      "Use test mode before production",
-      "Verify webhook URLs",
-      "Secure API credentials"
-    ],
+    commonIssues: ["Invalid API key", "Webhook failure", "Payment pending", "Currency mismatch"],
+    bestPractices: ["Use test mode before production", "Verify webhook URLs", "Secure API credentials"],
     keywords: ["payments", "razorpay", "checkout", "transactions", "gateway"],
     lastUpdated: "Updated 2 weeks ago"
-  },
-  {
-    id: "communication-module",
-    title: "Communication Module",
-    icon: MessageSquare,
-    shortDesc: "Manage notifications and communication workflows.",
-    featureCount: 5,
-    overview: "Manage notifications and communication workflows.",
-    features: [
-      "Email notifications",
-      "Broadcast messaging",
-      "Student announcements",
-      "Instructor communication",
-      "Notification management"
-    ],
-    workflow: [
-      "Open Communication Module",
-      "Select audience",
-      "Compose message",
-      "Send notification"
-    ],
-    commonIssues: [
-      "Emails not sending",
-      "Notification delay",
-      "Wrong recipient selection"
-    ],
-    bestPractices: [
-      "Review recipients carefully",
-      "Use professional messaging",
-      "Avoid excessive notifications"
-    ],
-    keywords: ["email", "messages", "announcements", "notifications"],
-    lastUpdated: "Updated 1 month ago"
-  },
-  {
-    id: "ai-features",
-    title: "AI Features",
-    icon: Bot,
-    shortDesc: "AI powered tools and smart LMS workflows.",
-    featureCount: 5,
-    overview: "AI powered tools and smart LMS workflows.",
-    features: [
-      "AI content generation",
-      "AI assistance",
-      "Smart recommendations",
-      "Workflow automation",
-      "AI enhancement tools"
-    ],
-    workflow: [
-      "Open AI Features",
-      "Select AI tool",
-      "Enter prompt/input",
-      "Generate result",
-      "Review output"
-    ],
-    commonIssues: [
-      "AI timeout",
-      "Invalid prompt",
-      "Response generation failed"
-    ],
-    bestPractices: [
-      "Use clear prompts",
-      "Review generated content",
-      "Avoid sensitive data input"
-    ],
-    keywords: ["ai", "artificial intelligence", "generator", "smart"],
-    lastUpdated: "Updated 3 days ago"
-  },
-  {
-    id: "maintenance-mode",
-    title: "Maintenance Mode",
-    icon: ShieldAlert,
-    shortDesc: "Control LMS maintenance state and access restrictions.",
-    featureCount: 4,
-    overview: "Control LMS maintenance state and access restrictions.",
-    features: [
-      "Enable maintenance mode",
-      "Disable maintenance mode",
-      "Configure maintenance message",
-      "Restrict user access"
-    ],
-    workflow: [
-      "Open Maintenance Mode",
-      "Toggle status",
-      "Add maintenance message",
-      "Save changes"
-    ],
-    commonIssues: [
-      "Users still accessing portal",
-      "Maintenance page not displaying"
-    ],
-    bestPractices: [
-      "Notify users before maintenance",
-      "Keep maintenance duration minimal"
-    ],
-    keywords: ["maintenance", "offline", "downtime", "status"],
-    lastUpdated: "Updated 2 months ago"
   },
   {
     id: "analytics-setup",
@@ -369,32 +189,52 @@ const SECTIONS: HelpSectionData[] = [
     shortDesc: "Manage analytics dashboards and reporting configuration.",
     featureCount: 6,
     overview: "Manage analytics dashboards and reporting configuration.",
-    features: [
-      "User analytics",
-      "Revenue analytics",
-      "Engagement analytics",
-      "Course analytics",
-      "Reporting dashboards",
-      "Completion tracking"
-    ],
+    features: ["User analytics", "Revenue analytics", "Engagement analytics", "Course analytics", "Reporting dashboards", "Completion tracking"],
     workflow: [
-      "Open Analytics Setup",
-      "Configure metrics",
-      "Save settings",
-      "View dashboards/reports"
+      {
+        title: "Google Analytics (Traffic)",
+        detail: "Track your website visitors and student activity by entering your Google Analytics 4 (GA4) Measurement ID in the Analytics settings.",
+        link: "/dashboard/analytics",
+        linkText: "Configure Analytics"
+      },
+      {
+        title: "Viewing Reports",
+        detail: "Once setup, you can monitor user enrollments, revenue trends, and platform engagement directly from the Analytics Dashboard.",
+        link: "/dashboard/analytics",
+        linkText: "View Reports"
+      }
     ],
-    commonIssues: [
-      "Reports missing",
-      "Dashboard not updating",
-      "Analytics mismatch"
-    ],
-    bestPractices: [
-      "Review analytics regularly",
-      "Monitor course completion trends",
-      "Track engagement metrics"
-    ],
+    commonIssues: ["Reports missing", "Dashboard not updating", "Analytics mismatch"],
+    bestPractices: ["Review analytics regularly", "Monitor course completion trends", "Track engagement metrics"],
     keywords: ["analytics", "charts", "reports", "metrics", "data"],
     lastUpdated: "Updated 4 days ago"
+  },
+  {
+    id: "basic-website-setup",
+    title: "Basic Website Setup",
+    icon: LayoutTemplate,
+    shortDesc: "Configure website branding and LMS platform settings.",
+    featureCount: 6,
+    overview: "Configure website branding and LMS platform settings.",
+    features: ["Logo upload", "Theme customization", "Homepage configuration", "Contact information", "Website branding", "SEO/basic settings"],
+    workflow: [
+      {
+        title: "Updating Logos & Branding",
+        detail: "Make the platform your own by uploading your custom Logo and Favicon. Navigate to Platform Settings to update these images and adjust your brand colors.",
+        link: "/dashboard/settings",
+        linkText: "Platform Settings"
+      },
+      {
+        title: "SEO & Meta Tags",
+        detail: "Improve your search engine ranking by adding relevant SEO titles, descriptions, and keywords. This helps students find your courses on Google.",
+        link: "/dashboard/settings",
+        linkText: "Configure SEO"
+      }
+    ],
+    commonIssues: ["Invalid image format", "Theme changes not updating", "Homepage settings not saving"],
+    bestPractices: ["Use optimized images", "Keep branding consistent", "Preview before publishing"],
+    keywords: ["branding", "logo", "theme", "seo", "contact"],
+    lastUpdated: "Updated 3 days ago"
   }
 ];
 
@@ -572,61 +412,51 @@ export default function Help() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-indigo-500/30">
-      
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-700 via-violet-800 to-purple-900 text-white pb-16 pt-24 px-6 sm:px-12 lg:px-24">
-        {/* Background Decorations */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-20 -left-20 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="relative max-w-6xl mx-auto z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <HelpCircle className="w-8 h-8 text-indigo-300" />
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Help & Documentation</h1>
+    <AdminDashboardLayout title="Help & Documentation" subtitle="Comprehensive documentation and support for administrators">
+      {/* Dynamic Header */}
+      <div className="p-3 md:p-8 max-w-[1600px] mx-auto">
+        <div className="relative overflow-hidden rounded-none bg-zinc-950 p-5 md:p-8 shadow-2xl border border-white/10 group mb-8 transition-all duration-700 ease-out animate-in fade-in slide-in-from-bottom-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-blue-500/20 opacity-50 transition-opacity duration-1000 group-hover:opacity-70"></div>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/30 blur-3xl transition-transform duration-1000 group-hover:scale-110"></div>
+          
+          <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+            <div className="space-y-2 text-center xl:text-left">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-white flex items-center gap-3">
+                <HelpCircle className="w-10 h-10 text-indigo-400 hidden md:block" /> Help Center
+              </h2>
+              <p className="text-sm md:text-lg text-white/60 font-medium max-w-xl mx-auto xl:mx-0">
+                Detailed documentation, guides, and troubleshooting for the Admin Dashboard.
+              </p>
             </div>
-            <p className="text-lg md:text-xl text-indigo-100 max-w-3xl mb-10 leading-relaxed">
-              Guides, workflows, troubleshooting, setup instructions, and platform management documentation for the LMS Admin Dashboard.
-            </p>
-
-            {/* 3. SEARCH FUNCTIONALITY */}
-            <div className="relative max-w-2xl mb-12">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-6 w-6 text-indigo-300" />
+            
+            {/* Actions Container */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full xl:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Input
+                  placeholder="Search articles, workflows..."
+                  className="pl-9 h-12 bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-none focus-visible:ring-indigo-500 shadow-[0_0_40px_rgba(0,0,0,0.3)] backdrop-blur-md font-medium w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                className="block w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-indigo-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/20 transition-all backdrop-blur-sm text-lg shadow-xl"
-                placeholder="Search articles, features, workflows..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
 
-            {/* Quick Access */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              <QuickAccessCard title="Getting Started" icon={Rocket} onClick={() => scrollToSection('getting-started')} />
-              <QuickAccessCard title="Course Mgmt" icon={BookOpen} onClick={() => scrollToSection('course-management')} />
-              <QuickAccessCard title="User Mgmt" icon={Users} onClick={() => scrollToSection('user-management')} />
-              <QuickAccessCard title="Razorpay Setup" icon={CreditCard} onClick={() => scrollToSection('razorpay-setup')} />
-              <QuickAccessCard title="Analytics Setup" icon={BarChart} onClick={() => scrollToSection('analytics-setup')} />
+              {/* Bug Report Button */}
+              <a href="mailto:hp.koustubh@gmail.com" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <Button className="h-12 rounded-none bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest w-full">
+                  <Bug className="h-4 w-4 mr-2" />
+                  Report a Bug
+                </Button>
+              </a>
             </div>
-          </motion.div>
+          </div>
         </div>
-      </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row items-start gap-10">
         
         {/* 2. STICKY SIDEBAR NAVIGATION */}
-        <aside className="lg:w-72 flex-shrink-0">
-          <div className="lg:hidden mb-4">
+        <aside className="lg:w-72 flex-shrink-0 lg:sticky lg:top-24 h-auto lg:h-[calc(100vh-7rem)] z-10 flex flex-col">
+          <div className="lg:hidden mb-4 flex-shrink-0">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-slate-700 dark:text-slate-300 font-medium"
@@ -636,11 +466,11 @@ export default function Help() {
             </button>
           </div>
 
-          <div className={`lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex-1 flex flex-col ${isMobileMenuOpen ? 'block' : 'hidden lg:flex'}`}>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
               <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm uppercase tracking-wider">Navigation</h3>
             </div>
-            <nav className="p-3 max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
+            <nav className="p-3 flex-1 overflow-y-auto custom-scrollbar">
               <ul className="space-y-1">
                 {SECTIONS.map((section) => (
                   <li key={section.id}>
@@ -796,12 +626,23 @@ export default function Help() {
                             </h3>
                             <div className="space-y-4">
                               {section.workflow.map((step, idx) => (
-                                <div key={idx} className="flex items-start gap-4">
-                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+                                <div key={idx} className="flex items-start gap-4 mb-6">
+                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm mt-1">
                                     {idx + 1}
                                   </div>
-                                  <div className="pt-1 text-slate-600 dark:text-slate-400 font-medium">
-                                    {step}
+                                  <div className="flex-grow">
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">{step.title}</h4>
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">{step.detail}</p>
+                                    {step.link && (
+                                      <a 
+                                        href={step.link} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                                      >
+                                        {step.linkText} <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -905,6 +746,7 @@ export default function Help() {
 
         </main>
       </div>
-    </div>
+      </div>
+    </AdminDashboardLayout>
   );
 }

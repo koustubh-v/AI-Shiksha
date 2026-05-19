@@ -399,13 +399,50 @@ export class QuizzesService {
               studentAnswer.every((ans: any) => correctAnswers.includes(ans));
             break;
           case 'FILL_BLANK':
+            if (Array.isArray(studentAnswer)) {
+              isCorrect =
+                studentAnswer.length === correctAnswers.length &&
+                studentAnswer.every(
+                  (ans: any, idx: number) =>
+                    ans?.toString().toLowerCase().trim() ===
+                    correctAnswers[idx]?.toString().toLowerCase().trim(),
+                );
+            } else {
+              isCorrect = correctAnswers.some(
+                (correct: string) =>
+                  studentAnswer?.toString().toLowerCase().trim() ===
+                  correct.toString().toLowerCase().trim(),
+              );
+            }
+            break;
+          case 'SHORT_ANSWER':
             isCorrect = correctAnswers.some(
               (correct: string) =>
                 studentAnswer?.toString().toLowerCase().trim() ===
                 correct.toString().toLowerCase().trim(),
             );
             break;
+          case 'NUMERICAL': {
+            const target = parseFloat(correctAnswers[0]);
+            const tolerance = correctAnswers[1] ? parseFloat(correctAnswers[1]) : 0;
+            const studentVal = parseFloat(studentAnswer);
+            isCorrect =
+              !isNaN(target) &&
+              !isNaN(studentVal) &&
+              Math.abs(studentVal - target) <= tolerance;
+            break;
+          }
+          case 'MATCHING':
+          case 'ORDERING':
+          case 'MATRIX':
+          case 'DRAG_DROP':
+            isCorrect =
+              Array.isArray(studentAnswer) &&
+              studentAnswer.length === correctAnswers.length &&
+              studentAnswer.every((ans: any, idx: number) => ans === correctAnswers[idx]);
+            break;
           case 'DESCRIPTIVE':
+          case 'ESSAY':
           case 'CODE':
             // These require manual grading
             isCorrect = false;

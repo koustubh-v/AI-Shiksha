@@ -7,7 +7,7 @@ export type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 export type SectionItemType = 'LECTURE' | 'QUIZ' | 'ASSIGNMENT' | 'RESOURCE';
 export type LectureContentType = 'VIDEO' | 'TEXT' | 'FILE' | 'LINK';
 export type VideoProvider = 'UPLOAD' | 'YOUTUBE' | 'VIMEO';
-export type QuizQuestionType = 'MCQ' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'DESCRIPTIVE' | 'CODE';
+export type QuizQuestionType = 'MCQ' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'DESCRIPTIVE' | 'CODE' | 'MATCHING' | 'ORDERING' | 'MATRIX' | 'SHORT_ANSWER' | 'ESSAY' | 'NUMERICAL' | 'DRAG_DROP';
 export type AssignmentSubmissionType = 'FILE' | 'CODE' | 'TEXT';
 
 // Course with all new fields

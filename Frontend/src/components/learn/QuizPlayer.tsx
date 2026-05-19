@@ -8,9 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ChevronRight, RotateCcw } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ChevronRight, RotateCcw, ArrowUp, ArrowDown } from "lucide-react";
 import { Quizzes } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface QuizPlayerProps {
     quizId: string;
@@ -24,6 +30,7 @@ interface Question {
     options?: string | string[]; // JSON string, comma-separated, or Array
     points: number;
     set_number?: number;
+    correct_answers?: string[];
 }
 
 interface QuizData {
@@ -48,11 +55,55 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+    const [shuffledMatchingPool, setShuffledMatchingPool] = useState<string[]>([]);
 
     // Result State
     const [result, setResult] = useState<any>(null);
     const [attemptsUsed, setAttemptsUsed] = useState(0);
     const [bestSubmission, setBestSubmission] = useState<any>(null);
+
+    useEffect(() => {
+        if (!started || !quiz) return;
+        const currentQuestion = quiz.questions[currentQuestionIndex];
+        if (!currentQuestion) return;
+
+        const currentAnswer = answers[currentQuestion.id];
+
+        if (currentAnswer === undefined) {
+            if (currentQuestion.type === 'MULTIPLE') {
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: [] }));
+            } else if (currentQuestion.type === 'FILL_BLANK') {
+                const blankCount = (currentQuestion.question_text.match(/\[blank\]/g) || []).length;
+                if (blankCount > 0) {
+                    setAnswers(prev => ({ ...prev, [currentQuestion.id]: Array(blankCount).fill("") }));
+                } else {
+                    setAnswers(prev => ({ ...prev, [currentQuestion.id]: "" }));
+                }
+            } else if (currentQuestion.type === 'MATCHING') {
+                const leftCount = parseOptions(currentQuestion.options).length;
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: Array(leftCount).fill("") }));
+            } else if (currentQuestion.type === 'ORDERING') {
+                const opts = parseOptions(currentQuestion.options);
+                const shuffled = [...opts].sort(() => Math.random() - 0.5);
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: shuffled }));
+            } else if (currentQuestion.type === 'MATRIX') {
+                const rows = parseOptions(currentQuestion.options).filter(o => o.startsWith('row:'));
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: Array(rows.length).fill("") }));
+            } else if (currentQuestion.type === 'DRAG_DROP') {
+                const dropCount = (currentQuestion.question_text.match(/\[drop\]/g) || []).length;
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: Array(dropCount).fill("") }));
+            } else {
+                setAnswers(prev => ({ ...prev, [currentQuestion.id]: "" }));
+            }
+        }
+
+        // Setup matching choice pool if applicable
+        if (currentQuestion.type === 'MATCHING') {
+            const correctList = currentQuestion.correct_answers || [];
+            const shuffled = [...correctList].sort(() => Math.random() - 0.5);
+            setShuffledMatchingPool(shuffled);
+        }
+    }, [started, currentQuestionIndex, quiz]);
 
     useEffect(() => {
         loadQuiz();
@@ -507,44 +558,380 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                 {/* Question Card */}
                 <Card className="border-none shadow-xl shadow-black/5 rounded-3xl overflow-hidden bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-10 md:p-14 space-y-12">
+                        {/* Question Text / Prompt */}
                         <div className="space-y-6">
-                            <h3 className="text-2xl md:text-4xl font-medium leading-normal text-gray-800 tracking-tight">
-                                {currentQuestion.question_text}
-                            </h3>
+                            {currentQuestion.type === 'FILL_BLANK' && currentQuestion.question_text.includes('[blank]') ? (
+                                <h3 className="text-xl md:text-2xl font-semibold text-gray-500">
+                                    Fill in the blanks:
+                                </h3>
+                            ) : currentQuestion.type === 'DRAG_DROP' && currentQuestion.question_text.includes('[drop]') ? (
+                                <h3 className="text-xl md:text-2xl font-semibold text-gray-500">
+                                    Select the correct options for the drop zones:
+                                </h3>
+                            ) : (
+                                <h3 className="text-2xl md:text-4xl font-medium leading-normal text-gray-800 tracking-tight">
+                                    {currentQuestion.question_text}
+                                </h3>
+                            )}
                         </div>
 
-                        <RadioGroup
-                            value={answers[currentQuestion.id] || ""}
-                            onValueChange={handleAnswer}
-                            className="space-y-4"
-                        >
-                            {options.map((option: string, index: number) => {
-                                const isSelected = answers[currentQuestion.id] === option;
-                                return (
-                                    <div
-                                        key={index}
-                                        onClick={() => handleAnswer(option)}
-                                        className={cn(
-                                            "flex items-center space-x-4 border-2 rounded-xl p-6 cursor-pointer transition-all duration-200 group relative overflow-hidden",
-                                            isSelected
-                                                ? "border-primary bg-primary/5 shadow-inner"
-                                                : "border-transparent bg-secondary/30 hover:bg-secondary/60 hover:scale-[1.01]"
-                                        )}
-                                    >
-                                        <div className={cn(
-                                            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                                            isSelected ? "border-primary bg-primary" : "border-muted-foreground/30 group-hover:border-muted-foreground"
-                                        )}>
-                                            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                        {/* Interactive Answers View */}
+                        <div className="space-y-6">
+                            {/* MCQ */}
+                            {currentQuestion.type === 'MCQ' && (
+                                <RadioGroup
+                                    value={answers[currentQuestion.id] || ""}
+                                    onValueChange={handleAnswer}
+                                    className="space-y-4"
+                                >
+                                    {options.map((option: string, index: number) => {
+                                        const isSelected = answers[currentQuestion.id] === option;
+                                        return (
+                                            <div
+                                                key={index}
+                                                onClick={() => handleAnswer(option)}
+                                                className={cn(
+                                                    "flex items-center space-x-4 border-2 rounded-xl p-6 cursor-pointer transition-all duration-200 group relative overflow-hidden",
+                                                    isSelected
+                                                        ? "border-primary bg-primary/5 shadow-inner"
+                                                        : "border-transparent bg-secondary/30 hover:bg-secondary/60 hover:scale-[1.01]"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                                    isSelected ? "border-primary bg-primary" : "border-muted-foreground/30 group-hover:border-muted-foreground"
+                                                )}>
+                                                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                                                </div>
+                                                <Label className="flex-1 cursor-pointer text-lg font-normal text-gray-700 group-hover:text-gray-900">
+                                                    {option}
+                                                </Label>
+                                            </div>
+                                        );
+                                    })}
+                                </RadioGroup>
+                            )}
+
+                            {/* MULTIPLE Checkboxes */}
+                            {currentQuestion.type === 'MULTIPLE' && (
+                                <div className="space-y-4">
+                                    {options.map((option: string, index: number) => {
+                                        const currentSelections = Array.isArray(answers[currentQuestion.id])
+                                            ? answers[currentQuestion.id]
+                                            : [];
+                                        const isSelected = currentSelections.includes(option);
+                                        return (
+                                            <div
+                                                key={index}
+                                                onClick={() => {
+                                                    const next = isSelected
+                                                        ? currentSelections.filter((v: string) => v !== option)
+                                                        : [...currentSelections, option];
+                                                    setAnswers(prev => ({ ...prev, [currentQuestion.id]: next }));
+                                                }}
+                                                className={cn(
+                                                    "flex items-center space-x-4 border-2 rounded-xl p-6 cursor-pointer transition-all duration-200 group relative overflow-hidden",
+                                                    isSelected
+                                                        ? "border-primary bg-primary/5 shadow-inner"
+                                                        : "border-transparent bg-secondary/30 hover:bg-secondary/60 hover:scale-[1.01]"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors",
+                                                    isSelected ? "border-primary bg-primary" : "border-muted-foreground/30 group-hover:border-muted-foreground"
+                                                )}>
+                                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                                </div>
+                                                <Label className="flex-1 cursor-pointer text-lg font-normal text-gray-700 group-hover:text-gray-900">
+                                                    {option}
+                                                </Label>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* TRUE_FALSE */}
+                            {currentQuestion.type === 'TRUE_FALSE' && (
+                                <div className="grid grid-cols-2 gap-6">
+                                    {["true", "false"].map((val) => {
+                                        const isSelected = answers[currentQuestion.id] === val;
+                                        return (
+                                            <div
+                                                key={val}
+                                                onClick={() => handleAnswer(val)}
+                                                className={cn(
+                                                    "border-2 rounded-2xl p-10 cursor-pointer text-center transition-all duration-200 group hover:scale-[1.02]",
+                                                    isSelected
+                                                        ? "border-primary bg-primary/5 shadow-sm"
+                                                        : "border-transparent bg-secondary/30 hover:bg-secondary/60"
+                                                )}
+                                            >
+                                                <span className="text-2xl font-bold capitalize text-gray-800">
+                                                    {val === "true" ? "True" : "False"}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* FILL_BLANK */}
+                            {currentQuestion.type === 'FILL_BLANK' && (() => {
+                                const parts = currentQuestion.question_text.split('[blank]');
+                                const currentBlankAnswers = Array.isArray(answers[currentQuestion.id])
+                                    ? answers[currentQuestion.id]
+                                    : [];
+
+                                if (parts.length <= 1) {
+                                    return (
+                                        <div className="space-y-4">
+                                            <Input
+                                                value={answers[currentQuestion.id] || ""}
+                                                onChange={(e) => handleAnswer(e.target.value)}
+                                                placeholder="Type your answer here..."
+                                                className="max-w-md text-lg h-12"
+                                            />
                                         </div>
-                                        <Label className="flex-1 cursor-pointer text-lg font-normal text-gray-700 group-hover:text-gray-900">
-                                            {option}
-                                        </Label>
+                                    );
+                                }
+
+                                return (
+                                    <div className="text-xl md:text-2xl leading-loose flex flex-wrap items-center gap-x-2 gap-y-4 text-gray-800">
+                                        {parts.map((part, i) => (
+                                            <span key={i} className="flex items-center gap-x-2">
+                                                <span>{part}</span>
+                                                {i < parts.length - 1 && (
+                                                    <Input
+                                                        value={currentBlankAnswers[i] || ""}
+                                                        onChange={(e) => {
+                                                            const nextAnswers = [...currentBlankAnswers];
+                                                            nextAnswers[i] = e.target.value;
+                                                            setAnswers(prev => ({ ...prev, [currentQuestion.id]: nextAnswers }));
+                                                        }}
+                                                        placeholder={`Blank ${i + 1}`}
+                                                        className="w-40 h-10 px-2 text-lg text-center border-b-2 border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-primary font-semibold text-primary"
+                                                    />
+                                                )}
+                                            </span>
+                                        ))}
                                     </div>
                                 );
-                            })}
-                        </RadioGroup>
-                    </CardContent >
+                            })()}
+
+                            {/* SHORT_ANSWER */}
+                            {currentQuestion.type === 'SHORT_ANSWER' && (
+                                <div className="space-y-4">
+                                    <Input
+                                        value={answers[currentQuestion.id] || ""}
+                                        onChange={(e) => handleAnswer(e.target.value)}
+                                        placeholder="Type your short answer here..."
+                                        className="max-w-md text-lg h-12"
+                                    />
+                                </div>
+                            )}
+
+                            {/* ESSAY */}
+                            {currentQuestion.type === 'ESSAY' && (
+                                <div className="space-y-4">
+                                    <Textarea
+                                        value={answers[currentQuestion.id] || ""}
+                                        onChange={(e) => handleAnswer(e.target.value)}
+                                        placeholder="Type your essay response here..."
+                                        rows={6}
+                                        className="text-lg p-4"
+                                    />
+                                </div>
+                            )}
+
+                            {/* NUMERICAL */}
+                            {currentQuestion.type === 'NUMERICAL' && (
+                                <div className="space-y-4">
+                                    <Input
+                                        type="number"
+                                        step="any"
+                                        value={answers[currentQuestion.id] || ""}
+                                        onChange={(e) => handleAnswer(e.target.value)}
+                                        placeholder="Enter numerical answer..."
+                                        className="max-w-xs text-lg h-12"
+                                    />
+                                </div>
+                            )}
+
+                            {/* MATCHING */}
+                            {currentQuestion.type === 'MATCHING' && (() => {
+                                const leftItems = options;
+                                const currentMatchingAnswers = Array.isArray(answers[currentQuestion.id])
+                                    ? answers[currentQuestion.id]
+                                    : [];
+
+                                return (
+                                    <div className="space-y-4 max-w-2xl">
+                                        {leftItems.map((left, idx) => (
+                                            <div key={idx} className="flex items-center justify-between gap-4 p-4 border rounded-xl bg-secondary/10">
+                                                <span className="font-semibold text-gray-800 text-lg">{left}</span>
+                                                <span className="text-muted-foreground">➔</span>
+                                                <Select
+                                                    value={currentMatchingAnswers[idx] || ""}
+                                                    onValueChange={(val) => {
+                                                        const nextAnswers = [...currentMatchingAnswers];
+                                                        nextAnswers[idx] = val;
+                                                        setAnswers(prev => ({ ...prev, [currentQuestion.id]: nextAnswers }));
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="w-[280px] h-11 text-base">
+                                                        <SelectValue placeholder="Select match..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {shuffledMatchingPool.map((choice, cIdx) => (
+                                                            <SelectItem key={cIdx} value={choice}>{choice}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* ORDERING */}
+                            {currentQuestion.type === 'ORDERING' && (() => {
+                                const currentOrder = Array.isArray(answers[currentQuestion.id])
+                                    ? answers[currentQuestion.id]
+                                    : [];
+
+                                const moveItem = (idx: number, direction: 'up' | 'down') => {
+                                    const nextOrder = [...currentOrder];
+                                    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+                                    if (targetIdx < 0 || targetIdx >= nextOrder.length) return;
+                                    const temp = nextOrder[idx];
+                                    nextOrder[idx] = nextOrder[targetIdx];
+                                    nextOrder[targetIdx] = temp;
+                                    setAnswers(prev => ({ ...prev, [currentQuestion.id]: nextOrder }));
+                                };
+
+                                return (
+                                    <div className="space-y-3 max-w-xl">
+                                        {currentOrder.map((item, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-4 border rounded-xl bg-white shadow-sm hover:scale-[1.01] transition-transform">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-base font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
+                                                    <span className="font-medium text-gray-800 text-lg">{item}</span>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        disabled={idx === 0}
+                                                        onClick={() => moveItem(idx, 'up')}
+                                                    >
+                                                        <ArrowUp className="h-5 w-5" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        disabled={idx === currentOrder.length - 1}
+                                                        onClick={() => moveItem(idx, 'down')}
+                                                    >
+                                                        <ArrowDown className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* MATRIX */}
+                            {currentQuestion.type === 'MATRIX' && (() => {
+                                const rows = options.filter(o => o.startsWith('row:')).map(o => o.slice(4));
+                                const cols = options.filter(o => o.startsWith('col:')).map(o => o.slice(4));
+                                const currentMatrixAnswers = Array.isArray(answers[currentQuestion.id])
+                                    ? answers[currentQuestion.id]
+                                    : [];
+
+                                return (
+                                    <div className="border rounded-2xl overflow-hidden shadow-sm max-w-3xl">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow className="bg-secondary/20">
+                                                    <TableHead className="font-bold text-gray-900 text-base">Criteria / Row</TableHead>
+                                                    {cols.map((col, cIdx) => (
+                                                        <th key={cIdx} className="text-center p-3 font-semibold text-gray-700 text-base">{col}</th>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {rows.map((row, rIdx) => (
+                                                    <TableRow key={rIdx}>
+                                                        <TableCell className="font-medium text-gray-800 text-base">{row}</TableCell>
+                                                        {cols.map((col, cIdx) => {
+                                                            const isChecked = currentMatrixAnswers[rIdx] === col;
+                                                            return (
+                                                                <TableCell key={cIdx} className="text-center">
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`student_matrix_row_${currentQuestion.id}_${rIdx}`}
+                                                                        checked={isChecked}
+                                                                        onChange={() => {
+                                                                            const nextAnswers = [...currentMatrixAnswers];
+                                                                            nextAnswers[rIdx] = col;
+                                                                            setAnswers(prev => ({ ...prev, [currentQuestion.id]: nextAnswers }));
+                                                                        }}
+                                                                        className="h-5 w-5 text-primary focus:ring-primary cursor-pointer"
+                                                                    />
+                                                                </TableCell>
+                                                            );
+                                                        })}
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* DRAG_DROP */}
+                            {currentQuestion.type === 'DRAG_DROP' && (() => {
+                                const parts = currentQuestion.question_text.split('[drop]');
+                                const dropOptions = options;
+                                const currentDropAnswers = Array.isArray(answers[currentQuestion.id])
+                                    ? answers[currentQuestion.id]
+                                    : [];
+
+                                return (
+                                    <div className="space-y-6">
+                                        <div className="text-xl md:text-2xl leading-loose flex flex-wrap items-center gap-x-2 gap-y-4 text-gray-800">
+                                            {parts.map((part, i) => (
+                                                <span key={i} className="flex items-center gap-x-2">
+                                                    <span>{part}</span>
+                                                    {i < parts.length - 1 && (
+                                                        <Select
+                                                            value={currentDropAnswers[i] || ""}
+                                                            onValueChange={(val) => {
+                                                                const nextAnswers = [...currentDropAnswers];
+                                                                nextAnswers[i] = val;
+                                                                setAnswers(prev => ({ ...prev, [currentQuestion.id]: nextAnswers }));
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-44 h-10 font-semibold text-primary border-primary bg-primary/5 text-base">
+                                                                <SelectValue placeholder="[Select]" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {dropOptions.map((opt, oIdx) => (
+                                                                    <SelectItem key={oIdx} value={opt}>{opt}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </CardContent>
 
                     <CardFooter className="flex justify-between items-center p-8 bg-muted/5 border-t">
                         <Button

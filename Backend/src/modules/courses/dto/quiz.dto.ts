@@ -125,7 +125,21 @@ export class UpdateQuizDto {
 // Quiz Question DTOs
 export class CreateQuizQuestionDto {
   @IsString()
-  @IsIn(['MCQ', 'MULTIPLE', 'TRUE_FALSE', 'FILL_BLANK', 'DESCRIPTIVE', 'CODE'])
+  @IsIn([
+    'MCQ',
+    'MULTIPLE',
+    'TRUE_FALSE',
+    'FILL_BLANK',
+    'DESCRIPTIVE',
+    'CODE',
+    'MATCHING',
+    'ORDERING',
+    'MATRIX',
+    'SHORT_ANSWER',
+    'ESSAY',
+    'NUMERICAL',
+    'DRAG_DROP',
+  ])
   type: string;
 
   @IsString()
@@ -169,7 +183,21 @@ export class CreateQuizQuestionDto {
 export class UpdateQuizQuestionDto {
   @IsString()
   @IsOptional()
-  @IsIn(['MCQ', 'MULTIPLE', 'TRUE_FALSE', 'FILL_BLANK', 'DESCRIPTIVE', 'CODE'])
+  @IsIn([
+    'MCQ',
+    'MULTIPLE',
+    'TRUE_FALSE',
+    'FILL_BLANK',
+    'DESCRIPTIVE',
+    'CODE',
+    'MATCHING',
+    'ORDERING',
+    'MATRIX',
+    'SHORT_ANSWER',
+    'ESSAY',
+    'NUMERICAL',
+    'DRAG_DROP',
+  ])
   type?: string;
 
   @IsString()

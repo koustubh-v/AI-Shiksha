@@ -151,9 +151,8 @@ export class QuizzesController {
   @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
   evaluateSubmission(
     @Param('submissionId') submissionId: string,
-    @Body('score') score: number,
-    @Body('passed') passed: boolean
+    @Body('evaluations') evaluations: Record<string, boolean>
   ) {
-    return this.quizzesService.evaluateSubmission(submissionId, score, passed);
+    return this.quizzesService.evaluateSubmission(submissionId, evaluations);
   }
 }

@@ -298,12 +298,21 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                             </div>
                         </div>
 
-                        {hasSubjectiveQuestions && (
+                        {hasSubjectiveQuestions && !result.is_evaluated && (
                             <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-none mb-4">
                                 <h4 className="text-sm font-bold text-amber-800 dark:text-amber-500 mb-1">Manual Evaluation Required</h4>
                                 <p className="text-xs text-amber-700 dark:text-amber-600/80">
                                     This quiz contains subjective questions (e.g., Essay, Short Answer) that require manual grading. 
                                     Your final score and pass status will be updated once your instructor has evaluated your answers.
+                                </p>
+                            </div>
+                        )}
+
+                        {hasSubjectiveQuestions && result.is_evaluated && (
+                            <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-none mb-4">
+                                <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-500 mb-1">Answers Evaluated Successfully</h4>
+                                <p className="text-xs text-emerald-700 dark:text-emerald-600/80">
+                                    Your instructor has reviewed your subjective answers. Your final score and pass status have been updated.
                                 </p>
                             </div>
                         )}

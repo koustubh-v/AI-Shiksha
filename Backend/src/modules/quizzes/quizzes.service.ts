@@ -371,7 +371,7 @@ export class QuizzesService {
     };
   }
 
-  private gradeQuiz(questions: any[], studentAnswers: Record<string, any> = {}) {
+  private gradeQuiz(questions: any[], studentAnswers: Record<string, any> = {}, manualEvaluations: Record<string, boolean> = {}) {
     let totalPoints = 0;
     let earnedPoints = 0;
 
@@ -390,8 +390,10 @@ export class QuizzesService {
 
       let isCorrect = false;
 
-      // Skip grading if no answer provided
-      if (studentAnswer !== undefined && studentAnswer !== null) {
+      // Skip grading if no answer provided and no manual evaluation provided
+      if (manualEvaluations[question.id] !== undefined) {
+        isCorrect = manualEvaluations[question.id];
+      } else if (studentAnswer !== undefined && studentAnswer !== null) {
         switch (question.type) {
           case 'MCQ':
           case 'TRUE_FALSE':
@@ -506,17 +508,72 @@ export class QuizzesService {
     });
   }
 
-  async evaluateSubmission(submissionId: string, score: number, passed: boolean) {
+  async evaluateSubmission(submissionId: string, evaluations: Record<string, boolean>) {
     const submission = await this.prisma.quizSubmission.findUnique({
       where: { id: submissionId },
+      include: {
+        quiz: {
+          include: { questions: { orderBy: { order_index: 'asc' } } }
+        }
+      }
     });
+
     if (!submission) {
       throw new NotFoundException('Submission not found');
     }
     
+    // Parse answers to determine which set the student took
+    const studentAnswers = submission.answers ? JSON.parse(submission.answers) : {};
+    const answeredQuestionIds = Object.keys(studentAnswers);
+    
+    let currentSet = 1;
+    // Find the first question the student answered to determine their set
+    for (const qId of answeredQuestionIds) {
+      const q = submission.quiz.questions.find(qu => qu.id === qId);
+      if (q && q.set_number) {
+        currentSet = q.set_number;
+        break;
+      }
+    }
+
+    // Helper for safe JSON parsing
+    const safeParse = (data: string | null) => {
+      if (!data) return [];
+      try {
+        return JSON.parse(data);
+      } catch {
+        return typeof data === 'string' ? data.split(',').map(s => s.trim()).filter(s => s) : [];
+      }
+    };
+
+    // Filter questions for the active set
+    let questionsForSet = submission.quiz.questions
+      .filter(q => (q.set_number || 1) === currentSet)
+      .map(q => ({
+        ...q,
+        correct_answers: safeParse(q.correct_answers)
+      }));
+
+    // If for some reason questions array is empty (e.g. legacy quizzes without sets)
+    if (questionsForSet.length === 0) {
+      questionsForSet = submission.quiz.questions.map(q => ({
+        ...q,
+        correct_answers: safeParse(q.correct_answers)
+      }));
+    }
+
+    // Regrade the quiz using both auto-graded and manual evaluations
+    const gradeResult = this.gradeQuiz(questionsForSet, studentAnswers, evaluations);
+    const passed = gradeResult.score >= submission.quiz.passing_score;
+
     const updated = await this.prisma.quizSubmission.update({
       where: { id: submissionId },
-      data: { score, passed }
+      data: { 
+        score: gradeResult.score, 
+        passed, 
+        is_evaluated: true,
+        evaluations: JSON.stringify(evaluations)
+      }
     });
 
     if (passed) {

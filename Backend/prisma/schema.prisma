@@ -707,6 +707,9 @@ model QuizSubmission {
   passed             Boolean @default(false)
   time_taken_minutes Int?
 
+  is_evaluated       Boolean @default(false)
+  evaluations        String? @db.Text // JSON: {questionId: points_awarded}
+
   submitted_at DateTime @default(now())
 
   @@map("quiz_submissions")

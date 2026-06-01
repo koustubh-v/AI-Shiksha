@@ -18,13 +18,17 @@ export function ManualEvaluationView({ quizzes }: { quizzes: any[] }) {
     const subjectiveTypes = ['SHORT_ANSWER', 'ESSAY', 'DESCRIPTIVE', 'CODE'];
 
     const handleSelectQuiz = async (quiz: any) => {
-        setSelectedQuiz(quiz);
         setLoadingSubmissions(true);
         try {
-            const response = await api.get(`/quizzes/${quiz.id}/submissions`);
-            setSubmissions(response.data || []);
+            // Fetch full quiz details to get question_text, correct_answers, etc.
+            const [quizResponse, submissionsResponse] = await Promise.all([
+                api.get(`/quizzes/${quiz.id}`),
+                api.get(`/quizzes/${quiz.id}/submissions`)
+            ]);
+            setSelectedQuiz(quizResponse.data);
+            setSubmissions(submissionsResponse.data || []);
         } catch (error) {
-            toast({ title: "Error", description: "Failed to load submissions", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to load quiz data", variant: "destructive" });
         } finally {
             setLoadingSubmissions(false);
         }

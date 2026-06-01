@@ -74,6 +74,9 @@ export class QuizzesService {
           _count: {
             select: { questions: true },
           },
+          questions: {
+            select: { id: true, type: true }
+          }
         },
       });
       return quizzes;
@@ -85,6 +88,9 @@ export class QuizzesService {
         _count: {
           select: { questions: true },
         },
+        questions: {
+          select: { id: true, type: true }
+        }
       },
     });
   }

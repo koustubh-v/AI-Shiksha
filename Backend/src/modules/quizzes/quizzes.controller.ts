@@ -146,4 +146,14 @@ export class QuizzesController {
   ) {
     return this.quizzesService.updateSubmissionDate(submissionId, new Date(submittedAt));
   }
+
+  @Patch('submissions/:submissionId/evaluate')
+  @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.FRANCHISE_ADMIN)
+  evaluateSubmission(
+    @Param('submissionId') submissionId: string,
+    @Body('score') score: number,
+    @Body('passed') passed: boolean
+  ) {
+    return this.quizzesService.evaluateSubmission(submissionId, score, passed);
+  }
 }

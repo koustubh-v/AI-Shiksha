@@ -61,6 +61,10 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
     const [result, setResult] = useState<any>(null);
     const [attemptsUsed, setAttemptsUsed] = useState(0);
     const [bestSubmission, setBestSubmission] = useState<any>(null);
+    const [isPractice, setIsPractice] = useState(false);
+
+    const subjectiveTypes = ['SHORT_ANSWER', 'ESSAY', 'DESCRIPTIVE', 'CODE'];
+    const hasSubjectiveQuestions = quiz?.questions?.some((q: any) => subjectiveTypes.includes(q.type));
 
     useEffect(() => {
         if (!started || !quiz) return;
@@ -125,7 +129,7 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
         }
     }, [started, timeRemaining]);
 
-    const loadQuiz = async () => {
+    const loadQuiz = async (practice: boolean = false) => {
         try {
             setLoading(true);
             const [quizData, submissions] = await Promise.all([
@@ -167,7 +171,7 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
             // ── Key fix: if the student already has a passing submission,
             // show the pass result screen immediately instead of the start screen.
             const passingSubmission = submissions.find((s: any) => s.passed);
-            if (passingSubmission) {
+            if (passingSubmission && !practice) {
                 setBestSubmission(passingSubmission);
                 setResult(passingSubmission); // jump straight to result view
             }
@@ -218,6 +222,7 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                 : 0; // consistent calculation needed, simplistic for now
 
             const submission = await Quizzes.submit(quiz.id, answers, Math.ceil(timeTaken / 60));
+            setAttemptsUsed((prev) => prev + 1);
             setResult(submission);
             if (submission.passed) {
                 onComplete();
@@ -292,8 +297,19 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                                 <span className="text-[10px] font-semibold uppercase tracking-widest mt-1 opacity-70">Score</span>
                             </div>
                         </div>
+
+                        {hasSubjectiveQuestions && (
+                            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-none mb-4">
+                                <h4 className="text-sm font-bold text-amber-800 dark:text-amber-500 mb-1">Manual Evaluation Required</h4>
+                                <p className="text-xs text-amber-700 dark:text-amber-600/80">
+                                    This quiz contains subjective questions (e.g., Essay, Short Answer) that require manual grading. 
+                                    Your final score and pass status will be updated once your instructor has evaluated your answers.
+                                </p>
+                            </div>
+                        )}
+
                         <CardTitle className="text-2xl font-bold">
-                            {isPassed ? "🎉 Quiz Passed!" : "Quiz Not Passed"}
+                            {isPassed ? "Quiz Passed!" : "Quiz Not Passed"}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground mt-1">
                             {isPassed
@@ -361,7 +377,8 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                                 setStarted(false);
                                 setAnswers({});
                                 setCurrentQuestionIndex(0);
-                                loadQuiz();
+                                setIsPractice(false);
+                                loadQuiz(false);
                             }}>
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 Retry Quiz
@@ -383,7 +400,8 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                                 setStarted(false);
                                 setAnswers({});
                                 setCurrentQuestionIndex(0);
-                                loadQuiz();
+                                setIsPractice(true);
+                                loadQuiz(true);
                             }}>
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 Retake for Practice

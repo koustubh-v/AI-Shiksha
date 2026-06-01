@@ -67,7 +67,7 @@ export default function QuizCreator() {
             //   - correct_answer (string) for MCQ and TRUE_FALSE
             //   - correct_answers (string[]) for MULTIPLE
             const mappedQuestions = (quiz.questions || []).map((q: any) => {
-                if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
+                if (q.type === 'MCQ' || q.type === 'TRUE_FALSE' || q.type === 'SHORT_ANSWER' || q.type === 'ESSAY' || q.type === 'DESCRIPTIVE' || q.type === 'CODE') {
                     return {
                         ...q,
                         correct_answer: Array.isArray(q.correct_answers) && q.correct_answers.length > 0
@@ -76,7 +76,7 @@ export default function QuizCreator() {
                         correct_answers: undefined,
                     };
                 }
-                // MULTIPLE — keep correct_answers array as-is
+                // MULTIPLE, FILL_BLANK, MATCHING, etc. — keep correct_answers array as-is
                 return { ...q, correct_answer: undefined };
             });
             setQuestions(mappedQuestions);
@@ -134,10 +134,10 @@ export default function QuizCreator() {
                     let backendCorrectAnswers: string[] | undefined;
                     if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
                         backendCorrectAnswers = correct_answer ? [correct_answer] : [];
-                    } else if (q.type === 'MULTIPLE') {
+                    } else if (q.type === 'MULTIPLE' || q.type === 'MATCHING' || q.type === 'ORDERING' || q.type === 'MATRIX' || q.type === 'DRAG_DROP' || q.type === 'NUMERICAL' || q.type === 'FILL_BLANK') {
                         backendCorrectAnswers = correct_answers || [];
                     } else {
-                        // FILL_BLANK: correct_answer is a plain string answer
+                        // SHORT_ANSWER, ESSAY, DESCRIPTIVE, CODE: correct_answer is a plain string answer
                         backendCorrectAnswers = correct_answer ? [correct_answer] : [];
                     }
                     return {

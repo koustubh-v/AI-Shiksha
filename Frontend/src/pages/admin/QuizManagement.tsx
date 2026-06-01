@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { QuizResultsView } from "./components/QuizResultsView";
+import { ManualEvaluationView } from "./components/ManualEvaluationView";
 
 export default function QuizManagement() {
     const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function QuizManagement() {
     const [quizzes, setQuizzes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState<"QUIZZES" | "RESULTS">("QUIZZES");
+    const [activeTab, setActiveTab] = useState<"QUIZZES" | "RESULTS" | "MANUAL_EVALUATION">("QUIZZES");
 
     useEffect(() => {
         fetchQuizzes();
@@ -133,6 +134,17 @@ export default function QuizManagement() {
                         >
                             <BarChart className="h-4 w-4" />
                             Results
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("MANUAL_EVALUATION")}
+                            className={`flex items-center gap-2 px-8 py-3 rounded-none font-bold text-xs uppercase tracking-widest transition-all ${
+                                activeTab === "MANUAL_EVALUATION"
+                                    ? "bg-violet-600 text-white shadow-md border border-violet-500/20"
+                                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-transparent hover:bg-white/50 dark:hover:bg-zinc-800/50"
+                            }`}
+                        >
+                            <Edit className="h-4 w-4" />
+                            Manual Eval
                         </button>
                     </div>
                 </div>
@@ -234,8 +246,10 @@ export default function QuizManagement() {
                             )}
                         </div>
                     </div>
-                ) : (
+                ) : activeTab === "RESULTS" ? (
                     <QuizResultsView quizzes={quizzes} />
+                ) : (
+                    <ManualEvaluationView quizzes={quizzes} />
                 )}
             </div>
         </AdminDashboardLayout>

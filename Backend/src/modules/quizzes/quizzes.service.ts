@@ -499,4 +499,48 @@ export class QuizzesService {
       data: { submitted_at: submittedAt },
     });
   }
+
+  async evaluateSubmission(submissionId: string, score: number, passed: boolean) {
+    const submission = await this.prisma.quizSubmission.findUnique({
+      where: { id: submissionId },
+    });
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+    
+    const updated = await this.prisma.quizSubmission.update({
+      where: { id: submissionId },
+      data: { score, passed }
+    });
+
+    if (passed) {
+      // Find section item for this quiz
+      const sectionItem = await this.prisma.sectionItem.findFirst({
+        where: { quiz_id: submission.quiz_id }
+      });
+
+      if (sectionItem) {
+        await this.prisma.sectionItemProgress.upsert({
+          where: {
+            student_id_item_id: {
+              student_id: submission.student_id,
+              item_id: sectionItem.id
+            }
+          },
+          create: {
+            student_id: submission.student_id,
+            item_id: sectionItem.id,
+            completed: true,
+            completed_at: new Date()
+          },
+          update: {
+            completed: true,
+            completed_at: new Date()
+          }
+        });
+      }
+    }
+
+    return updated;
+  }
 }

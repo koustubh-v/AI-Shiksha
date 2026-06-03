@@ -585,6 +585,13 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                 {/* Question Card */}
                 <Card className="border-none shadow-xl shadow-black/5 rounded-3xl overflow-hidden bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-10 md:p-14 space-y-12">
+                        {/* Question Type Badge */}
+                        <div className="flex items-center mb-2">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-violet-50 text-violet-700 border-violet-200">
+                                {currentQuestion.type.replace('_', ' ')}
+                            </Badge>
+                        </div>
+
                         {/* Question Text / Prompt */}
                         <div className="space-y-6">
                             {currentQuestion.type === 'FILL_BLANK' && currentQuestion.question_text.includes('[blank]') ? (
@@ -596,7 +603,7 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                                     Select the correct options for the drop zones:
                                 </h3>
                             ) : (
-                                <h3 className="text-2xl md:text-4xl font-medium leading-normal text-gray-800 tracking-tight">
+                                <h3 className="text-2xl md:text-4xl font-medium leading-normal text-gray-800 tracking-tight whitespace-pre-wrap">
                                     {currentQuestion.question_text}
                                 </h3>
                             )}

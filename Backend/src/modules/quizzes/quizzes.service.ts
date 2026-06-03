@@ -404,7 +404,11 @@ export class QuizzesService {
             isCorrect =
               Array.isArray(studentAnswer) &&
               studentAnswer.length === correctAnswers.length &&
-              studentAnswer.every((ans: any) => correctAnswers.includes(ans));
+              studentAnswer.every((ans: any) => 
+                correctAnswers.some((correct: any) => 
+                  correct?.toString().toLowerCase().trim() === ans?.toString().toLowerCase().trim()
+                )
+              );
             break;
           case 'FILL_BLANK':
             if (Array.isArray(studentAnswer)) {
@@ -447,7 +451,10 @@ export class QuizzesService {
             isCorrect =
               Array.isArray(studentAnswer) &&
               studentAnswer.length === correctAnswers.length &&
-              studentAnswer.every((ans: any, idx: number) => ans === correctAnswers[idx]);
+              studentAnswer.every((ans: any, idx: number) => 
+                ans?.toString().toLowerCase().trim() ===
+                correctAnswers[idx]?.toString().toLowerCase().trim()
+              );
             break;
           case 'DESCRIPTIVE':
           case 'ESSAY':

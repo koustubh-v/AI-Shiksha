@@ -31,6 +31,7 @@ interface Question {
     points: number;
     set_number?: number;
     correct_answers?: string[];
+    explanation?: string;
 }
 
 interface QuizData {
@@ -62,6 +63,7 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
     const [attemptsUsed, setAttemptsUsed] = useState(0);
     const [bestSubmission, setBestSubmission] = useState<any>(null);
     const [isPractice, setIsPractice] = useState(false);
+    const [isReviewing, setIsReviewing] = useState(false);
 
     const subjectiveTypes = ['SHORT_ANSWER', 'ESSAY', 'DESCRIPTIVE', 'CODE'];
     const hasSubjectiveQuestions = quiz?.questions?.some((q: any) => subjectiveTypes.includes(q.type));
@@ -266,6 +268,82 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
     if (!quiz) return null;
 
     // Result View
+    if (result && isReviewing) {
+        let studentAnswers: Record<string, any> = {};
+        try {
+            studentAnswers = typeof result.answers === 'string' ? JSON.parse(result.answers) : (result.answers || {});
+        } catch (e) {
+            console.error("Failed to parse answers", e);
+        }
+
+        return (
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 py-4 w-full">
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border">
+                    <h3 className="text-xl font-bold text-gray-800">Review Assessment</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setIsReviewing(false)} className="gap-2">
+                        <ChevronRight className="w-4 h-4 rotate-180" /> Back to Results
+                    </Button>
+                </div>
+
+                <div className="space-y-6">
+                    {quiz.questions.map((q: Question, index: number) => {
+                        const studentAns = studentAnswers[q.id];
+                        let correctAns = q.correct_answers;
+                        if (typeof q.correct_answers === 'string') {
+                            try { correctAns = JSON.parse(q.correct_answers); } catch (e) { }
+                        }
+                        
+                        let displayStudentAns = "Not answered";
+                        if (studentAns !== undefined && studentAns !== null && studentAns !== "") {
+                            displayStudentAns = Array.isArray(studentAns) ? studentAns.join(', ') : String(studentAns);
+                        }
+
+                        let displayCorrectAns = null;
+                        if (correctAns) {
+                            displayCorrectAns = Array.isArray(correctAns) ? correctAns.join(', ') : String(correctAns);
+                        }
+
+                        return (
+                            <Card key={q.id} className="border-none shadow-md rounded-2xl overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50 border-b pb-4">
+                                    <div className="flex justify-between items-start">
+                                        <Badge variant="outline" className="mb-2 bg-white">Question {index + 1}</Badge>
+                                        <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200 border-none">{q.type.replace('_', ' ')}</Badge>
+                                    </div>
+                                    <CardTitle className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">{q.question_text}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-6 space-y-5">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-500 mb-2">Your Answer:</p>
+                                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700 font-medium">
+                                            {displayStudentAns}
+                                        </div>
+                                    </div>
+                                    {displayCorrectAns && (
+                                        <div>
+                                            <p className="text-sm font-semibold text-emerald-600 mb-2">Correct Answer:</p>
+                                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 font-medium">
+                                                {displayCorrectAns}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {q.explanation && (
+                                        <div className="mt-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                            <p className="text-sm font-bold text-blue-800 flex items-center gap-2 mb-2">
+                                                <AlertCircle className="w-4 h-4" /> Explanation
+                                            </p>
+                                            <p className="text-sm text-blue-900/80 leading-relaxed whitespace-pre-wrap">{q.explanation}</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    }
+
     if (result) {
         const isPassed = result.passed;
         const isPreloaded = !!bestSubmission && result === bestSubmission; // came from a previous session
@@ -401,6 +479,9 @@ export default function QuizPlayer({ quizId, onComplete }: QuizPlayerProps) {
                                 <ChevronRight className="w-3.5 h-3.5" />
                             </Button>
                         )}
+                        <Button variant="secondary" size="sm" className="rounded-full gap-2" onClick={() => setIsReviewing(true)}>
+                            Review Assessment
+                        </Button>
                         {/* Retake for practice if passed and attempts remain */}
                         {isPassed && attemptsLeft > 0 && (
                             <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground gap-2" onClick={() => {

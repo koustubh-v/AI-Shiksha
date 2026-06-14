@@ -51,6 +51,9 @@ interface TemplateConfig {
         height: number;
         backgroundColor: string;
         backgroundImage?: string;
+        borderColor?: string;
+        borderWidth?: number;
+        borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'none';
     };
     elements: CertificateElement[];
 }
@@ -341,6 +344,8 @@ export class PdfGeneratorService {
             height: ${templateConfig.canvas.height}px;
             background-color: ${templateConfig.canvas.backgroundColor};
             ${templateConfig.canvas.backgroundImage ? `background-image: url(${templateConfig.canvas.backgroundImage}); background-size: cover; background-position: center;` : ''}
+            border: ${templateConfig.canvas.borderWidth || 0}px ${templateConfig.canvas.borderStyle || 'solid'} ${templateConfig.canvas.borderColor || 'transparent'};
+            box-sizing: border-box;
             overflow: hidden;
           ">
             ${elementsHTML}

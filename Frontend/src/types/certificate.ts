@@ -1,4 +1,4 @@
-export type CertificateElementType = 'text' | 'image' | 'variable' | 'qrcode';
+export type CertificateElementType = 'text' | 'image' | 'variable' | 'qrcode' | 'shape';
 
 export interface CertificateElement {
     id: string;
@@ -8,6 +8,8 @@ export interface CertificateElement {
     y: number;
     width?: number;
     height?: number;
+    zIndex?: number;
+    shapeType?: 'rectangle' | 'circle' | 'line' | 'star' | 'badge';
     style: {
         fontFamily?: string;
         fontSize?: number;
@@ -19,6 +21,12 @@ export interface CertificateElement {
         textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
         letterSpacing?: number;
         lineHeight?: number;
+        backgroundColor?: string;
+        borderColor?: string;
+        borderWidth?: number;
+        borderRadius?: number;
+        textShadow?: string;
+        boxShadow?: string;
     };
 }
 
@@ -28,6 +36,9 @@ export interface CertificateTemplateConfig {
         height: number;
         backgroundColor: string;
         backgroundImage?: string;
+        borderColor?: string;
+        borderWidth?: number;
+        borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'none';
         orientation: 'landscape' | 'portrait';
     };
     elements: CertificateElement[];
@@ -39,6 +50,9 @@ export const PLACEHOLDERS = [
     { label: 'Completion Date', value: '{completion_date}' },
     { label: 'Instructor Name', value: '{instructor_name}' },
     { label: 'Certificate ID', value: '{certificate_id}' },
+    { label: 'Issue Date', value: '{issue_date}' },
+    { label: 'Grade Average', value: '{grade_average}' },
+    { label: 'Duration Completed', value: '{duration_completed}' },
 ];
 
 export const FONTS = [

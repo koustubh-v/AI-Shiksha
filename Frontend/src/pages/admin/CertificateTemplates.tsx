@@ -24,14 +24,17 @@ import {
     Maximize2,
     Save,
     Undo2,
-    Redo2
+    Redo2,
+    Minus
 } from "lucide-react";
-import { CertificateTemplates } from "@/lib/api";
+import { CertificateTemplates, Settings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useHistory } from "@/hooks/useHistory";
 import { CertificateTemplateConfig, CertificateElement } from "@/types/certificate";
 import { CertificateCanvas } from "@/components/certificates/builder/CertificateCanvas";
-import { CertificateToolbar } from "@/components/certificates/builder/CertificateToolbar";
+import { CertificateSidebar } from "@/components/certificates/builder/CertificateSidebar";
+import { CertificatePropertiesBar } from "@/components/certificates/builder/CertificatePropertiesBar";
+import { COURSERA_TEMPLATE, UDEMY_TEMPLATE, CISCO_TEMPLATE } from "@/lib/certificate-templates";
 
 interface CertificateTemplate {
     id: string;
@@ -48,8 +51,8 @@ interface CertificateTemplate {
 
 const DEFAULT_CONFIG: CertificateTemplateConfig = {
     canvas: {
-        width: 800, // Standard landscape ratio roughly
-        height: 600,
+        width: 1122,
+        height: 794,
         backgroundColor: '#ffffff',
         orientation: 'landscape',
     },
@@ -98,6 +101,175 @@ const DEFAULT_CONFIG: CertificateTemplateConfig = {
     ]
 };
 
+const COURSERA_TEMPLATE_CONFIG: CertificateTemplateConfig = {
+    canvas: {
+        width: 1000,
+        height: 700,
+        backgroundColor: '#ffffff',
+        orientation: 'landscape',
+    },
+    elements: [
+        {
+            id: 'border-outer',
+            type: 'shape',
+            content: '',
+            x: 20,
+            y: 20,
+            width: 960,
+            height: 660,
+            shapeType: 'rectangle',
+            zIndex: 0,
+            style: {
+                borderColor: '#1a365d',
+                borderWidth: 4,
+            }
+        },
+        {
+            id: 'border-inner',
+            type: 'shape',
+            content: '',
+            x: 30,
+            y: 30,
+            width: 940,
+            height: 640,
+            shapeType: 'rectangle',
+            zIndex: 1,
+            style: {
+                borderColor: '#cbd5e1',
+                borderWidth: 1,
+            }
+        },
+        {
+            id: 'coursera-title',
+            type: 'text',
+            content: 'CERTIFICATE\nOF COMPLETION',
+            x: 100,
+            y: 100,
+            width: 800,
+            height: 100,
+            zIndex: 2,
+            style: {
+                fontFamily: 'serif',
+                fontSize: 48,
+                color: '#1a365d',
+                textAlign: 'left',
+                fontWeight: 'bold',
+                lineHeight: 1.2
+            }
+        },
+        {
+            id: 'coursera-student-name',
+            type: 'variable',
+            content: '{student_name}',
+            x: 100,
+            y: 250,
+            width: 800,
+            height: 60,
+            zIndex: 2,
+            style: {
+                fontFamily: 'sans-serif',
+                fontSize: 42,
+                color: '#000000',
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }
+        },
+        {
+            id: 'coursera-desc',
+            type: 'text',
+            content: 'has successfully completed the online, non-credit course',
+            x: 100,
+            y: 330,
+            width: 800,
+            height: 30,
+            zIndex: 2,
+            style: {
+                fontFamily: 'sans-serif',
+                fontSize: 16,
+                color: '#475569',
+                textAlign: 'left',
+            }
+        },
+        {
+            id: 'coursera-course-name',
+            type: 'variable',
+            content: '{course_name}',
+            x: 100,
+            y: 380,
+            width: 800,
+            height: 50,
+            zIndex: 2,
+            style: {
+                fontFamily: 'serif',
+                fontSize: 28,
+                color: '#000000',
+                textAlign: 'left',
+                fontWeight: 'bold'
+            }
+        },
+        {
+            id: 'coursera-instructor',
+            type: 'variable',
+            content: '{instructor_name}',
+            x: 100,
+            y: 480,
+            width: 300,
+            height: 30,
+            zIndex: 2,
+            style: {
+                fontFamily: 'sans-serif',
+                fontSize: 18,
+                color: '#1a365d',
+                textAlign: 'left',
+                fontWeight: 'bold'
+            }
+        },
+        {
+            id: 'coursera-instructor-title',
+            type: 'text',
+            content: 'Instructor',
+            x: 100,
+            y: 520,
+            width: 300,
+            height: 30,
+            zIndex: 2,
+            style: {
+                fontFamily: 'sans-serif',
+                fontSize: 14,
+                color: '#64748b',
+                textAlign: 'left',
+            }
+        },
+        {
+            id: 'coursera-qr',
+            type: 'qrcode',
+            content: 'https://example.com/verify/{certificate_id}',
+            x: 750,
+            y: 460,
+            width: 100,
+            height: 100,
+            zIndex: 2,
+            style: {}
+        },
+        {
+            id: 'coursera-issue-date',
+            type: 'variable',
+            content: 'Issued: {issue_date}',
+            x: 700,
+            y: 580,
+            width: 200,
+            height: 30,
+            zIndex: 2,
+            style: {
+                fontFamily: 'sans-serif',
+                fontSize: 12,
+                color: '#64748b',
+                textAlign: 'center',
+            }
+        }
+    ]
+};
+
 export default function CertificateTemplatesPage() {
     const { toast } = useToast();
     const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
@@ -111,6 +283,8 @@ export default function CertificateTemplatesPage() {
     const [description, setDescription] = useState("");
     const { state: config, setState: setConfig, undo, redo, canUndo, canRedo, reset: resetHistory } = useHistory<CertificateTemplateConfig>(DEFAULT_CONFIG);
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(0.5);
+    const [platformName, setPlatformName] = useState("Institution Name");
 
     useEffect(() => {
         loadTemplates();
@@ -165,7 +339,15 @@ export default function CertificateTemplatesPage() {
     const loadTemplates = async () => {
         try {
             setLoading(true);
-            const data = await CertificateTemplates.getAll();
+            const [data, settings] = await Promise.all([
+                CertificateTemplates.getAll(),
+                Settings.getPlatformSettings().catch(() => null)
+            ]);
+            
+            if (settings?.lms_name) {
+                setPlatformName(settings.lms_name);
+            }
+            
             // Ensure config matches type, or fallback
             const typoFixData = data.map((t: any) => ({
                 ...t,
@@ -235,6 +417,9 @@ export default function CertificateTemplatesPage() {
             content: text,
             x: config.canvas.width / 2,
             y: config.canvas.height / 2,
+            width: 300,
+            height: 50,
+            zIndex: 10,
             style: {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 24,
@@ -281,14 +466,91 @@ export default function CertificateTemplatesPage() {
         const newElement: CertificateElement = {
             id: crypto.randomUUID(),
             type: 'qrcode',
-            content: 'https://example.com/verify/123456', // Default placeholder
+            content: 'https://example.com/verify/{certificate_id}', // Default placeholder
             x: config.canvas.width / 2,
             y: config.canvas.height / 2,
             width: 100,
             height: 100,
+            zIndex: 10,
             style: {
                 opacity: 1,
             }
+        };
+        setConfig(prev => ({
+            ...prev,
+            elements: [...prev.elements, newElement]
+        }));
+        setSelectedElementId(newElement.id);
+    };
+
+    const handleAddShape = (shapeType: 'rectangle' | 'circle' | 'line') => {
+        const newElement: CertificateElement = {
+            id: crypto.randomUUID(),
+            type: 'shape',
+            content: '',
+            shapeType,
+            x: config.canvas.width / 2,
+            y: config.canvas.height / 2,
+            width: shapeType === 'line' ? 200 : 100,
+            height: shapeType === 'line' ? 4 : 100,
+            zIndex: 1,
+            style: {
+                backgroundColor: shapeType === 'line' ? '#000000' : '#e2e8f0',
+                borderColor: '#000000',
+                borderWidth: shapeType === 'line' ? 0 : 2,
+            }
+        };
+        setConfig(prev => ({
+            ...prev,
+            elements: [...prev.elements, newElement]
+        }));
+        setSelectedElementId(newElement.id);
+    };
+
+    const handleUpdateCanvasBorder = (updates: { borderWidth?: number, borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'none', borderColor?: string }) => {
+        setConfig(prev => ({
+            ...prev,
+            canvas: { ...prev.canvas, ...updates }
+        }));
+    };
+
+    const handleLoadTemplate = (templateId: string) => {
+        if (!confirm("This will overwrite your current design. Continue?")) return;
+        
+        let newConfig: CertificateTemplateConfig;
+        switch (templateId) {
+            case 'coursera':
+                newConfig = JSON.parse(JSON.stringify(COURSERA_TEMPLATE));
+                break;
+            case 'udemy':
+                newConfig = JSON.parse(JSON.stringify(UDEMY_TEMPLATE));
+                break;
+            case 'cisco':
+                newConfig = JSON.parse(JSON.stringify(CISCO_TEMPLATE));
+                break;
+            default:
+                return;
+        }
+
+        // Replace 'Institution Name' with actual platform name
+        newConfig.elements = newConfig.elements.map(el => {
+            if (el.type === 'text' && el.content === 'Institution Name') {
+                return { ...el, content: platformName || 'Institution Name' };
+            }
+            return el;
+        });
+
+        setConfig(newConfig);
+    };
+
+    const handleDuplicateElement = (id: string) => {
+        const element = config.elements.find(el => el.id === id);
+        if (!element) return;
+        const newElement = {
+            ...element,
+            id: crypto.randomUUID(),
+            x: element.x + 20,
+            y: element.y + 20,
         };
         setConfig(prev => ({
             ...prev,
@@ -431,32 +693,69 @@ export default function CertificateTemplatesPage() {
                                             <Redo2 className="h-4 w-4" />
                                         </Button>
                                     </div>
+                                    <div className="flex items-center gap-1 mr-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}
+                                            title="Zoom Out"
+                                        >
+                                            <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <span className="text-xs font-medium w-12 text-center">{Math.round(zoom * 100)}%</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setZoom(Math.min(2, zoom + 0.1))}
+                                            title="Zoom In"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                     <div className="h-6 w-px bg-gray-200" />
-                                    <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>
+                                    <Button variant="outline" size="sm" onClick={() => setDialogOpen(false)} disabled={submitting}>
                                         Cancel
                                     </Button>
-                                    <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
+                                    <Button onClick={handleSubmit} size="sm" disabled={submitting} className="gap-2">
                                         {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                                         <Save className="h-4 w-4" />
-                                        Save Template
+                                        Save
                                     </Button>
                                 </div>
                             </div>
 
+                            {/* Top Context Menu (Fixed Height to prevent layout shift) */}
+                            <div className="min-h-[56px] border-b bg-white shrink-0 flex items-center">
+                                {selectedElement ? (
+                                    <CertificatePropertiesBar
+                                        selectedElement={selectedElement}
+                                        onUpdateElement={handleUpdateElement}
+                                        onDeleteElement={handleDeleteElement}
+                                        onDuplicateElement={handleDuplicateElement}
+                                    />
+                                ) : (
+                                    <div className="text-sm text-muted-foreground px-4">
+                                        Select an element on the canvas to view its properties
+                                    </div>
+                                )}
+                            </div>
                             {/* Builder Area */}
-                            <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-100">
+                            <div className="flex-1 flex flex-row overflow-hidden bg-gray-100">
                                 {/* Left Sidebar Controls */}
-                                <CertificateToolbar
-                                    selectedElement={selectedElementId ? config.elements.find(e => e.id === selectedElementId) || null : null}
-                                    onUpdateElement={handleUpdateElement}
+                                <CertificateSidebar
                                     onAddText={handleAddText}
                                     onAddImage={handleAddImage}
                                     onAddQrCode={handleAddQrCode}
-                                    onDeleteElement={handleDeleteElement}
                                     onUploadBackground={handleUploadBackground}
                                     onRemoveBackground={handleRemoveBackground}
                                     canvasBackgroundColor={config.canvas.backgroundColor}
                                     onUpdateCanvasBackground={handleUpdateCanvasBackground}
+                                    onAddShape={handleAddShape}
+                                    canvasBorderWidth={config.canvas.borderWidth}
+                                    canvasBorderStyle={config.canvas.borderStyle}
+                                    canvasBorderColor={config.canvas.borderColor}
+                                    onUpdateCanvasBorder={handleUpdateCanvasBorder}
+                                    onLoadTemplate={handleLoadTemplate}
                                 />
 
                                 {/* Main Canvas Area */}
@@ -467,7 +766,7 @@ export default function CertificateTemplatesPage() {
                                             selectedElementId={selectedElementId}
                                             onSelectElement={setSelectedElementId}
                                             onUpdateElement={handleUpdateElement}
-                                            zoom={1}
+                                            zoom={zoom}
                                         />
                                     </div>
                                 </div>
@@ -516,12 +815,12 @@ export default function CertificateTemplatesPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {/* Mini Preview using simple scaling of the Canvas logic */}
-                                    <div className="w-full aspect-[4/3] rounded border bg-gray-50 relative overflow-hidden flex items-center justify-center pointer-events-none"
+                                    <div className="w-full aspect-[4/3] rounded border bg-gray-50 relative overflow-hidden pointer-events-none"
                                          style={{ 
                                             backgroundColor: template.template_config?.canvas?.backgroundColor || '#fff',
                                          }}
                                     >
-                                        <div className="transform scale-[0.35] origin-center">
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform scale-[0.25] sm:scale-[0.3] origin-center">
                                             <CertificateCanvas
                                                 config={template.template_config || DEFAULT_CONFIG}
                                                 selectedElementId={null}

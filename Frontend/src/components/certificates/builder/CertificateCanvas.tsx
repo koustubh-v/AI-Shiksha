@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { CertificateElement, CertificateTemplateConfig } from '@/types/certificate';
 import { cn } from '@/lib/utils';
 import QRCode from 'react-qr-code';
+import { Rnd } from 'react-rnd';
 
 interface CertificateCanvasProps {
     config: CertificateTemplateConfig;
@@ -19,42 +20,9 @@ export function CertificateCanvas({
     zoom = 1,
 }: CertificateCanvasProps) {
     const canvasRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
     const [editingContent, setEditingContent] = useState('');
-
-    // Helper to determine if we are interacting with a resize handle vs dragging the element
-    // For now, we only implement basic dragging. Resizing handles can be added next.
-
-    const handleMouseDown = (e: React.MouseEvent, element: CertificateElement) => {
-        e.stopPropagation();
-        onSelectElement(element.id);
-        setIsDragging(true);
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const initialElementX = element.x;
-        const initialElementY = element.y;
-
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            const deltaX = (moveEvent.clientX - startX) / zoom;
-            const deltaY = (moveEvent.clientY - startY) / zoom;
-
-            onUpdateElement(element.id, {
-                x: initialElementX + deltaX,
-                y: initialElementY + deltaY,
-            });
-        };
-
-        const handleMouseUp = () => {
-            setIsDragging(false);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-    };
+    const [guides, setGuides] = useState<{type: 'vertical'|'horizontal', position: number}[]>([]);
 
     const handleDoubleClick = (e: React.MouseEvent, element: CertificateElement) => {
         e.stopPropagation();
@@ -82,6 +50,9 @@ export function CertificateCanvas({
         }
     };
 
+    // Sort elements by zIndex
+    const sortedElements = [...config.elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
     return (
         <div
             className="relative shadow-2xl bg-white overflow-hidden transition-all duration-200 ease-in-out"
@@ -92,53 +63,79 @@ export function CertificateCanvas({
                 backgroundImage: config.canvas.backgroundImage ? `url(${config.canvas.backgroundImage})` : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
+                borderStyle: config.canvas.borderStyle || 'none',
+                borderWidth: (config.canvas.borderWidth || 0) * zoom,
+                borderColor: config.canvas.borderColor || '#000000',
             }}
-            onClick={() => onSelectElement(null)}
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) {
+                    onSelectElement(null);
+                }
+            }}
             ref={canvasRef}
         >
-            {config.elements.map((element) => (
+            {/* Smart Guides */}
+            {guides.map((g, i) => (
                 <div
-                    key={element.id}
-                    className={cn(
-                        "absolute cursor-move select-none group",
-                        selectedElementId === element.id ? "ring-2 ring-primary ring-offset-1" : "hover:ring-1 hover:ring-primary/50"
-                    )}
+                    key={i}
+                    className="absolute bg-[#e91e63] z-50 pointer-events-none"
                     style={{
-                        left: element.x * zoom,
-                        top: element.y * zoom,
-                        width: element.width ? element.width * zoom : 'auto',
-                        height: element.height ? element.height * zoom : 'auto',
-                        fontFamily: element.style.fontFamily,
-                        fontSize: (element.style.fontSize || 16) * zoom,
-                        fontWeight: element.style.fontWeight,
-                        fontStyle: element.style.fontStyle,
-                        color: element.style.color,
-                        textAlign: element.style.textAlign,
-                        opacity: element.style.opacity,
-                        textTransform: element.style.textTransform,
-                        letterSpacing: element.style.letterSpacing ? `${element.style.letterSpacing}px` : undefined,
-                        lineHeight: element.style.lineHeight,
-                        transform: 'translate(-50%, -50%)', // Center align the point
+                        ...(g.type === 'vertical' ? {
+                            left: g.position,
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            boxShadow: '0 0 2px rgba(233,30,99,0.5)'
+                        } : {
+                            top: g.position,
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            boxShadow: '0 0 2px rgba(233,30,99,0.5)'
+                        })
                     }}
-                    onMouseDown={(e) => handleMouseDown(e, element)}
-                    onDoubleClick={(e) => handleDoubleClick(e, element)}
-                >
-                    {element.type === 'image' ? (
+                />
+            ))}
+            {sortedElements.map((element) => {
+                const isSelected = selectedElementId === element.id;
+
+                let elementContent = null;
+                
+                if (element.type === 'image') {
+                    elementContent = (
                         <img
                             src={element.content}
                             alt="Certificate Element"
                             className="w-full h-full object-contain pointer-events-none"
                             draggable={false}
                         />
-                    ) : element.type === 'qrcode' ? (
-                        <div className="bg-white p-1">
+                    );
+                } else if (element.type === 'qrcode') {
+                    elementContent = (
+                        <div className="bg-white p-1 w-full h-full flex items-center justify-center">
                             <QRCode
                                 value={element.content || 'https://example.com'}
                                 size={element.width ? element.width * zoom : 64 * zoom}
                                 style={{ width: '100%', height: '100%' }}
                             />
                         </div>
-                    ) : editingElementId === element.id ? (
+                    );
+                } else if (element.type === 'shape') {
+                    elementContent = (
+                        <div
+                            className="w-full h-full"
+                            style={{
+                                backgroundColor: element.style.backgroundColor || 'transparent',
+                                borderColor: element.style.borderColor || 'transparent',
+                                borderWidth: element.style.borderWidth ? `${element.style.borderWidth}px` : 0,
+                                borderRadius: element.style.borderRadius ? `${element.style.borderRadius}px` : (element.shapeType === 'circle' ? '50%' : 0),
+                                borderStyle: 'solid',
+                                boxShadow: element.style.boxShadow,
+                            }}
+                        />
+                    );
+                } else if (editingElementId === element.id) {
+                    elementContent = (
                         <input
                             type="text"
                             value={editingContent}
@@ -146,25 +143,141 @@ export function CertificateCanvas({
                             onBlur={handleEditBlur}
                             onKeyDown={handleEditKeyDown}
                             autoFocus
-                            className="bg-transparent border-2 border-primary outline-none px-1"
+                            className="bg-transparent border border-primary outline-none px-1 w-full h-full"
                             style={{
-                                width: '100%',
                                 fontFamily: 'inherit',
                                 fontSize: 'inherit',
                                 fontWeight: 'inherit',
                                 fontStyle: 'inherit',
                                 color: 'inherit',
-                                textAlign: 'inherit',
+                                textAlign: 'inherit' as any,
                             }}
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                         />
-                    ) : (
-                        // Text or Variable
-                        <span className="whitespace-nowrap">{element.content}</span>
-                    )}
-                </div>
-            ))}
+                    );
+                } else {
+                    // Text or Variable
+                    elementContent = (
+                        <div className="w-full h-full break-words" style={{ display: 'flex', alignItems: 'center', justifyContent: element.style.textAlign === 'center' ? 'center' : element.style.textAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+                            {element.content}
+                        </div>
+                    );
+                }
+
+                return (
+                    <Rnd
+                        key={element.id}
+                        size={{
+                            width: (element.width || 300) * zoom,
+                            height: (element.height || 50) * zoom
+                        }}
+                        position={{
+                            x: element.x * zoom,
+                            y: element.y * zoom
+                        }}
+                        onDragStart={(e) => {
+                            e.stopPropagation();
+                            onSelectElement(element.id);
+                        }}
+                        onDrag={(e, d) => {
+                            const newGuides: {type: 'vertical'|'horizontal', position: number}[] = [];
+                            const elWidth = element.width || 300;
+                            const elHeight = element.height || 50;
+                            const centerX = (d.x / zoom) + elWidth / 2;
+                            const centerY = (d.y / zoom) + elHeight / 2;
+                            
+                            const canvasCenterX = config.canvas.width / 2;
+                            const canvasCenterY = config.canvas.height / 2;
+
+                            const TOLERANCE = 5; // px
+
+                            // Canvas center snapping/guides
+                            if (Math.abs(centerX - canvasCenterX) < TOLERANCE) {
+                                newGuides.push({ type: 'vertical', position: canvasCenterX * zoom });
+                            }
+                            if (Math.abs(centerY - canvasCenterY) < TOLERANCE) {
+                                newGuides.push({ type: 'horizontal', position: canvasCenterY * zoom });
+                            }
+
+                            // Element alignment guides (compare against other elements)
+                            config.elements.forEach(otherEl => {
+                                if (otherEl.id === element.id) return;
+                                
+                                const otherWidth = otherEl.width || 300;
+                                const otherHeight = otherEl.height || 50;
+                                const otherCenterX = otherEl.x + otherWidth / 2;
+                                const otherCenterY = otherEl.y + otherHeight / 2;
+
+                                if (Math.abs(centerX - otherCenterX) < TOLERANCE) {
+                                    newGuides.push({ type: 'vertical', position: otherCenterX * zoom });
+                                }
+                                if (Math.abs(centerY - otherCenterY) < TOLERANCE) {
+                                    newGuides.push({ type: 'horizontal', position: otherCenterY * zoom });
+                                }
+                            });
+
+                            setGuides(newGuides);
+                        }}
+                        onDragStop={(e, d) => {
+                            setGuides([]);
+                            
+                            // Snapping logic on drop
+                            const elWidth = element.width || 300;
+                            const elHeight = element.height || 50;
+                            let finalX = d.x / zoom;
+                            let finalY = d.y / zoom;
+                            const centerX = finalX + elWidth / 2;
+                            const centerY = finalY + elHeight / 2;
+                            const TOLERANCE = 5;
+
+                            const canvasCenterX = config.canvas.width / 2;
+                            const canvasCenterY = config.canvas.height / 2;
+
+                            if (Math.abs(centerX - canvasCenterX) < TOLERANCE) {
+                                finalX = canvasCenterX - elWidth / 2;
+                            }
+                            if (Math.abs(centerY - canvasCenterY) < TOLERANCE) {
+                                finalY = canvasCenterY - elHeight / 2;
+                            }
+
+                            onUpdateElement(element.id, { x: finalX, y: finalY });
+                        }}
+                        onResizeStop={(e, direction, ref, delta, position) => {
+                            onUpdateElement(element.id, {
+                                width: parseFloat(ref.style.width) / zoom,
+                                height: parseFloat(ref.style.height) / zoom,
+                                x: position.x / zoom,
+                                y: position.y / zoom
+                            });
+                        }}
+                        bounds="parent"
+                        className={cn(
+                            "absolute select-none group",
+                            isSelected ? "ring-2 ring-primary ring-offset-1 z-50" : "hover:ring-1 hover:ring-primary/50"
+                        )}
+                        style={{
+                            fontFamily: element.style.fontFamily,
+                            fontSize: (element.style.fontSize || 16) * zoom,
+                            fontWeight: element.style.fontWeight,
+                            fontStyle: element.style.fontStyle,
+                            color: element.style.color,
+                            textAlign: element.style.textAlign,
+                            opacity: element.style.opacity,
+                            textTransform: element.style.textTransform,
+                            letterSpacing: element.style.letterSpacing ? `${element.style.letterSpacing}px` : undefined,
+                            lineHeight: element.style.lineHeight,
+                            textShadow: element.style.textShadow,
+                            zIndex: element.zIndex || 1,
+                        }}
+                        onDoubleClick={(e: any) => handleDoubleClick(e, element)}
+                        disableDragging={editingElementId === element.id}
+                        enableResizing={isSelected}
+                    >
+                        {elementContent}
+                    </Rnd>
+                );
+            })}
 
             {config.elements.length === 0 && !config.canvas.backgroundImage && (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-300 select-none pointer-events-none">

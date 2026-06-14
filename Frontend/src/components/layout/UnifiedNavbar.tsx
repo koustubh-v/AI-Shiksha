@@ -76,7 +76,7 @@ export default function UnifiedNavbar() {
     const isLanding = location.pathname === "/";
 
     const navContent = (
-        <div className={`relative w-full flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] h-16 ${!isLanding && "px-4 sm:px-6"}`}>
+        <div className={`relative w-full flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto transition-all duration-700 ease-out h-16 ${!isLanding && "px-4 sm:px-6"}`}>
             {/* Left Section: Logo & Explore */}
                 <div className="flex items-center gap-4 md:gap-8">
                     {/* Mobile Menu Trigger */}
@@ -248,8 +248,8 @@ export default function UnifiedNavbar() {
 
     if (isLanding) {
         return (
-            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] top-0`}>
-                <nav className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center w-full h-16 bg-[#0e0e0e]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl px-6 md:px-8`}>
+            <div className={`fixed left-0 right-0 z-50 flex justify-center transition-all duration-700 ease-out top-0`}>
+                <nav className={`transition-all duration-700 ease-out flex items-center w-full h-16 bg-[#0e0e0e]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl px-6 md:px-8`}>
                     {navContent}
                 </nav>
             </div>

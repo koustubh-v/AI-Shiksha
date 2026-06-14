@@ -112,7 +112,7 @@ export default function PublicCourseCatalog() {
                         <img
                             src={course.thumbnail}
                             alt={course.title}
-                            className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -222,7 +222,7 @@ export default function PublicCourseCatalog() {
 
             {/* Smart Filters Drawer */}
             <div className="max-w-2xl mx-auto px-4 z-10 relative">
-                <div className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden glass-card bg-white/40 backdrop-blur-xl rounded-3xl ${showFilters ? 'max-h-96 opacity-100 border border-gray-100/50 shadow-sm mb-12' : 'max-h-0 opacity-0 border-0 mb-0'}`}>
+                <div className={`transition-all duration-500 ease-out overflow-hidden glass-card bg-white/40 backdrop-blur-xl rounded-3xl ${showFilters ? 'max-h-96 opacity-100 border border-gray-100/50 shadow-sm mb-12' : 'max-h-0 opacity-0 border-0 mb-0'}`}>
                     <div className="px-6 py-6 space-y-4">
                         <div className="flex flex-wrap gap-6 justify-center">
                             {/* Category Filter */}

@@ -11,6 +11,8 @@ interface CertificateData {
     completionTime: string;
     certificateNumber: string;
     qrValidationUrl: string;
+    gradeAverage: string;
+    issueDate: string;
 }
 
 interface CertificateElement {
@@ -21,6 +23,8 @@ interface CertificateElement {
     width?: number;
     height?: number;
     content: string;
+    zIndex?: number;
+    shapeType?: string;
     style: {
         fontFamily?: string;
         fontSize?: number;
@@ -32,6 +36,12 @@ interface CertificateElement {
         textTransform?: string;
         letterSpacing?: number;
         lineHeight?: number;
+        backgroundColor?: string;
+        borderColor?: string;
+        borderWidth?: number;
+        borderRadius?: number;
+        textShadow?: string;
+        boxShadow?: string;
     };
 }
 
@@ -115,6 +125,25 @@ export class PdfGeneratorService {
                 ? `${hours > 0 ? `${hours}h ` : ''}${minutes}m`
                 : 'Self-paced';
 
+            // Fetch quiz results for grade average
+            const quizSubmissions = await this.prisma.quizSubmission.findMany({
+                where: {
+                    student_id: certificate.student_id,
+                    quiz: {
+                        section_items: {
+                            some: {
+                                section: {
+                                    course_id: certificate.course_id
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            const gradeAverage = quizSubmissions.length > 0 
+                ? (quizSubmissions.reduce((acc, curr) => acc + (curr.score || 0), 0) / quizSubmissions.length).toFixed(1) + '%'
+                : 'N/A';
+
             // Prepare certificate data
             const certData: CertificateData = {
                 studentName: certificate.user.name,
@@ -128,6 +157,8 @@ export class PdfGeneratorService {
                 completionTime: durationString,
                 certificateNumber: certificate.certificate_number,
                 qrValidationUrl: certificate.qr_validation_url || '',
+                gradeAverage: gradeAverage,
+                issueDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             };
 
             // Get template config
@@ -192,14 +223,21 @@ export class PdfGeneratorService {
             content = content.replace('{instructor_name}', certData.instructorName || '');
             content = content.replace('{completion_date}', certData.completionDate || '');
             content = content.replace('{completion_time}', certData.completionTime || '');
+            content = content.replace('{duration_completed}', certData.completionTime || '');
             content = content.replace('{certificate_number}', certData.certificateNumber || '');
+            content = content.replace('{certificate_id}', certData.certificateNumber || '');
             content = content.replace('{qr_validation_url}', certData.qrValidationUrl || '');
+            content = content.replace('{grade_average}', certData.gradeAverage || '');
+            content = content.replace('{issue_date}', certData.issueDate || '');
 
             return { ...element, content };
         });
 
+        // Sort by zIndex
+        const sortedElements = [...processedElements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
         // Generate HTML elements
-        const elementsHTML = processedElements
+        const elementsHTML = sortedElements
             .map((element) => {
                 if (element.type === 'qrcode') {
                     return `
@@ -209,7 +247,7 @@ export class PdfGeneratorService {
               top: ${element.y}px;
               width: ${element.width || 100}px;
               height: ${element.height || 100}px;
-              transform: translate(-50%, -50%);
+              z-index: ${element.zIndex || 1};
             ">
               <img src="${qrCodeDataUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
             </div>
@@ -222,11 +260,26 @@ export class PdfGeneratorService {
               top: ${element.y}px;
               width: ${element.width || 100}px;
               height: ${element.height || 100}px;
-              transform: translate(-50%, -50%);
+              z-index: ${element.zIndex || 1};
               opacity: ${element.style.opacity || 1};
             ">
               <img src="${element.content}" style="width: 100%; height: 100%; object-fit: contain;" />
             </div>
+          `;
+                } else if (element.type as string === 'shape') {
+                    return `
+            <div style="
+              position: absolute;
+              left: ${element.x}px;
+              top: ${element.y}px;
+              width: ${element.width || 100}px;
+              height: ${element.height || 100}px;
+              z-index: ${element.zIndex || 1};
+              background-color: ${element.style.backgroundColor || 'transparent'};
+              border: ${element.style.borderWidth || 0}px solid ${element.style.borderColor || 'transparent'};
+              border-radius: ${element.style.borderRadius || 0}px;
+              box-shadow: ${element.style.boxShadow || 'none'};
+            "></div>
           `;
                 } else {
                     // Text or variable element
@@ -235,7 +288,9 @@ export class PdfGeneratorService {
               position: absolute;
               left: ${element.x}px;
               top: ${element.y}px;
-              transform: translate(-50%, -50%);
+              width: ${element.width ? `${element.width}px` : 'auto'};
+              height: ${element.height ? `${element.height}px` : 'auto'};
+              z-index: ${element.zIndex || 1};
               font-family: ${element.style.fontFamily || 'Arial, sans-serif'};
               font-size: ${element.style.fontSize || 16}px;
               font-weight: ${element.style.fontWeight || 'normal'};
@@ -246,9 +301,13 @@ export class PdfGeneratorService {
               ${element.style.textTransform ? `text-transform: ${element.style.textTransform};` : ''}
               ${element.style.letterSpacing ? `letter-spacing: ${element.style.letterSpacing}px;` : ''}
               ${element.style.lineHeight ? `line-height: ${element.style.lineHeight};` : ''}
-              white-space: nowrap;
+              text-shadow: ${element.style.textShadow || 'none'};
+              display: flex;
+              align-items: center;
+              justify-content: ${element.style.textAlign === 'center' ? 'center' : element.style.textAlign === 'right' ? 'flex-end' : 'flex-start'};
+              word-wrap: break-word;
             ">
-              ${element.content}
+              ${element.content.replace(/\n/g, '<br/>')}
             </div>
           `;
                 }

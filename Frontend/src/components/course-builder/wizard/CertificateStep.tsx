@@ -165,16 +165,14 @@ export function CertificateStep({ initialData, onSave, onBack }: CertificateStep
                                                             {template.is_default && <Badge variant="secondary" className="text-[10px] px-1 h-5">Default</Badge>}
                                                         </div>
                                                         {/* Mini Preview */}
-                                                        <div className="w-full aspect-[4/3] bg-gray-100 rounded overflow-hidden relative pointer-events-none border border-gray-100">
-                                                            <div className="origin-top-left transform scale-[0.25]" style={{ width: '400%', height: '400%' }}>
-                                                                <CertificateCanvas
-                                                                    config={template.template_config}
-                                                                    selectedElementId={null}
-                                                                    onSelectElement={() => { }}
-                                                                    onUpdateElement={() => { }}
-                                                                    zoom={1}
-                                                                />
-                                                            </div>
+                                                        <div className="w-full aspect-[1.414/1] bg-gray-100 rounded overflow-hidden relative pointer-events-none border border-gray-100 flex items-center justify-center">
+                                                            <CertificateCanvas
+                                                                config={template.template_config}
+                                                                selectedElementId={null}
+                                                                onSelectElement={() => { }}
+                                                                onUpdateElement={() => { }}
+                                                                zoom={0.25}
+                                                            />
                                                         </div>
                                                     </div>
                                                 ))}
@@ -227,7 +225,7 @@ export function CertificateStep({ initialData, onSave, onBack }: CertificateStep
                                     {loadingTemplates ? (
                                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                                     ) : selectedTemplate ? (
-                                        <div className="transform scale-[0.75] origin-center shadow-xl">
+                                        <div className="shadow-xl">
                                             <CertificateCanvas
                                                 config={{
                                                     ...selectedTemplate.template_config,
@@ -249,7 +247,7 @@ export function CertificateStep({ initialData, onSave, onBack }: CertificateStep
                                                 selectedElementId={null}
                                                 onSelectElement={() => { }}
                                                 onUpdateElement={() => { }}
-                                                zoom={1}
+                                                zoom={0.5}
                                             />
                                         </div>
                                     ) : (

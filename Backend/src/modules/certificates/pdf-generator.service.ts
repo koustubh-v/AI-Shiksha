@@ -248,8 +248,8 @@ export class PdfGeneratorService {
               position: absolute;
               left: ${element.x}px;
               top: ${element.y}px;
-              width: ${element.width || 100}px;
-              height: ${element.height || 100}px;
+              width: ${element.width || 300}px;
+              height: ${element.height || 50}px;
               z-index: ${element.zIndex || 1};
             ">
               <img src="${qrCodeDataUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
@@ -261,8 +261,8 @@ export class PdfGeneratorService {
               position: absolute;
               left: ${element.x}px;
               top: ${element.y}px;
-              width: ${element.width || 100}px;
-              height: ${element.height || 100}px;
+              width: ${element.width || 300}px;
+              height: ${element.height || 50}px;
               z-index: ${element.zIndex || 1};
               opacity: ${element.style.opacity || 1};
             ">
@@ -275,8 +275,8 @@ export class PdfGeneratorService {
               position: absolute;
               left: ${element.x}px;
               top: ${element.y}px;
-              width: ${element.width || 100}px;
-              height: ${element.height || 100}px;
+              width: ${element.width || 300}px;
+              height: ${element.height || 50}px;
               z-index: ${element.zIndex || 1};
               background-color: ${element.style.backgroundColor || 'transparent'};
               border: ${element.style.borderWidth || 0}px solid ${element.style.borderColor || 'transparent'};
@@ -291,8 +291,8 @@ export class PdfGeneratorService {
               position: absolute;
               left: ${element.x}px;
               top: ${element.y}px;
-              width: ${element.width ? `${element.width}px` : 'auto'};
-              height: ${element.height ? `${element.height}px` : 'auto'};
+              width: ${element.width ? `${element.width}px` : '300px'};
+              height: ${element.height ? `${element.height}px` : '50px'};
               z-index: ${element.zIndex || 1};
               font-family: ${element.style.fontFamily || 'Arial, sans-serif'};
               font-size: ${element.style.fontSize || 16}px;

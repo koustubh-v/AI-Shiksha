@@ -42,6 +42,9 @@ export class CertificatesController {
     @UseGuards(AuthGuard('jwt'))
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Download certificate by Course ID' })
+    @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    @Header('Pragma', 'no-cache')
+    @Header('Expires', '0')
     async downloadCertificateByCourse(
         @Param('courseId') courseId: string,
         @Request() req,
@@ -62,6 +65,9 @@ export class CertificatesController {
     @UseGuards(AuthGuard('jwt'))
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Download certificate PDF' })
+    @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    @Header('Pragma', 'no-cache')
+    @Header('Expires', '0')
     async downloadCertificate(
         @Param('id') id: string,
         @Request() req,

@@ -284,7 +284,18 @@ export class CompletionsService {
                 const certificateNumber = `CERT-${new Date().getFullYear()}-${randomSuffix}${timestamp.toString().slice(-4)}`;
 
                 // Generate QR validation URL
-                const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                // Fetch franchise domain
+                const franchise = await this.prisma.franchise.findUnique({
+                    where: { id: course.franchise_id || '' }
+                });
+                
+                let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                if (franchise && franchise.domain) {
+                    baseUrl = franchise.domain.includes('localhost') || franchise.domain.includes('127.0.0.1')
+                        ? `http://${franchise.domain}`
+                        : `https://${franchise.domain}`;
+                }
+                
                 const qrValidationUrl = `${baseUrl}/courses/${course.slug}/validation/${studentId}`;
 
                 certificate = await this.prisma.certificate.create({
@@ -309,9 +320,18 @@ export class CompletionsService {
         }
 
         // Send completion + certificate email to student
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        let emailBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        if (course?.franchise_id) {
+            const f = await this.prisma.franchise.findUnique({ where: { id: course.franchise_id }});
+            if (f && f.domain) {
+                emailBaseUrl = f.domain.includes('localhost') || f.domain.includes('127.0.0.1')
+                    ? `http://${f.domain}`
+                    : `https://${f.domain}`;
+            }
+        }
+        
         const certificateUrl = certificate
-            ? `${baseUrl}/dashboard/certificates`
+            ? `${emailBaseUrl}/dashboard/certificates`
             : undefined;
 
         if (certificateUrl) {
@@ -386,11 +406,17 @@ export class CompletionsService {
         // Get course slug for QR URL
         const course = await this.prisma.course.findUnique({
             where: { id: courseId },
-            select: { slug: true, franchise_id: true, title: true },
+            select: { slug: true, franchise_id: true, title: true, franchise: { select: { domain: true } } },
         });
 
         // Generate QR validation URL
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        if (course?.franchise?.domain) {
+            baseUrl = course.franchise.domain.includes('localhost') || course.franchise.domain.includes('127.0.0.1')
+                ? `http://${course.franchise.domain}`
+                : `https://${course.franchise.domain}`;
+        }
+        
         const qrValidationUrl = course ? `${baseUrl}/courses/${course.slug}/validation/${studentId}` : null;
 
         // Create certificate
@@ -643,6 +669,7 @@ export class CompletionsService {
                     slug: true,
                     title: true,
                     franchise_id: true,
+                    franchise: { select: { domain: true } }
                 },
             });
 
@@ -668,7 +695,12 @@ export class CompletionsService {
             const certificateNumber = `CERT-${new Date().getFullYear()}-${randomSuffix}${timestamp.toString().slice(-4)}`;
 
             // Generate QR validation URL
-            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            if (course?.franchise?.domain) {
+                baseUrl = course.franchise.domain.includes('localhost') || course.franchise.domain.includes('127.0.0.1')
+                    ? `http://${course.franchise.domain}`
+                    : `https://${course.franchise.domain}`;
+            }
             const qrValidationUrl = `${baseUrl}/courses/${course.slug}/validation/${studentId}`;
 
             // Create certificate — KEY FIX: include franchise_id for proper isolation

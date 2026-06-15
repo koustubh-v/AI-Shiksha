@@ -831,7 +831,7 @@ const SidebarContent = ({
     if (!course) return;
     try {
       const { default: api } = await import('@/lib/api');
-      const response = await api.get(`/certificates/course/${course.id}/download`, {
+      const response = await api.get(`/certificates/course/${course.id}/download?t=${Date.now()}`, {
         responseType: 'blob',
       });
 

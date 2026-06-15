@@ -42,7 +42,7 @@ export const getCertificateById = async (id: string): Promise<Certificate> => {
 };
 
 export const downloadCertificate = async (id: string): Promise<any> => {
-    const response = await api.get(`/certificates/${id}/download`, {
+    const response = await api.get(`/certificates/${id}/download?t=${Date.now()}`, {
         responseType: 'blob',
     });
     return response.data;

@@ -31,7 +31,7 @@ export function CompletedCourses() {
 
     const handleDownloadCertificate = async (courseId: string, courseTitle: string) => {
         try {
-            const response = await api.get(`/certificates/course/${courseId}/download`, {
+            const response = await api.get(`/certificates/course/${courseId}/download?t=${Date.now()}`, {
                 responseType: 'blob',
             });
 

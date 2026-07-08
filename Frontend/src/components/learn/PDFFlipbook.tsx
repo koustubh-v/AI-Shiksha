@@ -8,12 +8,8 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 // Setup PDF worker
-import 'pdfjs-dist/build/pdf.worker.mjs';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url,
-).toString();
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const options = {
     cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -96,9 +92,10 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                                     <Page
                                         pageNumber={index + 1}
                                         width={400 * scale}
+                                        devicePixelRatio={typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio) : 1}
                                         renderAnnotationLayer={true}
                                         renderTextLayer={true}
-                                        className="h-full w-full object-contain"
+                                        className="h-full w-full object-contain bg-white"
                                     />
                                     <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400">
                                         Page {index + 1}

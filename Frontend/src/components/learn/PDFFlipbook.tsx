@@ -4,6 +4,8 @@ import HTMLFlipBook from 'react-pageflip';
 import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
 // Setup PDF worker
 import 'pdfjs-dist/build/pdf.worker.mjs';
@@ -12,6 +14,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
 ).toString();
+
+const options = {
+    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+};
 
 interface PDFFlipbookProps {
     pdfUrl: string;
@@ -41,6 +49,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
 
             <Document
                 file={pdfUrl}
+                options={options}
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                     <div className="flex flex-col items-center gap-2">
@@ -87,8 +96,8 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                                     <Page
                                         pageNumber={index + 1}
                                         width={400 * scale}
-                                        renderAnnotationLayer={false}
-                                        renderTextLayer={false}
+                                        renderAnnotationLayer={true}
+                                        renderTextLayer={true}
                                         className="h-full w-full object-contain"
                                     />
                                     <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400">

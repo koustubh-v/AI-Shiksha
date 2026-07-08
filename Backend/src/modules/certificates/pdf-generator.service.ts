@@ -85,6 +85,12 @@ export class PdfGeneratorService {
                     course: {
                         select: {
                             title: true,
+                            slug: true,
+                            franchise: {
+                                select: {
+                                    domain: true,
+                                }
+                            },
                             certificate_template_id: true,
                             certificate_template: {
                                 select: {
@@ -147,6 +153,18 @@ export class PdfGeneratorService {
                 ? (quizSubmissions.reduce((acc, curr) => acc + (curr.score || 0), 0) / quizSubmissions.length).toFixed(1) + '%'
                 : 'N/A';
 
+            let dynamicQrUrl = certificate.qr_validation_url || '';
+            const course = certificate.course as any;
+            if (course.slug) {
+                let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                if (course.franchise?.domain) {
+                    baseUrl = course.franchise.domain.includes('localhost') || course.franchise.domain.includes('127.0.0.1')
+                        ? `http://${course.franchise.domain}`
+                        : `https://${course.franchise.domain}`;
+                }
+                dynamicQrUrl = `${baseUrl}/courses/${course.slug}/validation/${certificate.student_id}`;
+            }
+
             // Prepare certificate data
             const certData: CertificateData = {
                 studentName: certificate.user.name,
@@ -159,7 +177,7 @@ export class PdfGeneratorService {
                 }),
                 completionTime: durationString,
                 certificateNumber: certificate.certificate_number,
-                qrValidationUrl: certificate.qr_validation_url || '',
+                qrValidationUrl: dynamicQrUrl,
                 gradeAverage: gradeAverage,
                 issueDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             };

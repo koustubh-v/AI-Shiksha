@@ -1,13 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import HTMLFlipBook from 'react-pageflip';
-import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Setup PDF worker
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -15,7 +14,10 @@ const options = {
     cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
     cMapPacked: true,
     standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+    wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/wasm/`,
 };
+
+const RENDER_WINDOW = 4;
 
 interface PDFFlipbookProps {
     pdfUrl: string;
@@ -24,15 +26,22 @@ interface PDFFlipbookProps {
 export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [scale, setScale] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
 
+    const onFlip = useCallback((e: any) => {
+        setCurrentPage(e.data);
+    }, []);
+
+    const shouldRender = (index: number) =>
+        Math.abs(index - currentPage) <= RENDER_WINDOW;
+
     return (
         <div className="w-full flex flex-col items-center gap-4 bg-slate-100 p-8 rounded-xl shadow-inner min-h-[600px] justify-center relative">
 
-            {/* Controls */}
             <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-white/90 p-2 rounded-lg shadow-sm backdrop-blur-sm">
                 <Button variant="ghost" size="icon" onClick={() => setScale(s => Math.max(0.5, s - 0.1))} title="Zoom Out">
                     <ZoomOut className="h-4 w-4" />
@@ -63,7 +72,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                 {numPages > 0 && (
                     <HTMLFlipBook
                         width={400 * scale}
-                        height={570 * scale} // A4 aspect ratio roughly
+                        height={570 * scale}
                         size="fixed"
                         minWidth={300}
                         maxWidth={1000}
@@ -77,7 +86,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                         startPage={0}
                         drawShadow={true}
                         flippingTime={1000}
-                        usePortrait={false} // Double page view on desktop
+                        usePortrait={false}
                         startZIndex={0}
                         autoSize={true}
                         clickEventForward={true}
@@ -85,19 +94,27 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                         swipeDistance={30}
                         showPageCorners={true}
                         disableFlipByClick={false}
+                        onFlip={onFlip}
                     >
                         {Array.from(new Array(numPages), (_, index) => (
                             <div key={`page_${index + 1}`} className="bg-white shadow-sm border border-gray-100 overflow-hidden">
                                 <div className="h-full w-full relative">
-                                    <Page
-                                        pageNumber={index + 1}
-                                        width={400 * scale}
-                                        devicePixelRatio={typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio) : 1}
-                                        renderAnnotationLayer={true}
-                                        renderTextLayer={true}
-                                        className="h-full w-full object-contain bg-white"
-                                    />
-                                    <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400">
+                                    {shouldRender(index) ? (
+                                        <Page
+                                            pageNumber={index + 1}
+                                            width={400 * scale}
+                                            devicePixelRatio={typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio) : 1}
+                                            renderAnnotationLayer={true}
+                                            renderTextLayer={true}
+                                            className="h-full w-full object-contain bg-white"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="bg-white"
+                                            style={{ width: 400 * scale, height: 570 * scale }}
+                                        />
+                                    )}
+                                    <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400 pointer-events-none">
                                         Page {index + 1}
                                     </div>
                                 </div>

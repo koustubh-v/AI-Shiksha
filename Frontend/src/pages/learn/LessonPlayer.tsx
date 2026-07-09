@@ -120,6 +120,7 @@ interface Course {
   title: string;
   sections: Section[];
   enrollments?: { progress_percentage: number }[];
+  certificate_enabled?: boolean;
 }
 
 export default function LessonPlayer() {
@@ -138,6 +139,7 @@ export default function LessonPlayer() {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+  const [canMarkComplete, setCanMarkComplete] = useState(false);
 
   // New Design State
   const [sidebarTab, setSidebarTab] = useState("content"); // content | ai
@@ -256,6 +258,21 @@ export default function LessonPlayer() {
       Completions.logAccess(course.id, currentItem.id).catch(console.error);
     }
   }, [course?.id, currentItem?.id]);
+
+  // Manage canMarkComplete state
+  useEffect(() => {
+    if (currentItem) {
+      if (currentItem.type === 'PDF') {
+        setCanMarkComplete(false);
+      } else if (currentItem.type === 'VIDEO') {
+        const url = currentItem?.lecture_content?.video_url || currentItem?.content?.video_url;
+        const isYt = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+        setCanMarkComplete(!!isYt);
+      } else {
+        setCanMarkComplete(true);
+      }
+    }
+  }, [currentItem?.id, currentItem?.type, currentItem?.lecture_content?.video_url, currentItem?.content?.video_url]);
 
   // Track Time (Session Timer + Heartbeat)
   useEffect(() => {
@@ -518,11 +535,12 @@ export default function LessonPlayer() {
             <span className="text-xs font-medium">{formatDuration(currentItem.duration_minutes)}</span>
           </div>
           
-          {(!currentItem.sectionItemProgresses?.[0]?.completed) && (
+          {(!currentItem.sectionItemProgresses?.[0]?.completed && currentItem?.type !== 'QUIZ') && (
             <>
               <Button
                 className="hidden sm:flex bg-primary hover:bg-primary/90 text-white rounded-full px-6 transition-all"
                 onClick={handleMarkComplete}
+                disabled={!canMarkComplete}
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Mark as Complete
@@ -532,6 +550,7 @@ export default function LessonPlayer() {
               <Button
                 className="flex sm:hidden bg-primary hover:bg-primary/90 text-white rounded-full p-2 h-8 w-8 transition-all"
                 onClick={handleMarkComplete}
+                disabled={!canMarkComplete}
               >
                 <CheckCircle2 className="h-4 w-4" />
               </Button>
@@ -592,9 +611,17 @@ export default function LessonPlayer() {
               </div>
             )}
 
-            {/* PDF Flipbook Viewer */}
+            {/* PDF View */}
             {currentItem.lecture_content?.pdf_url && (
-              <PDFFlipbook pdfUrl={currentItem.lecture_content.pdf_url} />
+              <PDFFlipbook 
+                pdfUrl={currentItem.lecture_content.pdf_url} 
+                onReachEnd={() => {
+                  setCanMarkComplete(true);
+                  if (!currentItem.sectionItemProgresses?.[0]?.completed) {
+                    handleMarkComplete();
+                  }
+                }}
+              />
             )}
 
             {/* Video Player */}
@@ -616,7 +643,10 @@ export default function LessonPlayer() {
                       controls
                       autoPlay={false}
                       onEnded={() => {
-                        // Optional: Auto-mark complete?
+                        setCanMarkComplete(true);
+                        if (!currentItem.sectionItemProgresses?.[0]?.completed) {
+                          handleMarkComplete();
+                        }
                       }}
                     />
                   </div>
@@ -967,8 +997,8 @@ const SidebarContent = ({
               ))}
             </Accordion>
 
-            {/* Certificate Section - Show when course is 100% complete */}
-            {course && course.enrollments && course.enrollments[0]?.progress_percentage === 100 && (
+            {/* Certificate Section - Show when course is 100% complete and certificate is enabled */}
+            {course && course.enrollments && course.enrollments[0]?.progress_percentage === 100 && course.certificate_enabled !== false && (
               <div className="p-6">
                 <div className="bg-white border rounded-xl p-5 shadow-sm text-center space-y-4">
                   <div className="mx-auto w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-2">

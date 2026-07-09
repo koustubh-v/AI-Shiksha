@@ -828,6 +828,18 @@ export class EnrollmentsService {
         },
       });
 
+      // 3.5 Reset SectionItemProgress
+      await this.prisma.sectionItemProgress.deleteMany({
+        where: {
+          student_id: enrollment.student_id,
+          item: {
+            section: {
+              course_id: enrollment.course_id
+            }
+          }
+        }
+      });
+
       // 4. Delete existing certificates
       await this.prisma.certificate.deleteMany({
         where: {

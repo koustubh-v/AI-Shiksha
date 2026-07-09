@@ -21,9 +21,10 @@ const RENDER_WINDOW = 4;
 
 interface PDFFlipbookProps {
     pdfUrl: string;
+    onReachEnd?: () => void;
 }
 
-export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
+export default function PDFFlipbook({ pdfUrl, onReachEnd }: PDFFlipbookProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [scale, setScale] = useState(1);
     const [currentPage, setCurrentPage] = useState(0);
@@ -34,7 +35,11 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
 
     const onFlip = useCallback((e: any) => {
         setCurrentPage(e.data);
-    }, []);
+        if (e.data >= numPages - 2 && onReachEnd) {
+            // Trigger onReachEnd if they reached the last or second to last page (since it's a 2-page spread)
+            onReachEnd();
+        }
+    }, [numPages, onReachEnd]);
 
     const shouldRender = (index: number) =>
         Math.abs(index - currentPage) <= RENDER_WINDOW;
@@ -70,6 +75,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                 className="flex justify-center"
             >
                 {numPages > 0 && (
+                <div className="w-full max-w-[100vw] overflow-auto flex justify-center py-4 hide-scrollbar">
                     <HTMLFlipBook
                         width={400 * scale}
                         height={570 * scale}
@@ -86,7 +92,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                         startPage={0}
                         drawShadow={true}
                         flippingTime={1000}
-                        usePortrait={false}
+                        usePortrait={true}
                         startZIndex={0}
                         autoSize={true}
                         clickEventForward={true}
@@ -121,6 +127,7 @@ export default function PDFFlipbook({ pdfUrl }: PDFFlipbookProps) {
                             </div>
                         ))}
                     </HTMLFlipBook>
+                </div>
                 )}
             </Document>
 

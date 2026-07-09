@@ -15,6 +15,7 @@ export interface EnrolledCourse {
         };
         totalLessons: number;
         duration: string;
+        certificate_enabled: boolean;
     };
     progress: number;
     completedLessons: number;
@@ -44,6 +45,7 @@ export const enrollmentService = {
                 },
                 totalLessons: enrollment.course.lessons_count || 0, // Assuming this field exists or needs calculation
                 duration: enrollment.course.duration || '0h',
+                certificate_enabled: enrollment.course.certificate_enabled ?? false,
             },
             progress: enrollment.progress_percentage || 0,
             completedLessons: 0, // Backend doesn't seem to return this directly in simple query

@@ -840,6 +840,22 @@ export class EnrollmentsService {
         }
       });
 
+      // 3.6 Reset QuizSubmission
+      await this.prisma.quizSubmission.deleteMany({
+        where: {
+          student_id: enrollment.student_id,
+          quiz: {
+            section_items: {
+              some: {
+                section: {
+                  course_id: enrollment.course_id
+                }
+              }
+            }
+          }
+        }
+      });
+
       // 4. Delete existing certificates
       await this.prisma.certificate.deleteMany({
         where: {

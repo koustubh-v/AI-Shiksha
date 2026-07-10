@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import HTMLFlipBook from 'react-pageflip';
 import { Loader2, ZoomIn, ZoomOut } from 'lucide-react';
@@ -28,6 +28,55 @@ export default function PDFFlipbook({ pdfUrl, onReachEnd }: PDFFlipbookProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [scale, setScale] = useState(1);
     const [currentPage, setCurrentPage] = useState(0);
+
+    // Responsive State
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+    
+    // Drag to Pan State
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [startY, setStartY] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+    const [scrollTop, setScrollTop] = useState(0);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (scale <= 1) return;
+        setIsDragging(true);
+        if (containerRef.current) {
+            setStartX(e.pageX - containerRef.current.offsetLeft);
+            setStartY(e.pageY - containerRef.current.offsetTop);
+            setScrollLeft(containerRef.current.scrollLeft);
+            setScrollTop(containerRef.current.scrollTop);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (scale <= 1) return;
+        setIsDragging(false);
+    };
+
+    const handleMouseUp = () => {
+        if (scale <= 1) return;
+        setIsDragging(false);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || scale <= 1 || !containerRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - containerRef.current.offsetLeft;
+        const y = e.pageY - containerRef.current.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        containerRef.current.scrollLeft = scrollLeft - walkX;
+        containerRef.current.scrollTop = scrollTop - walkY;
+    };
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
@@ -75,58 +124,84 @@ export default function PDFFlipbook({ pdfUrl, onReachEnd }: PDFFlipbookProps) {
                 className="flex justify-center"
             >
                 {numPages > 0 && (
-                <div className="w-full max-w-[100vw] overflow-auto flex justify-center py-4 hide-scrollbar">
-                    <HTMLFlipBook
-                        width={400 * scale}
-                        height={570 * scale}
-                        size="fixed"
-                        minWidth={300}
-                        maxWidth={1000}
-                        minHeight={400}
-                        maxHeight={1414}
-                        maxShadowOpacity={0.5}
-                        showCover={true}
-                        mobileScrollSupport={true}
-                        className="shadow-2xl"
-                        style={{ margin: '0 auto' }}
-                        startPage={0}
-                        drawShadow={true}
-                        flippingTime={1000}
-                        usePortrait={true}
-                        startZIndex={0}
-                        autoSize={true}
-                        clickEventForward={true}
-                        useMouseEvents={true}
-                        swipeDistance={30}
-                        showPageCorners={true}
-                        disableFlipByClick={false}
-                        onFlip={onFlip}
-                    >
-                        {Array.from(new Array(numPages), (_, index) => (
-                            <div key={`page_${index + 1}`} className="bg-white shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="h-full w-full relative">
-                                    {shouldRender(index) ? (
-                                        <Page
-                                            pageNumber={index + 1}
-                                            width={400 * scale}
-                                            devicePixelRatio={typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio) : 1}
-                                            renderAnnotationLayer={true}
-                                            renderTextLayer={true}
-                                            className="h-full w-full object-contain bg-white"
-                                        />
-                                    ) : (
-                                        <div
-                                            className="bg-white"
-                                            style={{ width: 400 * scale, height: 570 * scale }}
-                                        />
-                                    )}
-                                    <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400 pointer-events-none">
-                                        Page {index + 1}
+                <div 
+                    ref={containerRef}
+                    className={`w-full max-w-[100vw] overflow-auto flex justify-center py-4 hide-scrollbar ${scale > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
+                    onMouseDown={handleMouseDown}
+                    onMouseLeave={handleMouseLeave}
+                    onMouseUp={handleMouseUp}
+                    onMouseMove={handleMouseMove}
+                >
+                    {/* Spacer div to reserve space for scaled content */}
+                    <div style={{ 
+                        width: (isMobile ? 400 : 800) * scale, 
+                        height: 570 * scale,
+                        flexShrink: 0,
+                        transition: 'width 0.2s, height 0.2s',
+                        display: 'flex',
+                        justifyContent: 'center'
+                    }}>
+                        {/* Scaled content container */}
+                        <div style={{
+                            transform: `scale(${scale})`,
+                            transformOrigin: 'top center',
+                            width: isMobile ? 400 : 800,
+                            height: 570,
+                            transition: 'transform 0.2s'
+                        }}>
+                            <HTMLFlipBook
+                                width={400}
+                                height={570}
+                                size="fixed"
+                                minWidth={300}
+                                maxWidth={1000}
+                                minHeight={400}
+                                maxHeight={1414}
+                                maxShadowOpacity={0.5}
+                                showCover={true}
+                                mobileScrollSupport={true}
+                                className="shadow-2xl"
+                                style={{ margin: '0 auto' }}
+                                startPage={0}
+                                drawShadow={true}
+                                flippingTime={1000}
+                                usePortrait={isMobile}
+                                startZIndex={0}
+                                autoSize={true}
+                                clickEventForward={true}
+                                useMouseEvents={scale === 1}
+                                swipeDistance={30}
+                                showPageCorners={true}
+                                disableFlipByClick={false}
+                                onFlip={onFlip}
+                            >
+                                {Array.from(new Array(numPages), (_, index) => (
+                                    <div key={`page_${index + 1}`} className="bg-white shadow-sm border border-gray-100 overflow-hidden">
+                                        <div className="h-full w-full relative">
+                                            {shouldRender(index) ? (
+                                                <Page
+                                                    pageNumber={index + 1}
+                                                    width={400}
+                                                    devicePixelRatio={typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio) : 1}
+                                                    renderAnnotationLayer={true}
+                                                    renderTextLayer={true}
+                                                    className="h-full w-full object-contain bg-white"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="bg-white"
+                                                    style={{ width: 400, height: 570 }}
+                                                />
+                                            )}
+                                            <div className="absolute bottom-2 w-full text-center text-[10px] text-gray-400 pointer-events-none">
+                                                Page {index + 1}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </HTMLFlipBook>
+                                ))}
+                            </HTMLFlipBook>
+                        </div>
+                    </div>
                 </div>
                 )}
             </Document>

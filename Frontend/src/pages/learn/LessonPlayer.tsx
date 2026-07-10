@@ -262,17 +262,21 @@ export default function LessonPlayer() {
   // Manage canMarkComplete state
   useEffect(() => {
     if (currentItem) {
-      if (currentItem.type === 'PDF') {
-        setCanMarkComplete(false);
-      } else if (currentItem.type === 'VIDEO') {
-        const url = currentItem?.lecture_content?.video_url || currentItem?.content?.video_url;
-        const isYt = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-        setCanMarkComplete(!!isYt);
+      if (currentItem.type === 'LECTURE') {
+        if (currentItem.lecture_content?.pdf_url) {
+          setCanMarkComplete(false);
+        } else if (currentItem.lecture_content?.video_url || currentItem.content?.video_url) {
+          const url = currentItem.lecture_content?.video_url || currentItem.content?.video_url;
+          const isYt = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+          setCanMarkComplete(!!isYt);
+        } else {
+          setCanMarkComplete(true);
+        }
       } else {
         setCanMarkComplete(true);
       }
     }
-  }, [currentItem?.id, currentItem?.type, currentItem?.lecture_content?.video_url, currentItem?.content?.video_url]);
+  }, [currentItem]);
 
   // Track Time (Session Timer + Heartbeat)
   useEffect(() => {
@@ -388,6 +392,28 @@ export default function LessonPlayer() {
     if (nextLesson && course?.slug) {
       navigate(`/learn/${course.slug}/lesson/${nextLesson.slug}`);
     }
+  };
+
+  const handleManualMarkComplete = () => {
+    if (!canMarkComplete) {
+      toast({
+        description: (
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-100/50 p-2 rounded-full">
+              <Clock className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-gray-900 text-sm">Almost there!</span>
+              <span className="text-gray-500 text-xs">Please complete the lecture first.</span>
+            </div>
+          </div>
+        ),
+        className: "bg-white border-gray-100 shadow-xl shadow-black/5 rounded-2xl p-3 border",
+        duration: 3000,
+      });
+      return;
+    }
+    handleMarkComplete();
   };
 
   const handleMarkComplete = async () => {
@@ -539,8 +565,7 @@ export default function LessonPlayer() {
             <>
               <Button
                 className="hidden sm:flex bg-primary hover:bg-primary/90 text-white rounded-full px-6 transition-all"
-                onClick={handleMarkComplete}
-                disabled={!canMarkComplete}
+                onClick={handleManualMarkComplete}
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Mark as Complete
@@ -549,8 +574,7 @@ export default function LessonPlayer() {
               {/* Mobile Mark Complete (Icon Only) */}
               <Button
                 className="flex sm:hidden bg-primary hover:bg-primary/90 text-white rounded-full p-2 h-8 w-8 transition-all"
-                onClick={handleMarkComplete}
-                disabled={!canMarkComplete}
+                onClick={handleManualMarkComplete}
               >
                 <CheckCircle2 className="h-4 w-4" />
               </Button>

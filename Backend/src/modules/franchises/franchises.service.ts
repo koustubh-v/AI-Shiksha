@@ -25,6 +25,10 @@ export class FranchisesService {
                 _count: {
                     select: { users: true, courses: true, enrollments: true },
                 },
+                users: {
+                    where: { role: 'FRANCHISE_ADMIN' },
+                    select: { email: true, name: true, id: true },
+                },
             },
         });
         return franchises;
@@ -445,6 +449,45 @@ export class FranchisesService {
             where: { id },
             data: dto,
         });
+    }
+
+    /**
+     * Update franchise admin credentials
+     */
+    async updateAdmin(franchiseId: string, dto: { email?: string; password?: string }) {
+        const admin = await this.prisma.user.findFirst({
+            where: { franchise_id: franchiseId, role: 'FRANCHISE_ADMIN' }
+        });
+        
+        if (!admin) {
+            throw new NotFoundException('Franchise admin not found');
+        }
+
+        const updateData: any = {};
+        
+        if (dto.email && dto.email !== admin.email) {
+            // Check if email already taken
+            const existing = await this.prisma.user.findFirst({
+                where: { email: dto.email, id: { not: admin.id } }
+            });
+            if (existing) {
+                throw new ConflictException('Email already in use');
+            }
+            updateData.email = dto.email;
+        }
+        
+        if (dto.password) {
+            updateData.password_hash = await bcrypt.hash(dto.password, 10);
+        }
+
+        if (Object.keys(updateData).length > 0) {
+            await this.prisma.user.update({
+                where: { id: admin.id },
+                data: updateData
+            });
+        }
+        
+        return { message: 'Franchise admin updated successfully' };
     }
 
     /**

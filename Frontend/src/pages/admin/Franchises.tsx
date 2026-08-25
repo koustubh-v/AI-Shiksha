@@ -26,6 +26,7 @@ interface Franchise {
   domain_verified: boolean;
   created_at: string;
   _count?: { users: number; courses: number; enrollments: number };
+  users?: { id: string; email: string; name: string }[];
 }
 
 export default function FranchisesPage() {

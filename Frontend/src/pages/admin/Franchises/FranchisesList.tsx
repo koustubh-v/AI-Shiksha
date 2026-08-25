@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Edit, Trash2, Loader2, Building2 } from "lucide-react";
+import { Search, Edit, Trash2, Loader2, Building2, KeyRound } from "lucide-react";
+import EditFranchiseAdminModal from "./EditFranchiseAdminModal";
 
 interface Franchise {
     id: string;
@@ -18,6 +19,7 @@ interface Franchise {
     is_active: boolean;
     domain_verified: boolean;
     _count?: { users: number; courses: number; enrollments: number };
+    users?: { id: string; email: string; name: string }[];
 }
 
 interface FranchisesListProps {
@@ -29,6 +31,7 @@ interface FranchisesListProps {
 
 export default function FranchisesList({ franchises, isLoading, onDelete, onRefresh }: FranchisesListProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [editingFranchise, setEditingFranchise] = useState<Franchise | null>(null);
 
     const filteredFranchises = franchises.filter(
         (f) =>
@@ -133,8 +136,14 @@ export default function FranchisesList({ franchises, isLoading, onDelete, onRefr
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                                    <Edit className="h-4 w-4" />
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => setEditingFranchise(franchise)}
+                                                    title="Edit Admin Credentials"
+                                                >
+                                                    <KeyRound className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -145,6 +154,17 @@ export default function FranchisesList({ franchises, isLoading, onDelete, onRefr
                     </div>
                 )}
             </CardContent>
+            
+            {editingFranchise && (
+                <EditFranchiseAdminModal
+                    isOpen={!!editingFranchise}
+                    onClose={() => setEditingFranchise(null)}
+                    franchiseId={editingFranchise.id}
+                    franchiseName={editingFranchise.name}
+                    currentEmail={editingFranchise.users?.[0]?.email}
+                    onSuccess={onRefresh}
+                />
+            )}
         </Card>
     );
 }

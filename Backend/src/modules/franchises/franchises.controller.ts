@@ -15,6 +15,7 @@ import {
 import { FranchisesService } from './franchises.service';
 import { CreateFranchiseDto } from './dto/create-franchise.dto';
 import { UpdateFranchiseDto } from './dto/update-franchise.dto';
+import { UpdateFranchiseAdminDto } from './dto/update-franchise-admin.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -133,6 +134,15 @@ export class FranchisesController {
     @ApiOperation({ summary: 'Update franchise details (SUPER_ADMIN only)' })
     update(@Param('id') id: string, @Body() updateFranchiseDto: UpdateFranchiseDto) {
         return this.franchisesService.update(id, updateFranchiseDto);
+    }
+
+    @Patch(':id/admin')
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.SUPER_ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update franchise admin credentials (SUPER_ADMIN only)' })
+    updateAdmin(@Param('id') id: string, @Body() updateAdminDto: UpdateFranchiseAdminDto) {
+        return this.franchisesService.updateAdmin(id, updateAdminDto);
     }
 
     @Patch(':id/suspend')
